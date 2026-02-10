@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Error de Acceso</h4>
+                </div>
+                <div class="card-body text-center p-5">
+                    <h1 class="display-1 text-danger mb-4"><i class="bi bi-shield-lock"></i></h1>
+                    <h4 class="card-title">Lo sentimos</h4>
+                    <p class="card-text lead">{{ mensaje|default:"Ocurrió un error inesperado o no tienes permisos para ver esta página." }}</p>
+                    
+                    <hr>
+                    <a href="{% url 'home' %}" class="btn btn-secondary btn-lg">Volver al Inicio</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

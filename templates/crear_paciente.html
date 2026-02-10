@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4>{{ titulo|default:"Registrar Nuevo Paciente" }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <h6 class="text-muted mb-3">Datos Personales</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">{{ form.first_name.label_tag }} {{ form.first_name }}</div> <div class="col-md-6 mb-3">{{ form.last_name.label_tag }} {{ form.last_name }}</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">{{ form.cedula.label_tag }} {{ form.cedula }}</div>
+                        <div class="col-md-6 mb-3">{{ form.email.label_tag }} {{ form.email }}</div>
+                    </div>
+
+                    <hr>
+                    <h6 class="text-muted mb-3">Ficha Médica Inicial</h6>
+                    {% for field in form %}
+                        {% if field.name not in 'first_name last_name cedula email' %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ field.label }}</label>
+                                {{ field }} </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-success w-100 mt-3">Guardar Paciente</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var inputs = document.querySelectorAll('input, select, textarea');
+    inputs.forEach(function(input) {
+        input.classList.add('form-control');
+    });
+</script>
+{% endblock %}

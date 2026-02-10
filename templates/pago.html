@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <h2>Suscripción Profesional</h2>
+    <p class="lead">Para activar su cuenta de Médico, por favor realice el pago de suscripción.</p>
+    <h1 class="display-4 text-primary my-4">$29.99 / mes</h1>
+
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow p-4">
+                <h5>Seleccione método de pago:</h5>
+                <hr>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <button type="submit" class="btn btn-outline-primary w-100 mb-2 btn-lg">
+                        <i class="bi bi-paypal"></i> Pagar con PayPal
+                    </button>
+
+                    <button type="submit" class="btn btn-outline-dark w-100 mb-2 btn-lg">
+                        <i class="bi bi-credit-card"></i> Tarjeta de Crédito (Stripe/Kuski)
+                    </button>
+                </form>
+
+                <div class="alert alert-info mt-3">
+                    <small>Modo Simulación: Al hacer clic, el sistema aprobará el pago automáticamente.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h1><i class="bi bi-search"></i> Buscar Especialista</h1>
+        <p class="lead">Seleccione la especialidad para ver los médicos disponibles</p>
+    </div>
+
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-6">
+            <form method="get" class="d-flex gap-2">
+                <select name="especialidad" class="form-select form-select-lg">
+                    <option value="">-- Seleccionar Especialidad --</option>
+                    {% for esp in especialidades %}
+                        <option value="{{ esp.id }}">{{ esp.nombre }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary btn-lg">Buscar</button>
+            </form>
+        </div>
+    </div>
+
+    {% if medicos %}
+    <div class="row">
+        {% for m in medicos %}
+        <div class="col-md-4 mb-3">
+            <div class="card shadow h-100 border-0">
+                <div class="card-body text-center">
+                    <div class="display-1 text-secondary"><i class="bi bi-person-circle"></i></div>
+                    <h5 class="card-title mt-2">Dr. {{ m.usuario.last_name }} {{ m.usuario.first_name }}</h5>
+                    <p class="text-muted">{{ m.especialidad.nombre }}</p>
+                    <hr>
+                    <p><i class="bi bi-clock"></i> {{ m.hora_inicio }} - {{ m.hora_fin }}</p>
+                    <a href="{% url 'reservar_cita' m.id %}" class="btn btn-success w-100">
+                        <i class="bi bi-calendar-check"></i> Ver Disponibilidad
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif request.GET.especialidad %}
+        <div class="alert alert-warning text-center">No encontramos médicos en esta especialidad.</div>
+    {% endif %}
+</div>
+{% endblock %}

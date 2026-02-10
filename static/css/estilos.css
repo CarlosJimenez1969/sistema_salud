@@ -1,0 +1,129 @@
+/* === DISEÑO "DARK MEDICAL FUTURE" === */
+:root {
+    --bg-dark: #131517;       /* Fondo casi negro */
+    --card-dark: #1E2226;     /* Fondo de tarjetas */
+    --text-primary: #ffffff;
+    --text-secondary: #a0aec0;
+    
+    /* Degradados de la imagen */
+    --gradient-teal: linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%); /* Verde a Azul */
+    --gradient-blue: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); /* Azul a Morado */
+    --gradient-green: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    
+    --radius-xl: 20px;
+    --radius-md: 12px;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* === NAVBAR === */
+.navbar-custom {
+    background-color: transparent !important; /* Navbar flotante */
+    box-shadow: none;
+    padding-top: 1.5rem;
+}
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+/* === TARJETAS GENERALES === */
+.card {
+    background-color: var(--card-dark);
+    border: 1px solid rgba(255,255,255,0.05); /* Borde sutil */
+    border-radius: var(--radius-xl);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    color: white;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 1.5rem;
+}
+
+/* === TARJETAS DEL DASHBOARD (KPIs) === */
+/* Estilo para las tarjetas pequeñas de arriba */
+.dashboard-widget {
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    border: none;
+}
+
+/* Aplicamos los degradados a las tarjetas específicas */
+.bg-primary.dashboard-widget { background: var(--gradient-teal) !important; }
+.bg-success.dashboard-widget { background: var(--gradient-green) !important; }
+.bg-info.dashboard-widget { background: var(--gradient-blue) !important; }
+
+.dashboard-widget h2 {
+    font-size: 3rem;
+    font-weight: 700;
+}
+.dashboard-widget h6 {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+    font-size: 0.8rem;
+}
+
+/* === BOTONES REDONDOS === */
+.btn {
+    border-radius: 50px; /* Estilo píldora */
+    padding: 10px 25px;
+    font-weight: 600;
+    text-transform: none;
+    border: none;
+}
+
+.btn-primary {
+    background: var(--gradient-teal);
+    box-shadow: 0 4px 15px rgba(45, 212, 191, 0.4); /* Resplandor */
+}
+.btn-primary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}
+
+.btn-secondary, .btn-outline-secondary {
+    background-color: #2D3339;
+    color: white;
+    border: none;
+}
+
+/* === TABLAS EN MODO OSCURO === */
+.table {
+    color: var(--text-secondary);
+}
+.table thead th {
+    color: var(--text-primary);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.table td {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.table-hover tbody tr:hover {
+    color: white;
+    background-color: rgba(255,255,255,0.05);
+}
+
+/* === FORMULARIOS OSCUROS === */
+.form-control, .form-select {
+    background-color: #0d0f11;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    border-radius: var(--radius-md);
+    padding: 12px;
+}
+.form-control:focus {
+    background-color: #0d0f11;
+    color: white;
+    border-color: #2dd4bf; /* Color Teal al enfocar */
+    box-shadow: 0 0 0 0.25rem rgba(45, 212, 191, 0.2);
+}

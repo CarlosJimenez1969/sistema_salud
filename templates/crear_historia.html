@@ -1,0 +1,533 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mb-5">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-dark text-white">
+                    Paciente
+                </div>
+                <div class="card-body text-center">
+                    <h1 class="display-4"><i class="bi bi-person-circle"></i></h1>
+                    <h5>{{ paciente.usuario.last_name }} {{ paciente.usuario.first_name }}</h5>
+                    <p class="text-muted">{{ paciente.usuario.cedula }}</p>
+                    <hr>
+                    <small><strong>Sangre:</strong> {{ paciente.tipo_sangre }}</small><br>
+                    <small><strong>Edad:</strong> {{ paciente.fecha_nacimiento|timesince }}</small>
+                    <div class="alert alert-warning mt-3 p-1">
+                        <small><strong>Alergias:</strong><br> {{ paciente.alergias|default:"Ninguna" }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <span class="h5 mb-0">
+                        <i class="bi bi-journal-medical"></i> 
+                        Consulta de {{ request.user.perfil_medico.especialidad.nombre }}
+                    </span>
+
+                    <small class="text-white-50">
+                        <i class="bi bi-calendar-event"></i> {% now "d \d\e F, Y" %}
+                    </small>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <h3>¡Atención! Hay errores:</h3>
+                                {{ form.errors }}
+                            </div>
+                        {% endif %}
+
+                        <h5 class="text-primary border-bottom pb-2">1. Motivo y Antecedentes</h5>
+                        <div class="mb-3">
+                            <label>Motivo de Consulta</label>
+                            {{ form.motivo_consulta }}
+                        </div>
+                        <div class="mb-3">
+                            <label>Enfermedad Actual</label>
+                            {{ form.enfermedad_actual }}
+                        </div>
+
+                        <h5 class="text-primary border-bottom pb-2 mt-4">2. Signos Vitales</h5>
+                        <div class="row text-center">
+                            <div class="col-md-2">
+                                <label><i class="bi bi-thermometer-half"></i> Temp (°C)</label>
+                                {{ form.temperatura }}
+                            </div>
+                            <div class="col-md-3">
+                                <label><i class="bi bi-heart-pulse"></i> Presión (P/A)</label>
+                                {{ form.presion_arterial }}
+                            </div>
+                            <div class="col-md-2">
+                                <label><i class="bi bi-activity"></i> Pulso</label>
+                                {{ form.pulso }}
+                            </div>
+                            <div class="col-md-2">
+                                <label>Peso (Kg)</label>
+                                {{ form.peso }}
+                            </div>
+                            <div class="col-md-2">
+                                <label>Talla (m)</label>
+                                {{ form.altura }}
+                            </div>
+                        </div>
+
+                        <h5 class="text-primary border-bottom pb-2 mt-4">3. Examen Físico General</h5>
+                        <div class="mb-3">
+                            {{ form.examen_fisico }}
+                        </div>
+
+                        {% if es_oftalmologo %}
+                        <div class="card border-info mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="bi bi-eye-fill"></i> Evaluación Oftalmológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row text-center mb-2">
+                                    <div class="col-6"><h6 class="text-primary fw-bold">OJO DERECHO (OD)</h6></div>
+                                    <div class="col-6"><h6 class="text-primary fw-bold">OJO IZQUIERDO (OI)</h6></div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6 border-end">
+                                        <label class="small text-muted">Agudeza Visual</label>
+                                        <input type="text" name="agudeza_od" class="form-control" placeholder="Ej: 20/20">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="small text-muted">Agudeza Visual</label>
+                                        <input type="text" name="agudeza_oi" class="form-control" placeholder="Ej: 20/20">
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6 border-end">
+                                        <label class="small text-muted">Presión Intraocular (PIO)</label>
+                                        <div class="input-group">
+                                            <input type="text" name="presion_od" class="form-control" placeholder="Ej: 14">
+                                            <span class="input-group-text">mmHg</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="small text-muted">Presión Intraocular (PIO)</label>
+                                        <div class="input-group">
+                                            <input type="text" name="presion_oi" class="form-control" placeholder="Ej: 15">
+                                            <span class="input-group-text">mmHg</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group mt-3">
+                                    <label class="fw-bold"><i class="bi bi-search"></i> Fondo de Ojo / Observaciones:</label>
+                                    <textarea name="fondo_ojo" class="form-control" rows="3" placeholder="Descripción de retina, mácula, nervio óptico..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if es_pediatra %}
+                        <div class="card border-warning mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0"><i class="bi bi-emoji-smile-fill"></i> Historia Pediátrica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="small text-muted">Tipo de Parto</label>
+                                        <select name="tipo_parto" class="form-select">
+                                            <option value="NORMAL">Normal</option>
+                                            <option value="CESAREA">Cesárea</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small text-muted">Lactancia Actual</label>
+                                        <select name="lactancia" class="form-select">
+                                            <option value="MATERNA">Materna Exclusiva</option>
+                                            <option value="FORMULA">Fórmula</option>
+                                            <option value="MIXTA">Mixta</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small text-muted">Test APGAR</label>
+                                        <input type="text" name="apgar" class="form-control" placeholder="Ej: 9/10">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="small text-muted">Peso al Nacer</label>
+                                        <input type="text" name="peso_nacimiento" class="form-control" placeholder="Ej: 3200g">
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-center">
+                                        <div class="form-check form-switch mt-4">
+                                            <input class="form-check-input" type="checkbox" name="vacunas" id="vacunasCheck">
+                                            <label class="form-check-label fw-bold" for="vacunasCheck">¿Esquema de Vacunas Completo?</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Notas de Desarrollo Psicomotriz:</label>
+                                    <textarea name="observaciones_crecimiento" class="form-control" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_ginecologo %}
+                        <div class="card border-danger mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0"><i class="bi bi-gender-female"></i> Historia Gineco-Obstétrica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-danger">FUM (Ultima Menstruación)</label>
+                                        <input type="date" name="fum" class="form-control">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="small text-muted">Regularidad / Ciclo</label>
+                                        <input type="text" name="ciclo_menstrual" class="form-control" placeholder="Ej: Regular 28 días">
+                                    </div>
+                                </div>
+                                
+                                <label class="small text-muted fw-bold">Antecedentes Obstétricos:</label>
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text bg-white">G (Gestas)</span>
+                                    <input type="number" name="gestas" class="form-control" value="0">
+                                    <span class="input-group-text bg-white">P (Partos)</span>
+                                    <input type="number" name="partos" class="form-control" value="0">
+                                    <span class="input-group-text bg-white">C (Cesáreas)</span>
+                                    <input type="number" name="cesareas" class="form-control" value="0">
+                                    <span class="input-group-text bg-white">A (Abortos)</span>
+                                    <input type="number" name="abortos" class="form-control" value="0">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Método Anticonceptivo Actual:</label>
+                                    <input type="text" name="anticonceptivos" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_cardiologo %}
+                        <div class="card border-danger mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0"><i class="bi bi-heart-pulse-fill"></i> Evaluación Cardiológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-danger">Riesgo Cardiovascular</label>
+                                        <select name="riesgo" class="form-select">
+                                            <option value="BAJO">Bajo</option>
+                                            <option value="MODERADO">Moderado</option>
+                                            <option value="ALTO">Alto</option>
+                                            <option value="MUY_ALTO">Muy Alto</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-danger">Clase Funcional (NYHA)</label>
+                                        <select name="clase_funcional" class="form-select">
+                                            <option value="I">I - Sin limitación</option>
+                                            <option value="II">II - Leve limitación</option>
+                                            <option value="III">III - Marcada limitación</option>
+                                            <option value="IV">IV - Incapacidad / Reposo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Antecedentes Familiares Cardíacos:</label>
+                                    <textarea name="antecedentes_familiares" class="form-control" rows="2"></textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label>Hallazgos EKG:</label>
+                                        <textarea name="electrocardiograma" class="form-control" rows="2"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label>Hallazgos Ecocardiograma:</label>
+                                        <textarea name="ecocardiograma" class="form-control" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_dermatologo %}
+                        <div class="card border-primary mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-person-bounding-box"></i> Evaluación Dermatológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label>Fototipo (Fitzpatrick)</label>
+                                        <input type="text" name="fototipo" class="form-control" placeholder="Ej: III">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label>Lesión Primaria</label>
+                                        <input type="text" name="lesion_primaria" class="form-control" placeholder="Ej: Mácula eritematosa...">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label>Localización</label>
+                                        <input type="text" name="localizacion" class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label>Distribución</label>
+                                        <input type="text" name="distribucion" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="biopsia" id="biopsiaCheck">
+                                    <label class="form-check-label fw-bold text-danger" for="biopsiaCheck">¿Se toma Biopsia?</label>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_odontologo %}
+                        <div class="card border-secondary mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0"><i class="bi bi-mouth"></i> Odontograma / Procedimiento</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-secondary">Higiene Oral</label>
+                                        <select name="higiene_oral" class="form-select">
+                                            <option value="BUENA">Buena</option>
+                                            <option value="REGULAR" selected>Regular</option>
+                                            <option value="MALA">Mala</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-secondary">Estado de Encías</label>
+                                        <select name="encias" class="form-select">
+                                            <option value="SANAS">Sanas</option>
+                                            <option value="INFLAMADAS">Inflamadas (Gingivitis)</option>
+                                            <option value="SANGRANTES">Sangrantes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Piezas Dentales Tratadas (Separar por comas):</label>
+                                    <input type="text" name="dientes_tratados" class="form-control" placeholder="Ej: 18, 24, 36 (Molares superiores)">
+                                </div>
+                                <div class="mb-3">
+                                    <label>Procedimiento Realizado:</label>
+                                    <textarea name="procedimiento" class="form-control" rows="3" placeholder="Ej: Profilaxis profunda, restauración con resina..."></textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="small text-muted">Próxima Cita / Control:</label>
+                                        <input type="date" name="proxima_cita" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_psicologo %}
+                        <div class="card border-info mb-4 shadow-sm mt-4" style="border-color: #6f42c1 !important;">
+                            <div class="card-header text-white" style="background-color: #6f42c1;">
+                                <h5 class="mb-0"><i class="bi bi-brain"></i> Salud Mental / Psicología</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="mb-3">
+                                    <label class="fw-bold" style="color: #6f42c1;">Apariencia y Comportamiento:</label>
+                                    <textarea name="apariencia_comportamiento" class="form-control" rows="2" placeholder="Higiene, vestimenta, contacto visual, inquietud motora..."></textarea>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label>Estado de Ánimo / Afecto</label>
+                                        <input type="text" name="estado_animo" class="form-control" placeholder="Ej: Ansioso, Depresivo, Eutímico">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label>Sueño y Apetito</label>
+                                        <input type="text" name="sueno_apetito" class="form-control" placeholder="Ej: Insomnio conciliación, hiporexia">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Funciones Cognitivas (Atención, Memoria):</label>
+                                    <input type="text" name="funciones_cognitivas" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="fw-bold">Plan Terapéutico / Próximas Sesiones:</label>
+                                    <textarea name="plan_sesiones" class="form-control" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_nutricionista %}
+                        <div class="card border-success mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-apple"></i> Evaluación Nutricional</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <p class="small text-muted mb-2">Nota: Ingrese Peso y Talla en la sección de Signos Vitales arriba.</p>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-success">IMC (Calculado)</label>
+                                        <input type="text" name="imc" class="form-control" placeholder="Ej: 24.5">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label>% Grasa Corporal</label>
+                                        <input type="text" name="grasa_corporal" class="form-control" placeholder="Ej: 18%">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label>% Masa Muscular</label>
+                                        <input type="text" name="masa_muscular" class="form-control" placeholder="Ej: 42%">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label>Circunferencia Cintura (cm)</label>
+                                        <input type="text" name="circunferencia_cintura" class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label>Circunferencia Cadera (cm)</label>
+                                        <input type="text" name="circunferencia_cadera" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="fw-bold">Plan Alimenticio / Tipo de Dieta:</label>
+                                    <textarea name="tipo_dieta" class="form-control" rows="3" placeholder="Ej: Dieta Hiperproteica 2500kcal, baja en sodio..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_otorrino %}
+                        <div class="card border-dark mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0"><i class="bi bi-ear"></i> Otorrinolaringología (ORL)</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <h6 class="text-primary border-bottom pb-1">1. Otoscopia (Oídos)</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold">Oído Derecho (OD)</label>
+                                        <input type="text" name="otoscopia_od" class="form-control" value="Conducto permeable, Membrana íntegra">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold">Oído Izquierdo (OI)</label>
+                                        <input type="text" name="otoscopia_oi" class="form-control" value="Conducto permeable, Membrana íntegra">
+                                    </div>
+                                </div>
+
+                                <h6 class="text-primary border-bottom pb-1 mt-3">2. Rinoscopia (Nariz)</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label>Tabique Nasal</label>
+                                        <select name="tabique" class="form-select">
+                                            <option value="CENTRADO">Centrado</option>
+                                            <option value="DESVIADO_D">Desviado a Derecha</option>
+                                            <option value="DESVIADO_I">Desviado a Izquierda</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label>Mucosa / Cornetes / Secreciones</label>
+                                        <input type="text" name="rinoscopia" class="form-control" placeholder="Ej: Mucosa pálida, hipertrofia de cornetes...">
+                                    </div>
+                                </div>
+
+                                <h6 class="text-primary border-bottom pb-1 mt-3">3. Orofaringe y Cuello</h6>
+                                <div class="mb-3">
+                                    <label>Amígdalas / Faringe:</label>
+                                    <textarea name="orofaringe" class="form-control" rows="2" placeholder="Ej: Amígdalas grado II, cripticas..."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="small text-muted">Audiometría (Opcional):</label>
+                                    <input type="text" name="audiometria" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_traumatologo %}
+                        <div class="card border-dark mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0"><i class="bi bi-bandaid-fill"></i> Traumatología y Ortopedia</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold">Zona Afectada</label>
+                                        <input type="text" name="zona_afectada" class="form-control" placeholder="Ej: Rodilla Derecha, Hombro Izq...">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label>Mecanismo de Lesión</label>
+                                        <input type="text" name="mecanismo_lesion" class="form-control" placeholder="Ej: Caída de propia altura, Trauma directo...">
+                                    </div>
+                                </div>
+
+                                <h6 class="text-primary border-bottom pb-1 mt-3">Examen Físico Dirigido</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="small text-muted">Movilidad (ROM)</label>
+                                        <input type="text" name="movilidad" class="form-control" value="Arcos Completos">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small text-muted">Fuerza (Daniels)</label>
+                                        <select name="fuerza_muscular" class="form-select">
+                                            <option value="5/5 (Normal)">5/5 (Normal)</option>
+                                            <option value="4/5 (Mov contra resistencia)">4/5 (Buena)</option>
+                                            <option value="3/5 (Mov contra gravedad)">3/5 (Regular)</option>
+                                            <option value="2/5 (Sin gravedad)">2/5 (Mala)</option>
+                                            <option value="1/5 (Contracción visible)">1/5 (Vestigios)</option>
+                                            <option value="0/5 (Parálisis)">0/5 (Nula)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small text-muted">Sensibilidad</label>
+                                        <input type="text" name="sensibilidad" class="form-control" value="Conservada">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label>Pruebas Especiales (Maniobras):</label>
+                                    <textarea name="pruebas_especiales" class="form-control" rows="2" placeholder="Ej: Cajón anterior (+), McMurray (-)..."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold">Plan de Rehabilitación / Inmovilización:</label>
+                                    <textarea name="plan_rehabilitacion" class="form-control" rows="2" placeholder="Ej: Férula por 3 semanas, Fisioterapia 10 sesiones..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="alert alert-secondary mt-4">
+                            <h5><i class="bi bi-images"></i> Imágenes / Evidencia</h5>
+                            <p class="small mb-1">Seleccione radiografías, fotos o resultados (puede seleccionar varios a la vez).</p>
+                            <input type="file" name="imagenes_campo" multiple class="form-control">
+                        </div>
+
+                        <h5 class="text-primary border-bottom pb-2 mt-4">4. Diagnóstico y Tratamiento</h5>
+                        <div class="mb-3">
+                            <label class="fw-bold">Diagnóstico (CIE-10)</label>
+                            {{ form.diagnostico }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold">Tratamiento / Receta</label>
+                            {{ form.tratamiento }}
+                        </div>
+
+                        <div class="d-grid gap-2 mt-5">
+                            <button type="submit" class="btn btn-success btn-lg">Guardar Historia Clínica</button>
+                            <a href="{% url 'listar_pacientes' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

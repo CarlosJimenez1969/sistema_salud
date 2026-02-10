@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <h1>Bienvenido al Sistema Médico</h1>
+    <p class="lead">Hola, {{ user.first_name }} {{ user.last_name }}</p>
+    
+    <div class="row mt-5">
+        {% if user.role == "MEDICO" or user.role == "ADMIN" %}
+            
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white h-100 dashboard-widget shadow">
+                        <div class="card-body">
+                            <h6 class="text-uppercase mb-2 opacity-75">Pacientes Totales</h6>
+                            <h2 class="mb-0">{{ total_pacientes }}</h2>
+                            <i class="bi bi-people-fill icon-bg"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white h-100 dashboard-widget shadow">
+                        <div class="card-body">
+                            <h6 class="text-uppercase mb-2 opacity-75">Citas Agendadas</h6>
+                            <h2 class="mb-0">{{ citas_totales }}</h2>
+                            <i class="bi bi-calendar-check-fill icon-bg"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white h-100 dashboard-widget shadow">
+                        <div class="card-body">
+                            <h6 class="text-uppercase mb-2 opacity-75">Médicos Activos</h6>
+                            <h2 class="mb-0">{{ total_medicos }}</h2>
+                            <i class="bi bi-person-badge-fill icon-bg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card shadow mb-4">
+                        <div class="card-header bg-white font-weight-bold text-primary">
+                            <i class="bi bi-bar-chart-line"></i> Evolución de Citas por Mes
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-area">
+                                <canvas id="citasChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 border-0 bg-transparent">
+                            <h6 class="m-0 font-weight-bold text-white">⚡ Acciones Rápidas</h6>
+                        </div>
+                        
+                        <div class="card-body d-grid gap-3">
+                            <a href="{% url 'ver_agenda' %}" class="btn btn-primary btn-lg">
+                                <i class="bi bi-calendar-day"></i> Ver Agenda Hoy
+                            </a>
+                            
+                            <a href="{% url 'listar_pacientes' %}" class="btn btn-outline-light">
+                                <i class="bi bi-search"></i> Buscar Paciente
+                            </a>
+                            
+                            {% if user.role == 'ADMIN' %}
+                                <a href="/admin/" target="_blank" class="btn btn-secondary">
+                                    <i class="bi bi-gear-fill"></i> Panel Administrador
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{ grafico_meses|json_script:"meses-data" }}
+            {{ grafico_cantidades|json_script:"cantidades-data" }}
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    // Verificamos si existe el canvas (para que no falle si entras como Paciente)
+                    var canvasElement = document.getElementById('citasChart');
+
+                    if (canvasElement) {
+                        // 2. LEER LOS DATOS: Los sacamos de las etiquetas invisibles
+                        // Si no hay datos, usamos listas vacías [] por seguridad
+                        var meses = JSON.parse(document.getElementById('meses-data').textContent || "[]");
+                        var cantidades = JSON.parse(document.getElementById('cantidades-data').textContent || "[]");
+
+                        var ctx = canvasElement.getContext('2d');
+                        
+                        var myChart = new Chart(ctx, {
+                            type: 'line', 
+                            data: {
+                                labels: meses, 
+                                datasets: [{
+                                    label: 'Citas Médicas',
+                                    data: cantidades, 
+                                    // COLORES NUEVOS DE LA IMAGEN
+                                    backgroundColor: 'rgba(45, 212, 191, 0.2)', // Turquesa transparente
+                                    borderColor: '#2dd4bf', // Turquesa neón
+                                    borderWidth: 3,
+                                    pointBackgroundColor: '#131517', // Negro (fondo)
+                                    pointBorderColor: '#2dd4bf',
+                                    pointBorderWidth: 3,
+                                    pointRadius: 6,
+                                    fill: true,     // Relleno debajo de la línea
+                                    tension: 0.4    // HACE LA LÍNEA CURVA (IMPORTANTE)
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false } // Ocultar leyenda para más limpieza
+                                },
+                                scales: {
+                                    y: {
+                                        grid: { color: 'rgba(255, 255, 255, 0.05)' }, // Líneas de cuadrícula sutiles
+                                        ticks: { color: '#a0aec0' }
+                                    },
+                                    x: {
+                                        grid: { display: false },
+                                        ticks: { color: '#a0aec0' }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            </script>
+        {% elif user.role == "PACIENTE" %}
+            <div class="col-md-6 offset-md-3">
+                <div class="card border-primary mb-3">
+                    <div class="card-body text-primary">
+                        <h5 class="card-title">Agendar Cita</h5>
+                        <p class="card-text">Buscar un médico y reservar turno.</p>
+                        
+                        <a href="{% url 'buscar_medico' %}" class="btn btn-primary">Buscar Médico</a>
+                        
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

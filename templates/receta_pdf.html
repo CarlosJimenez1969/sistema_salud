@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        /* Estilos para impresión A4 */
+        @page {
+            size: a4 portrait;
+            margin: 2cm;
+        }
+        body {
+            font-family: Helvetica, sans-serif;
+            color: #333;
+            line-height: 1.5;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .header h1 { margin: 0; color: #0056b3; font-size: 22px; }
+        .header p { margin: 2px; font-size: 12px; color: #666; }
+        
+        .info-box {
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .info-box td { padding: 4px; }
+        .label { font-weight: bold; color: #555; }
+        
+        /* Bloque principal de la receta */
+        .rx-box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            background-color: #fcfcfc;
+            min-height: 300px; /* Espacio para que se vea lleno */
+        }
+        .rx-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 10px;
+        }
+        
+        /* Pie de página */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 10px;
+            color: #aaa;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        .firma {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .linea-firma {
+            border-top: 1px solid #333;
+            width: 200px;
+            margin: 0 auto;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Dr. {{ h.medico.usuario.first_name }} {{ h.medico.usuario.last_name }}</h1>
+        <p>{{ h.medico.especialidad.nombre }}</p>
+        <p>Reg. Senescyt: {{ h.medico.registro_senescyt }}</p>
+        <p>Email: {{ h.medico.usuario.email }}</p>
+    </div>
+
+    <table class="info-box">
+        <tr>
+            <td class="label">Paciente:</td>
+            <td>{{ h.paciente.usuario.last_name }} {{ h.paciente.usuario.first_name }}</td>
+            <td class="label">Fecha:</td>
+            <td>{{ h.fecha_atencion|date:"d de F, Y" }}</td>
+        </tr>
+        <tr>
+            <td class="label">Cédula:</td>
+            <td>{{ h.paciente.usuario.cedula }}</td>
+            <td class="label">Edad:</td>
+            <td>{{ h.paciente.fecha_nacimiento|timesince }}</td>
+        </tr>
+    </table>
+
+    <hr style="border: 0; border-top: 1px solid #ddd; margin-bottom: 20px;">
+
+    {% if h.oftalmologia %}
+    <div style="border: 1px solid #17a2b8; padding: 10px; margin-bottom: 20px; background-color: #f0f8ff;">
+        <h3 style="color: #17a2b8; margin-top: 0; font-size: 14px; border-bottom: 1px solid #17a2b8; padding-bottom: 5px;">
+            EVALUACIÓN OFTALMOLÓGICA
+        </h3>
+        <table style="width: 100%; font-size: 11px;">
+            <tr>
+                <td width="50%" style="border-right: 1px solid #ccc; padding-right: 10px;">
+                    <strong>OJO DERECHO (OD)</strong><br>
+                    AV: {{ h.oftalmologia.agudeza_visual_od }}<br>
+                    PIO: {{ h.oftalmologia.presion_intraocular_od }} mmHg
+                </td>
+                <td width="50%" style="padding-left: 10px;">
+                    <strong>OJO IZQUIERDO (OI)</strong><br>
+                    AV: {{ h.oftalmologia.agudeza_visual_oi }}<br>
+                    PIO: {{ h.oftalmologia.presion_intraocular_oi }} mmHg
+                </td>
+            </tr>
+        </table>
+        {% if h.oftalmologia.fondo_ojo %}
+        <p style="font-size: 11px; margin-top: 5px; color: #555;">
+            <strong>Fondo de Ojo:</strong> {{ h.oftalmologia.fondo_ojo }}
+        </p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if h.pediatria %}
+    <div style="border: 1px solid #ffc107; padding: 10px; margin-bottom: 20px; background-color: #fff3cd;">
+        <h3 style="color: #856404; margin-top: 0; font-size: 14px; border-bottom: 1px solid #ffc107; padding-bottom: 5px;">
+            HISTORIA PEDIÁTRICA
+        </h3>
+        <table style="width: 100%; font-size: 11px; color: #333;">
+            <tr>
+                <td width="33%"><strong>Parto:</strong> {{ h.pediatria.get_tipo_parto_display }}</td>
+                <td width="33%"><strong>Peso Nacer:</strong> {{ h.pediatria.peso_nacimiento }}</td>
+                <td width="33%"><strong>Lactancia:</strong> {{ h.pediatria.get_lactancia_display }}</td>
+            </tr>
+            <tr>
+                <td><strong>APGAR:</strong> {{ h.pediatria.apgar }}</td>
+                <td colspan="2">
+                    <strong>Vacunas:</strong> 
+                    {% if h.pediatria.vacunas_completas %}
+                        <span style="color: green;">Completo (Al día)</span>
+                    {% else %}
+                        <span style="color: red;">Pendiente / Incompleto</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+        {% if h.pediatria.observaciones_crecimiento %}
+            <p style="font-size: 11px; margin-top: 8px; border-top: 1px dotted #999; padding-top: 4px;">
+                <strong>Desarrollo:</strong> {{ h.pediatria.observaciones_crecimiento }}
+            </p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if h.ginecologia %}
+    <div style="border: 1px solid #dc3545; padding: 10px; margin-bottom: 20px; background-color: #f8d7da;">
+        <h3 style="color: #721c24; margin-top: 0; font-size: 14px; border-bottom: 1px solid #dc3545; padding-bottom: 5px;">
+            GINECO-OBSTETRICIA
+        </h3>
+        <table style="width: 100%; font-size: 11px; margin-bottom: 5px;">
+            <tr>
+                <td width="50%"><strong>FUM:</strong> {{ h.ginecologia.fum|default:"--" }}</td>
+                <td width="50%"><strong>Ciclo:</strong> {{ h.ginecologia.ciclo_menstrual }}</td>
+            </tr>
+        </table>
+        <div style="background-color: #fff; padding: 5px; border: 1px solid #e2e2e2; text-align: center; font-size: 12px; font-weight: bold; margin: 5px 0;">
+            G: {{ h.ginecologia.gestas }} &nbsp;|&nbsp; 
+            P: {{ h.ginecologia.partos }} &nbsp;|&nbsp; 
+            C: {{ h.ginecologia.cesareas }} &nbsp;|&nbsp; 
+            A: {{ h.ginecologia.abortos }}
+        </div>
+        {% if h.ginecologia.anticonceptivos %}
+            <p style="font-size: 11px; margin-top: 5px;">
+                <strong>Método Anticonceptivo:</strong> {{ h.ginecologia.anticonceptivos }}
+            </p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if h.cardiologia %}
+    <div style="border: 1px solid #dc3545; padding: 10px; margin-bottom: 20px; background-color: #fce8e8;">
+        <h3 style="color: #721c24; margin-top: 0; font-size: 14px; border-bottom: 1px solid #dc3545;">
+            CARDIOLOGÍA
+        </h3>
+        <p style="font-size: 12px; margin: 5px 0;">
+            <strong>Riesgo CV:</strong> {{ h.cardiologia.riesgo }} &nbsp;|&nbsp; 
+            <strong>Clase Funcional:</strong> {{ h.cardiologia.clase_funcional }}
+        </p>
+        <p style="font-size: 11px;"><strong>EKG:</strong> {{ h.cardiologia.electrocardiograma }}</p>
+    </div>
+    {% endif %}
+
+    {% if h.dermatologia %}
+    <div style="border: 1px solid #007bff; padding: 10px; margin-bottom: 20px; background-color: #e6f2ff;">
+        <h3 style="color: #004085; margin-top: 0; font-size: 14px; border-bottom: 1px solid #007bff;">
+            DERMATOLOGÍA
+        </h3>
+        <p style="font-size: 12px; margin: 5px 0;">
+            <strong>Fototipo:</strong> {{ h.dermatologia.fototipo }} &nbsp;|&nbsp; 
+            <strong>Biopsia:</strong> {% if h.dermatologia.biopsia %} SÍ {% else %} NO {% endif %}
+        </p>
+        <p style="font-size: 11px;"><strong>Lesión:</strong> {{ h.dermatologia.lesion_primaria }} ({{ h.dermatologia.localizacion }})</p>
+    </div>
+    {% endif %}
+
+    {% if h.odontologia %}
+    <div style="border: 1px solid #6c757d; padding: 10px; margin-bottom: 20px; background-color: #f8f9fa;">
+        <h3 style="color: #6c757d; margin-top: 0; font-size: 14px; border-bottom: 1px solid #6c757d;">
+            ODONTOLOGÍA
+        </h3>
+        <p style="font-size: 12px; margin: 5px 0;">
+            <strong>Higiene:</strong> {{ h.odontologia.get_higiene_oral_display }} &nbsp;|&nbsp; 
+            <strong>Encías:</strong> {{ h.odontologia.get_encias_display }}
+        </p>
+        <p style="font-size: 11px;"><strong>Piezas:</strong> {{ h.odontologia.dientes_tratados }}</p>
+        <p style="font-size: 11px; margin-top: 5px;"><strong>Procedimiento:</strong> {{ h.odontologia.procedimiento }}</p>
+        {% if h.odontologia.proxima_cita %}
+            <p style="font-size: 12px; font-weight: bold; margin-top: 10px;">
+                Próximo Control: {{ h.odontologia.proxima_cita|date:"d/M/Y" }}
+            </p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if h.psicologia %}
+    <div style="border: 1px solid #6f42c1; padding: 10px; margin-bottom: 20px; background-color: #f3eefc;">
+        <h3 style="color: #6f42c1; margin-top: 0; font-size: 14px; border-bottom: 1px solid #6f42c1;">
+            PSICOLOGÍA
+        </h3>
+        <p style="font-size: 12px; margin: 5px 0;">
+            <strong>Ánimo:</strong> {{ h.psicologia.estado_animo }}
+        </p>
+        <p style="font-size: 11px;"><strong>Plan:</strong> {{ h.psicologia.plan_sesiones }}</p>
+    </div>
+    {% endif %}
+
+    {% if h.nutricion %}
+    <div style="border: 1px solid #28a745; padding: 10px; margin-bottom: 20px; background-color: #d4edda;">
+        <h3 style="color: #155724; margin-top: 0; font-size: 14px; border-bottom: 1px solid #28a745;">
+            NUTRICIÓN
+        </h3>
+        <table style="width: 100%; font-size: 11px;">
+            <tr>
+                <td><strong>IMC:</strong> {{ h.nutricion.imc }}</td>
+                <td><strong>Grasa:</strong> {{ h.nutricion.grasa_corporal }}</td>
+                <td><strong>Músculo:</strong> {{ h.nutricion.masa_muscular }}</td>
+            </tr>
+        </table>
+        <p style="font-size: 11px; margin-top: 8px;">
+            <strong>Dieta:</strong> {{ h.nutricion.tipo_dieta }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if h.otorrino %}
+    <div style="border: 1px solid #343a40; padding: 10px; margin-bottom: 20px; background-color: #f8f9fa;">
+        <h3 style="color: #343a40; margin-top: 0; font-size: 14px; border-bottom: 1px solid #343a40;">
+            OTORRINOLARINGOLOGÍA
+        </h3>
+        <table style="width: 100%; font-size: 11px;">
+            <tr>
+                <td width="50%"><strong>OD:</strong> {{ h.otorrino.otoscopia_od }}</td>
+                <td width="50%"><strong>OI:</strong> {{ h.otorrino.otoscopia_oi }}</td>
+            </tr>
+        </table>
+        <p style="font-size: 11px; margin-top: 5px;">
+            <strong>Nariz:</strong> {{ h.otorrino.rinoscopia }} ({{ h.otorrino.get_tabique_display }})
+        </p>
+        <p style="font-size: 11px;">
+            <strong>Garganta:</strong> {{ h.otorrino.orofaringe }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if h.traumatologia %}
+    <div style="border: 1px solid #343a40; padding: 10px; margin-bottom: 20px; background-color: #e2e3e5;">
+        <h3 style="color: #343a40; margin-top: 0; font-size: 14px; border-bottom: 1px solid #343a40;">
+            TRAUMATOLOGÍA: {{ h.traumatologia.zona_afectada }}
+        </h3>
+        <table style="width: 100%; font-size: 11px;">
+            <tr>
+                <td width="33%"><strong>Movilidad:</strong> {{ h.traumatologia.movilidad }}</td>
+                <td width="33%"><strong>Fuerza:</strong> {{ h.traumatologia.fuerza_muscular }}</td>
+                <td width="33%"><strong>Sensibilidad:</strong> {{ h.traumatologia.sensibilidad }}</td>
+            </tr>
+        </table>
+        <p style="font-size: 11px; margin-top: 5px;">
+            <strong>Mecanismo:</strong> {{ h.traumatologia.mecanismo_lesion }}
+        </p>
+        {% if h.traumatologia.pruebas_especiales %}
+        <p style="font-size: 11px;">
+            <strong>Pruebas Especiales:</strong> {{ h.traumatologia.pruebas_especiales }}
+        </p>
+        {% endif %}
+        {% if h.traumatologia.plan_rehabilitacion %}
+        <p style="font-size: 11px; font-weight: bold; margin-top: 5px;">
+            Plan: {{ h.traumatologia.plan_rehabilitacion }}
+        </p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="rx-box">
+        <div class="rx-title">Rp.</div>
+        <div style="white-space: pre-line;">
+            {{ h.tratamiento }}
+        </div>
+
+        <br><br>
+        <p><strong>Diagnóstico (CIE-10):</strong> {{ h.diagnostico }}</p>
+    </div>
+
+    <div class="firma">
+        <div class="linea-firma"></div>
+        <p>Firma y Sello</p>
+    </div>
+
+    <div class="footer">
+        Generado por Sistema Médico SaludDigital<br>
+        Este documento es informativo y válido para farmacias.
+    </div>
+</body>
+</html>
