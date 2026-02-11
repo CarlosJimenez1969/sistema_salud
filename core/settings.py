@@ -158,5 +158,11 @@ AUTH_USER_MODEL = 'users.User'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-LOGIN_REDIRECT_URL = '/'  # Ir a la página de inicio
-LOGOUT_REDIRECT_URL = '/login/' # Al salir, volver al login
+# Redirigir al usuario a esta URL si no ha iniciado sesión
+LOGIN_URL = 'login'
+
+# A dónde ir después de iniciar sesión correctamente
+LOGIN_REDIRECT_URL = 'home'
+
+# A dónde ir después de cerrar sesión
+LOGOUT_REDIRECT_URL = 'login'
