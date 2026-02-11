@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import dj_database_url
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -80,7 +81,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
+"""DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'sistema_medico_db',  # El nombre exacto que pusimos en pgAdmin
@@ -89,6 +90,15 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '5432',
     }
+}"""
+
+DATABASES = {
+    'default': dj_database_url.config(
+        # Cambia esta línea si quieres usar otra cosa en local,
+        # pero esto permite que funcione en Render automáticamente.
+        default='sqlite:///db.sqlite3',
+        conn_max_age=600
+    )
 }
 
 
