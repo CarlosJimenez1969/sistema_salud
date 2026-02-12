@@ -10,8 +10,8 @@
             ¿Es Médico?: {{ user.medico }} <br>
             ID Médico: {{ user.medico.id }}
         </div>
-        {% if user.medico %}
-            <a href="{% url 'reservar_cita' user.medico.id %}" class="btn btn-success">
+        {% if user.perfil_medico %}
+            <a href="{% url 'reservar_cita' user.perfil_medico.id %}" class="btn btn-success">
                 <i class="bi bi-plus-circle"></i> Agendar Nueva Cita
             </a>
         {% endif %}
