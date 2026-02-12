@@ -27,6 +27,14 @@ def buscar_medico(request):
 def reservar_cita(request, medico_id):
     medico = get_object_or_404(Medico, id=medico_id)
     
+    # --- Lógica para saber si el usuario es Médico ---
+    es_medico = hasattr(request.user, 'perfil_medico')
+    lista_pacientes = []
+    
+    # Si es médico, traemos todos los pacientes para que pueda elegir
+    if es_medico:
+        lista_pacientes = Paciente.objects.all()
+
     # 1. Obtener la fecha
     fecha_str = request.GET.get('fecha')
     if fecha_str:
@@ -40,51 +48,47 @@ def reservar_cita(request, medico_id):
     if dia_anterior < date.today():
         dia_anterior = None
 
-    # 3. LÓGICA DE TURNOS "A PRUEBA DE FALLOS"
+    # 3. LÓGICA DE TURNOS
     horarios_disponibles = []
     
-    # PASO CLAVE: Traemos las horas ocupadas y las convertimos a TEXTO "HH:MM"
-    # Esto elimina cualquier problema de segundos o milisegundos ocultos
     citas_ocupadas = Cita.objects.filter(
         medico=medico,
         fecha=fecha_seleccionada,
-        estado='PENDIENTE' # Solo nos importan las activas
+        estado='PENDIENTE'
     ).values_list('hora', flat=True)
     
-    # Convertimos la lista de objetos Time a lista de Textos ['08:00', '11:50', etc]
     lista_horas_ocupadas = [t.strftime('%H:%M') for t in citas_ocupadas]
-    
-    print(f"--- FECHA: {fecha_seleccionada} ---")
-    print(f"Horas Ocupadas en BD (Texto): {lista_horas_ocupadas}")
 
     if medico.hora_inicio and medico.hora_fin:
         hora_actual = medico.hora_inicio
         while hora_actual < medico.hora_fin:
-            
-            # Convertimos la hora del turno actual a TEXTO también
             hora_actual_str = hora_actual.strftime('%H:%M')
-            
-            # COMPARAMOS TEXTO CON TEXTO (Infalible)
             esta_ocupado = hora_actual_str in lista_horas_ocupadas
             
-            if esta_ocupado:
-                print(f"--> ¡Coincidencia! El turno {hora_actual_str} se marcará como ROJO.")
-
             horarios_disponibles.append({
                 'hora': hora_actual,
                 'ocupado': esta_ocupado 
             })
             
-            # Sumamos 30 minutos
             dt = datetime.combine(date.today(), hora_actual) + timedelta(minutes=30)
             hora_actual = dt.time()
 
     # 4. Procesar Reserva (POST)
     if request.method == 'POST':
         try:
-            paciente = request.user.perfil_paciente
-            hora_post = request.POST.get('hora') # Recibimos "11:50"
+            hora_post = request.POST.get('hora')
             
+            # --- AQUÍ ESTÁ LA CORRECCIÓN CLAVE ---
+            if es_medico:
+                # Si soy médico, obtengo el ID del paciente desde el formulario
+                paciente_id = request.POST.get('paciente_id')
+                if not paciente_id:
+                    raise Exception("Debes seleccionar un paciente.")
+                paciente = get_object_or_404(Paciente, id=paciente_id)
+            else:
+                # Si soy paciente, me uso a mí mismo
+                paciente = request.user.perfil_paciente
+
             # Guardamos la cita
             Cita.objects.create(
                 medico=medico,
@@ -94,7 +98,14 @@ def reservar_cita(request, medico_id):
                 estado='PENDIENTE'
             )
             messages.success(request, '¡Cita reservada con éxito!')
+            
+            # Si es médico, quizás quieras volver a la agenda, si es paciente al home
+            if es_medico:
+                return redirect('ver_agenda') 
             return redirect('home')
+            
+        except AttributeError:
+            messages.error(request, 'Error: Tu usuario no tiene perfil de paciente.')
         except Exception as e:
             messages.error(request, f'Error al reservar: {e}')
 
@@ -103,7 +114,9 @@ def reservar_cita(request, medico_id):
         'horarios': horarios_disponibles,
         'fecha_seleccionada': fecha_seleccionada,
         'dia_anterior': dia_anterior,
-        'dia_siguiente': dia_siguiente
+        'dia_siguiente': dia_siguiente,
+        'es_medico': es_medico,          # <--- Pasamos este dato al HTML
+        'lista_pacientes': lista_pacientes # <--- Pasamos la lista al HTML
     })
 
 @login_required

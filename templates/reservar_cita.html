@@ -4,7 +4,7 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-4">
-            <div class="card shadow">
+            <div class="card shadow mb-3">
                 <div class="card-header bg-primary text-white text-center">
                     <h5>Seleccionar Fecha</h5>
                 </div>
@@ -16,25 +16,21 @@
                                onchange="document.getElementById('formFecha').submit()">
                     </form>
                     <div class="alert alert-info small">
-                        <i class="bi bi-info-circle"></i> Cambia la fecha para ver los horarios disponibles de ese día.
+                        <i class="bi bi-info-circle"></i> Cambia la fecha para ver los horarios disponibles.
                     </div>
                 </div>
             </div>
             
-            <div class="card mt-3 border-0 bg-light">
-                <div class="card-body text-center">
-                    <h4>Dr. {{ medico.usuario.last_name }}</h4>
-                    <span class="badge bg-secondary">{{ medico.especialidad }}</span>
-                </div>
+            <div class="card border-0 bg-light text-center p-3">
+                <h4>Dr. {{ medico.usuario.last_name }}</h4>
+                <span class="badge bg-secondary">{{ medico.especialidad }}</span>
             </div>
         </div>
 
         <div class="col-md-8">
             <div class="card shadow">
-                
                 <div class="card-header bg-white py-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        
                         {% if dia_anterior %}
                             <a href="?fecha={{ dia_anterior|date:'Y-m-d' }}" class="btn btn-outline-primary">
                                 <i class="bi bi-chevron-left"></i> Anterior
@@ -53,35 +49,49 @@
                         <a href="?fecha={{ dia_siguiente|date:'Y-m-d' }}" class="btn btn-outline-primary">
                             Siguiente <i class="bi bi-chevron-right"></i>
                         </a>
-
                     </div>
                 </div>
 
                 <div class="card-body">
                     {% if not horarios %}
-                        <div class="alert alert-danger">El médico no tiene configurado su horario.</div>
+                        <div class="alert alert-danger text-center">El médico no tiene configurado su horario.</div>
                     {% else %}
                         
+                        {% if es_medico %}
+                            <div class="alert alert-warning text-center mb-3">
+                                <i class="bi bi-shield-lock-fill"></i> Modo Doctor: Selecciona una hora para asignar paciente.
+                            </div>
+                        {% endif %}
+
                         <div class="d-flex flex-wrap gap-3 justify-content-center mt-3">
                             {% for turno in horarios %}
                                 {% if turno.ocupado %}
-                                    <button disabled class="btn btn-danger btn-lg position-relative shadow-sm" style="width: 110px;">
+                                    <button disabled class="btn btn-danger btn-lg shadow-sm" style="width: 110px;">
                                         {{ turno.hora|time:"H:i" }}
                                     </button>
                                 {% else %}
-                                    <form method="post" onsubmit="return confirm('¿Confirmar reserva a las {{ turno.hora }}?');">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="hora" value="{{ turno.hora|time:'H:i' }}">
-                                        <button type="submit" class="btn btn-outline-success btn-lg shadow-sm" style="width: 110px;">
+                                    {% if es_medico %}
+                                        <button type="button" 
+                                                class="btn btn-outline-success btn-lg shadow-sm" 
+                                                style="width: 110px;"
+                                                onclick="abrirModalReserva('{{ turno.hora|time:'H:i' }}')">
                                             {{ turno.hora|time:"H:i" }}
                                         </button>
-                                    </form>
+                                    {% else %}
+                                        <form method="post" onsubmit="return confirm('¿Confirmar reserva a las {{ turno.hora }}?');">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="hora" value="{{ turno.hora|time:'H:i' }}">
+                                            <button type="submit" class="btn btn-outline-success btn-lg shadow-sm" style="width: 110px;">
+                                                {{ turno.hora|time:"H:i" }}
+                                            </button>
+                                        </form>
+                                    {% endif %}
                                 {% endif %}
                             {% endfor %}
                         </div>
 
                         {% if not horarios %}
-                            <p class="text-center text-muted mt-5">No hay turnos disponibles.</p>
+                            <p class="text-center text-muted mt-5">No hay turnos disponibles para este día.</p>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -89,4 +99,51 @@
         </div>
     </div>
 </div>
+
+{% if es_medico %}
+<div class="modal fade" id="modalReservaMedico" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Asignar Cita a Paciente</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+          {% csrf_token %}
+          <div class="modal-body">
+            <p class="fw-bold">Hora seleccionada: <span id="spanHoraSeleccionada" class="text-primary"></span></p>
+            <input type="hidden" name="hora" id="inputHoraModal">
+
+            <label class="form-label">Seleccione el Paciente:</label>
+            <select name="paciente_id" class="form-select" required>
+                <option value="" selected disabled>-- Buscar Paciente --</option>
+                {% for p in lista_pacientes %}
+                    <option value="{{ p.id }}">
+                        {{ p.usuario.last_name }} {{ p.usuario.first_name }} ({{ p.cedula }})
+                    </option>
+                {% endfor %}
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Confirmar Cita</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+    function abrirModalReserva(hora) {
+        // Pone la hora en el texto visible y en el input oculto
+        document.getElementById('spanHoraSeleccionada').innerText = hora;
+        document.getElementById('inputHoraModal').value = hora;
+        
+        // Abre el modal de Bootstrap
+        var myModal = new bootstrap.Modal(document.getElementById('modalReservaMedico'));
+        myModal.show();
+    }
+</script>
+{% endif %}
+
 {% endblock %}
