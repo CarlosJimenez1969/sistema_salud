@@ -41,6 +41,12 @@ urlpatterns = [
     path('citas/buscar/', buscar_medico, name='buscar_medico'),
     path('citas/reservar/<int:medico_id>/', reservar_cita, name='reservar_cita'),
     path('citas/agenda/', ver_agenda, name='ver_agenda'),
+
+    # Esto habilita: login, logout, password_reset, password_reset_confirm, etc.
+    path('accounts/', include('django.contrib.auth.urls')),
+
+    # Tus otras rutas...
+    #path('', include('medico.urls')), # o como se llame tu app
 ]
 
 if settings.DEBUG:
