@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+from . import views
 
 # Importamos las vistas
 from users.views import home, registro_medico, pasarela_pago
@@ -20,6 +21,7 @@ urlpatterns = [
     
     # Registro de Médicos
     path('registro-medico/', registro_medico, name='registro_medico'),
+    path('crear-secretaria/', views.crear_secretaria, name='crear_secretaria'),
     path('pago-suscripcion/', pasarela_pago, name='pasarela_pago'),
 
     # Pacientes

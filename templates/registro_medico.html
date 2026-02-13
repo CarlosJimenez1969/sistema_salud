@@ -1,25 +1,107 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row justify-content-center mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h4>Registro de Médicos</h4>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    {% for field in form %}
-                        <div class="mb-3">
-                            <label class="form-label">{{ field.label }}</label>
-                            {{ field }} {% if field.errors %}
-                                <div class="text-danger"><small>{{ field.errors }}</small></div>
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8"> <div class="card shadow">
+                <div class="card-header bg-success text-white text-center py-3">
+                    <h3 class="mb-0"><i class="bi bi-person-badge"></i> Registro Profesional</h3>
+                    <small>Completa tu perfil para activar tu consultorio</small>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <h5 class="text-success border-bottom pb-2 mb-3">1. Datos de Acceso</h5>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">Nombre de Usuario (Login)</label>
+                                {{ form.username }}
+                                <div class="text-danger small">{{ form.username.errors }}</div>
+                            </div>
+                            
+                            {% if form.password %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Contraseña</label>
+                                    {{ form.password }} 
+                                </div>
                             {% endif %}
+                            
+                            </div>
+
+                        <h5 class="text-success border-bottom pb-2 mb-3 mt-4">2. Información Personal</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.first_name.label }}</label>
+                                {{ form.first_name }}
+                                <div class="text-danger small">{{ form.first_name.errors }}</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.last_name.label }}</label>
+                                {{ form.last_name }}
+                                <div class="text-danger small">{{ form.last_name.errors }}</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.cedula.label }}</label>
+                                {{ form.cedula }}
+                                <div class="text-danger small">{{ form.cedula.errors }}</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.email.label }}</label>
+                                {{ form.email }}
+                                <div class="text-danger small">{{ form.email.errors }}</div>
+                            </div>
                         </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-success w-100">Registrarse y Pagar</button>
-                </form>
+
+                        <h5 class="text-success border-bottom pb-2 mb-3 mt-4">3. Datos del Consultorio</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ form.especialidad.label }}</label>
+                            {{ form.especialidad }}
+                            <div class="form-text">Selecciona tu especialidad principal.</div>
+                            <div class="text-danger small">{{ form.especialidad.errors }}</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.telefono_consultorio.label }}</label>
+                                {{ form.telefono_consultorio }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.precio_consulta.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.precio_consulta }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <label class="form-label fw-bold mb-2">Horario de Atención General</label>
+                            <div class="col-md-6 mb-3">
+                                <label class="small text-muted">Hora Inicio</label>
+                                {{ form.hora_inicio }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="small text-muted">Hora Fin</label>
+                                {{ form.hora_fin }}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">{{ form.direccion_consultorio.label }}</label>
+                            {{ form.direccion_consultorio }}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg shadow">
+                                <i class="bi bi-check-circle-fill"></i> Registrarse y Pagar
+                            </button>
+                            <a href="{% url 'home' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

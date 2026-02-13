@@ -15,7 +15,7 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">
+            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
                 <i class="bi bi-hospital-fill"></i> SaludDigital
             </a>
 
@@ -25,9 +25,27 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
+                    
                     {% if user.is_authenticated %}
+                        
+                        {% if user.perfil_medico %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'ver_agenda' %}">
+                                    <i class="bi bi-calendar-check"></i> Mi Agenda
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'crear_secretaria' %}">
+                                    <i class="bi bi-people-fill"></i> Mi Personal
+                                </a>
+                            </li>
+                            <li class="nav-item d-none d-lg-block mx-2 text-white-50">|</li>
+                        {% endif %}
+
                         <li class="nav-item">
-                            <span class="nav-link fw-bold text-white">Hola, {{ user.first_name|default:user.username }}</span>
+                            <span class="nav-link fw-bold text-white">
+                                <i class="bi bi-person-circle"></i> Hola, {{ user.first_name|default:user.username }}
+                            </span>
                         </li>
                         
                         <li class="nav-item ms-2">
@@ -38,20 +56,23 @@
                                 </button>
                             </form>
                         </li>
+
                     {% else %}
                         <li class="nav-item">
                             <a class="nav-link text-white" href="{% url 'login' %}">
-                                <i class="bi bi-person-circle"></i> Ingresar
+                                <i class="bi bi-box-arrow-in-right"></i> Ingresar
                             </a>
                         </li>
                     {% endif %}
                 </ul>
             </div>
         </div>
-    </nav> <div class="container mt-4">
+    </nav> 
+    
+    <div class="container mt-4">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
