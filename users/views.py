@@ -1,5 +1,4 @@
 from datetime import date
-from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 
@@ -18,9 +17,10 @@ from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
 from django.urls import reverse
 from django.conf import settings
-from django.contrib.auth.models import Group # Importar Grupos
+from django.contrib.auth.models import User, Group # Importar Grupos
 
-
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.forms import SetPasswordForm
 
 @login_required
 def home(request):
@@ -100,8 +100,10 @@ def pasarela_pago(request):
         
     return render(request, 'pago.html')
 
+# --- VISTA 1: CREA EL USUARIO Y SALTA A LA CONTRASEÑA ---
 @login_required
 def crear_secretaria(request):
+    # Seguridad: Solo médico
     if not hasattr(request.user, 'perfil_medico'):
         messages.error(request, "Acceso denegado.")
         return redirect('home')
@@ -109,54 +111,42 @@ def crear_secretaria(request):
     if request.method == 'POST':
         form = SecretariaRegistroForm(request.POST)
         if form.is_valid():
+            # 1. Guardar usuario básico
             user = form.save(commit=False)
-            
-            # 1. Creamos usuario SIN contraseña activa
-            user.set_unusable_password()
-            user.is_staff = True  # Permiso básico
+            user.set_unusable_password() # Sin clave por ahora
+            user.is_staff = True 
             user.save()
             
-            # 2. Asignar al Grupo "Secretaria" (Para controlar qué ve después)
-            grupo_secretaria, created = Group.objects.get_or_create(name='Secretarias')
-            user.groups.add(grupo_secretaria)
+            # 2. Asignar grupo
+            grupo, _ = Group.objects.get_or_create(name='Secretarias')
+            user.groups.add(grupo)
 
-            # 3. Generar el Link de "Crear Contraseña"
-            token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            # 3. ¡AQUÍ ESTÁ EL CAMBIO! Redirigir a la vista de contraseña
+            return redirect('asignar_password', user_id=user.id)
             
-            # Construimos la URL completa (ej: https://tusitio.com/reset/...)
-            link = request.build_absolute_uri(
-                reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
-            )
-
-            # 4. Enviar el Correo
-            asunto = f"Bienvenido/a al equipo del Dr. {request.user.last_name}"
-            mensaje = f"""
-            Hola {user.first_name},
-            
-            El Dr. {request.user.last_name} te ha registrado como asistente en el sistema MediSys.
-            
-            Para activar tu cuenta y configurar tu contraseña, haz clic aquí:
-            {link}
-            
-            Atentamente,
-            El Equipo de Soporte
-            """
-            
-            try:
-                send_mail(
-                    asunto,
-                    mensaje,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=False,
-                )
-                messages.success(request, f'Invitación enviada a {user.email}')
-            except Exception as e:
-                messages.warning(request, f'Usuario creado, pero falló el envío del correo: {e}')
-
-            return redirect('home')
     else:
         form = SecretariaRegistroForm()
 
     return render(request, 'crear_secretaria.html', {'form': form})
+
+
+# --- VISTA 2: PANTALLA PARA PONER LA CLAVE ---
+@login_required
+def asignar_password(request, user_id):
+    # Buscamos al usuario que acabamos de crear
+    usuario_nuevo = get_object_or_404(User, id=user_id)
+
+    if request.method == 'POST':
+        # Formulario especial de Django para poner claves
+        form = SetPasswordForm(usuario_nuevo, request.POST)
+        if form.is_valid():
+            form.save() # Guarda y encripta
+            messages.success(request, f"¡Usuario {usuario_nuevo.username} listo! Prueba ingresar ahora.")
+            return redirect('login') # Mandamos al login para probar
+    else:
+        form = SetPasswordForm(usuario_nuevo)
+
+    return render(request, 'asignar_password.html', {
+        'form': form,
+        'usuario_nuevo': usuario_nuevo
+    })

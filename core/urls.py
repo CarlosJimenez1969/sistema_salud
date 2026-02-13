@@ -45,6 +45,8 @@ urlpatterns = [
     # Esto habilita: login, logout, password_reset, password_reset_confirm, etc.
     path('accounts/', include('django.contrib.auth.urls')),
 
+    path('asignar-password/<int:user_id>/', views.asignar_password, name='asignar_password'),
+
     # Tus otras rutas...
     #path('', include('medico.urls')), # o como se llame tu app
 ]
