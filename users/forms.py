@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.shortcuts import redirect, render
-from .models import Medico, Especialidad
+from medico.models import Medico, Especialidad
 from django.contrib.auth.decorators import login_required
 
 from django.contrib.auth.models import Group

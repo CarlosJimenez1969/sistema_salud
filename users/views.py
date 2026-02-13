@@ -8,7 +8,7 @@ from .forms import RegistroMedicoForm
 from .models import User
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
-from medico.models import Medico
+from medico.models import Medico, Especialidad
 from paciente.models import Paciente
 # (Asegúrate de tener también Cita y datetime/date importados)
 
