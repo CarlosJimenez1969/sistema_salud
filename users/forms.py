@@ -98,10 +98,8 @@ def crear_secretaria(request):
     return render(request, 'crear_secretaria.html', {'form': form})
 
 class SecretariaRegistroForm(forms.ModelForm):
-    # Campos extra para confirmar contraseña
-    password = forms.CharField(label="Contraseña", widget=forms.PasswordInput(attrs={'class': 'form-control'}))
-    confirm_password = forms.CharField(label="Confirmar Contraseña", widget=forms.PasswordInput(attrs={'class': 'form-control'}))
-
+    # ¡YA NO PEDIMOS PASSWORD AQUÍ!
+    
     class Meta:
         model = User
         fields = ['username', 'first_name', 'last_name', 'email']
@@ -111,12 +109,9 @@ class SecretariaRegistroForm(forms.ModelForm):
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
         }
-
-    def clean(self):
-        cleaned_data = super().clean()
-        password = cleaned_data.get("password")
-        confirm_password = cleaned_data.get("confirm_password")
-
-        if password != confirm_password:
-            raise forms.ValidationError("Las contraseñas no coinciden.")
-        return cleaned_data
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("Este correo ya está registrado.")
+        return email

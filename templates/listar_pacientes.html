@@ -20,7 +20,8 @@
                         <tr>
                             <th class="ps-4">Paciente</th>
                             <th>Cédula</th>
-                            <th>Contacto</th> <th class="text-end pe-4">Acciones</th>
+                            <th>Contacto</th> 
+                            <th class="text-end pe-4">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -51,11 +52,15 @@
 
                             <td class="text-end pe-4">
                                 <div class="btn-group" role="group">
-                                    <a href="{% url 'historial_medico' p.id %}" class="btn btn-sm btn-outline-primary" title="Ver Historia Clínica">
-                                        <i class="bi bi-folder2-open"></i> Historial
-                                    </a>
+                                    
+                                    {% if user.perfil_medico %}
+                                        <a href="{% url 'historial_medico' p.id %}" class="btn btn-sm btn-outline-primary" title="Ver Historia Clínica">
+                                            <i class="bi bi-folder2-open"></i> Historial
+                                        </a>
+                                    {% endif %}
+                                    
                                     <a href="{% url 'editar_paciente' p.id %}" class="btn btn-sm btn-outline-secondary" title="Editar Datos">
-                                        <i class="bi bi-pencil-square"></i>
+                                        <i class="bi bi-pencil-square"></i> Editar
                                     </a>
                                 </div>
                             </td>

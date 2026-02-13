@@ -166,3 +166,6 @@ LOGIN_REDIRECT_URL = 'home'
 
 # A dónde ir después de cerrar sesión
 LOGOUT_REDIRECT_URL = 'login'
+
+#Envio de correos
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
