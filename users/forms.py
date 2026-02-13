@@ -8,7 +8,7 @@ from medico.models import Medico, Especialidad
 from django.contrib.auth.decorators import login_required
 
 from django.contrib.auth.models import Group
-from .forms import MedicoRegistroForm, SecretariaRegistroForm
+#from .forms import MedicoRegistroForm, SecretariaRegistroForm
 
 User = get_user_model()
 
@@ -96,3 +96,27 @@ def crear_secretaria(request):
         form = SecretariaRegistroForm()
 
     return render(request, 'crear_secretaria.html', {'form': form})
+
+class SecretariaRegistroForm(forms.ModelForm):
+    # Campos extra para confirmar contraseña
+    password = forms.CharField(label="Contraseña", widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    confirm_password = forms.CharField(label="Confirmar Contraseña", widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        if password != confirm_password:
+            raise forms.ValidationError("Las contraseñas no coinciden.")
+        return cleaned_data

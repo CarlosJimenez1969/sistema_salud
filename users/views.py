@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 
 from citas.models import Cita
-from .forms import RegistroMedicoForm
+from .forms import RegistroMedicoForm, SecretariaRegistroForm
 from .models import User
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
