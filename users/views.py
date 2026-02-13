@@ -10,7 +10,9 @@ from django.db.models import Count
 from django.db.models.functions import TruncMonth
 from medico.models import Medico, Especialidad
 from paciente.models import Paciente
-# (Asegúrate de tener también Cita y datetime/date importados)
+from django.contrib import messages
+
+
 
 @login_required
 def home(request):
@@ -89,3 +91,33 @@ def pasarela_pago(request):
         return redirect('home') # Lo enviamos al Dashboard
         
     return render(request, 'pago.html')
+
+@login_required
+def crear_secretaria(request):
+    # 1. Seguridad: Verificar que sea Médico
+    if not hasattr(request.user, 'perfil_medico'):
+        messages.error(request, "Acceso denegado. Solo los médicos pueden registrar personal.")
+        return redirect('home')
+
+    # 2. Lógica del Formulario
+    if request.method == 'POST':
+        form = SecretariaRegistroForm(request.POST)
+        if form.is_valid():
+            # Guardamos el usuario pero sin enviarlo a la BD todavía
+            user = form.save(commit=False)
+            
+            # Encriptamos la contraseña (muy importante)
+            user.set_password(form.cleaned_data['password'])
+            
+            # Le damos permiso de Staff (para que pueda entrar al admin y ver citas)
+            user.is_staff = True 
+            
+            # Ahora sí guardamos definitivamente
+            user.save()
+            
+            messages.success(request, f'¡Secretaria "{user.username}" creada con éxito!')
+            return redirect('home') # O a donde quieras redirigir
+    else:
+        form = SecretariaRegistroForm()
+
+    return render(request, 'crear_secretaria.html', {'form': form})
