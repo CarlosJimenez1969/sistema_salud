@@ -11,6 +11,8 @@ from paciente.views import listar_pacientes, crear_paciente, editar_paciente
 from historia.views import crear_historia, historial_medico, imprimir_receta  # <--- IMPORTANTE: Importar historial_medico
 from citas.views import buscar_medico, reservar_cita, ver_agenda
 
+from users import views
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     
