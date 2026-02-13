@@ -3,7 +3,6 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
-from . import views
 
 # Importamos las vistas
 from users.views import home, registro_medico, pasarela_pago
