@@ -224,6 +224,7 @@ def dashboard_secretaria(request):
 
     context = {
         'medico': medico_vinculado,
+        'secretaria': perfil_sec,
         'citas_hoy': citas_hoy,
         'total_citas': citas_hoy.count(),
         'query': query,
