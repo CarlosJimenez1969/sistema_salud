@@ -74,7 +74,7 @@ class FacturaElectronica(models.Model):
     # Descripción del servicio
     descripcion = models.CharField(
         max_length=300,
-        default='Registro de suscripción - Sistema Salud'
+        default='Registro de suscripción - VertexSalud'
     )
 
     # XML generado

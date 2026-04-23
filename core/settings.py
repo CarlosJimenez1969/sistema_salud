@@ -140,7 +140,7 @@ EMAIL_PORT          = 587
 EMAIL_USE_TLS       = True
 EMAIL_HOST_USER     = config('EMAIL_HOST_USER',     default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL  = f'Sistema Salud <{EMAIL_HOST_USER}>'
+DEFAULT_FROM_EMAIL  = f'VertexSalud <{EMAIL_HOST_USER}>'
 EMAIL_SSL_CONTEXT   = ssl._create_unverified_context()
 
 # ── PayPal ─────────────────────────────────────────────────────────────────────

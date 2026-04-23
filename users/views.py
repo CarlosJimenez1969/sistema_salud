@@ -199,7 +199,7 @@ def crear_orden_paypal(request):
             'intent': 'CAPTURE',
             'purchase_units': [{
                 'amount': {'currency_code': 'USD', 'value': '50.00'},
-                'description': 'Registro de suscripción - Sistema Salud',
+                'description': 'Registro de suscripción - VertexSalud',
             }],
         }
         resp = http_requests.post(
@@ -344,8 +344,8 @@ def redirect_by_role(request):
     
 def probar_email(request):
     try:
-        asunto = 'Prueba de Conexión MediSys Pro'
-        mensaje = 'Si recibes esto, la configuración de Gmail en SaludDigital es correcta. 🚀'
+        asunto = 'Prueba de Conexión VertexSalud'
+        mensaje = 'Si recibes esto, la configuración de Gmail en VertexSalud es correcta.'
         email_remitente = settings.EMAIL_HOST_USER
         # Pon tu correo personal aquí para la prueba
         email_destino = ['tu-correo-personal@gmail.com'] 

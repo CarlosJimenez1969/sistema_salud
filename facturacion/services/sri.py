@@ -562,7 +562,7 @@ class SriService:
             from django.conf import settings as djconf
             from django.template.loader import render_to_string
 
-            emisor = getattr(djconf, 'SRI_RAZON_SOCIAL', 'MediSys Pro')
+            emisor = getattr(djconf, 'SRI_RAZON_SOCIAL', 'VertexSalud')
             asunto = f'Factura Electrónica {factura.numero_secuencial} — Autorizada por el SRI'
 
             cuerpo = (
@@ -669,7 +669,7 @@ class SriService:
             iva_porcentaje=self.iva_porcentaje,
             iva_valor=iva_valor,
             total=monto_total,
-            descripcion='Registro de suscripción - Sistema Salud MediSys Pro',
+            descripcion='Registro de suscripción - VertexSalud',
             estado='PENDIENTE',
         )
 
@@ -695,13 +695,13 @@ class SriService:
         estado_texto = factura.get_estado_display()
         num_aut = factura.numero_autorizacion or 'Pendiente de autorización SRI'
 
-        asunto = f"Factura Electrónica {factura.numero_secuencial} - MediSys Pro"
+        asunto = f"Factura Electrónica {factura.numero_secuencial} - VertexSalud"
         cuerpo = f"""Estimado(a) {factura.receptor_nombre},
 
 Le informamos que se ha emitido su factura electrónica con los siguientes datos:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  FACTURA ELECTRÓNICA - MediSys Pro
+  FACTURA ELECTRÓNICA - VertexSalud
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   N° Factura:          {factura.numero_secuencial}
   Clave de Acceso:     {factura.clave_acceso}
@@ -722,7 +722,7 @@ Puede verificar su comprobante en el portal del SRI:
 https://srienlinea.sri.gob.ec/comprobantes-electronicos-ws/
 
 Gracias por su confianza.
-MediSys Pro - Sistema de Gestión Médica
+VertexSalud - Sistema de Gestión Médica
 """
         send_mail(
             subject=asunto,
