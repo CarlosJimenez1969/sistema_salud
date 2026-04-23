@@ -125,6 +125,9 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # ── Autenticación ──────────────────────────────────────────────────────────────
 AUTH_USER_MODEL      = 'users.User'
+AUTHENTICATION_BACKENDS = [
+    'users.backends.UsernameOrEmailBackend',
+]
 MEDIA_URL            = '/media/'
 MEDIA_ROOT           = BASE_DIR / 'media'
 LOGIN_URL            = 'login'
