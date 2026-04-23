@@ -12,59 +12,40 @@ from django.contrib.auth.models import Group
 
 User = get_user_model()
 
-class RegistroMedicoForm(UserCreationForm):
-    # --- 1. CAMPOS DE USUARIO PERSONALIZADOS ---
-    first_name = forms.CharField(required=True, label="Nombres", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    last_name = forms.CharField(required=True, label="Apellidos", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    email = forms.EmailField(required=True, label="Correo Electrónico", widget=forms.EmailInput(attrs={'class': 'form-control'}))
-    cedula = forms.CharField(required=True, label="Cédula", widget=forms.TextInput(attrs={'class': 'form-control'}))
-
-    # --- 2. CAMPOS DEL PERFIL MÉDICO (EXTRA) ---
+class RegistroInicialMedicoForm(forms.ModelForm):
+    # Definimos los widgets para que aparezcan las cajas de texto con estilo
+    username = forms.CharField(label="Usuario", widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: dr_ivan'}))
+    first_name = forms.CharField(label="Nombres", widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tus nombres'}))
+    last_name = forms.CharField(label="Apellidos", widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tus apellidos'}))
+    email = forms.EmailField(label="Correo Electrónico", widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}))
+    cedula = forms.CharField(label="Cédula", widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de identificación'}))
     especialidad = forms.ModelChoiceField(
-        queryset=Especialidad.objects.all(),
-        label="Especialidad",
+        queryset=Especialidad.objects.all().order_by('nombre'),
+        label="Especialidad Médica",
         widget=forms.Select(attrs={'class': 'form-select'}),
         empty_label="Seleccione su especialidad"
     )
-    telefono_consultorio = forms.CharField(label="Teléfono Consultorio", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    direccion_consultorio = forms.CharField(label="Dirección", widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2}))
-    precio_consulta = forms.DecimalField(label="Costo por Cita ($)", widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    
-    # Widgets de hora HTML5 para que salga el relojito
-    hora_inicio = forms.TimeField(label="Hora Inicio Jornada", widget=forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}))
-    hora_fin = forms.TimeField(label="Hora Fin Jornada", widget=forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}))
 
     class Meta:
         model = User
-        # Solo ponemos los campos que PERTENECEN al modelo User
-        fields = ['username', 'first_name', 'last_name', 'email', 'cedula']
+        fields = ['username', 'first_name', 'last_name', 'email', 'cedula','especialidad']
 
-    # --- 3. LA MAGIA: GUARDADO ATÓMICO ---
     def save(self, commit=True):
-        # Usamos transaction.atomic para asegurar que se creen LOS DOS o NINGUNO
         with transaction.atomic():
-            # A) Guardamos el Usuario primero
             user = super().save(commit=False)
+            # Solo asignar MEDICO si el rol está vacío o es el default
+            if not user.role or user.role == user.base_role:
+                user.role = 'MEDICO'
             
-            # Asignamos roles y estados
-            # (Asegúrate de que tu modelo User tenga estos campos, si no, bórralos)
-            if hasattr(user, 'role'):
-                user.role = User.Role.MEDICO
-            if hasattr(user, 'pago_realizado'):
-                user.pago_realizado = True  # Asumimos que si llena este form, ya pagó
+            user.pago_realizado = False
+            user.set_unusable_password()
             
             if commit:
                 user.save()
-
-                # B) Creamos el Perfil Médico vinculado
+                from medico.models import Medico
                 Medico.objects.create(
                     usuario=user,
-                    especialidad=self.cleaned_data['especialidad'],
-                    telefono_consultorio=self.cleaned_data['telefono_consultorio'],
-                    direccion_consultorio=self.cleaned_data['direccion_consultorio'],
-                    precio_consulta=self.cleaned_data['precio_consulta'],
-                    hora_inicio=self.cleaned_data['hora_inicio'],
-                    hora_fin=self.cleaned_data['hora_fin']
+                    especialidad=self.cleaned_data['especialidad']
                 )
         return user
     
@@ -98,16 +79,16 @@ def crear_secretaria(request):
     return render(request, 'crear_secretaria.html', {'form': form})
 
 class SecretariaRegistroForm(forms.ModelForm):
-    # ¡YA NO PEDIMOS PASSWORD AQUÍ!
-    
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email']
+        # Añadimos 'cedula' a la lista de campos
+        fields = ['username', 'first_name', 'last_name', 'email', 'cedula']
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Usuario'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombres'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apellidos'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Correo Electrónico'}),
+            'cedula': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de Cédula'}),
         }
     
     def clean_email(self):
@@ -115,3 +96,35 @@ class SecretariaRegistroForm(forms.ModelForm):
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("Este correo ya está registrado.")
         return email
+
+    # Validación adicional para la cédula
+    def clean_cedula(self):
+        cedula = self.cleaned_data.get('cedula')
+        if User.objects.filter(cedula=cedula).exists():
+            raise forms.ValidationError("Esta cédula ya está registrada en el sistema.")
+        return cedula
+    
+class CompletarPerfilMedicoForm(forms.Form): # Usamos forms.Form porque el User ya existe
+    especialidad = forms.ModelChoiceField(
+        queryset=Especialidad.objects.all(),
+        label="Especialidad",
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        empty_label="Seleccione su especialidad"
+    )
+    telefono_consultorio = forms.CharField(label="Teléfono Consultorio", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    direccion_consultorio = forms.CharField(label="Dirección", widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2}))
+    precio_consulta = forms.DecimalField(label="Costo por Cita ($)", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    hora_inicio = forms.TimeField(label="Hora Inicio", widget=forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}))
+    hora_fin = forms.TimeField(label="Hora Fin", widget=forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}))
+
+    def save_perfil(self, user):
+        with transaction.atomic():
+            return Medico.objects.create(
+                usuario=user,
+                especialidad=self.cleaned_data['especialidad'],
+                telefono_consultorio=self.cleaned_data['telefono_consultorio'],
+                direccion_consultorio=self.cleaned_data['direccion_consultorio'],
+                precio_consulta=self.cleaned_data['precio_consulta'],
+                hora_inicio=self.cleaned_data['hora_inicio'],
+                hora_fin=self.cleaned_data['hora_fin']
+            )

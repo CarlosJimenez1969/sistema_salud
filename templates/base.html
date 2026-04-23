@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Médico MSP</title>
+    <title>{% block title %}SaludDigital{% endblock %}</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+      
     {% load static %}
-    <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=4">
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top bg-primary shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
-                <i class="bi bi-hospital-fill"></i> SaludDigital
+            <a class="navbar-brand fw-bold d-flex align-items-center"
+               href="{% if user.role == 'ADMIN' %}{% url 'panel_admin' %}{% else %}{% url 'home' %}{% endif %}">
+                <i class="bi bi-hospital-fill me-2"></i> SaludDigital
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
@@ -28,7 +31,19 @@
                     
                     {% if user.is_authenticated %}
                         
-                        {% if user.perfil_medico %}
+                        {# OPCIONES SEGÚN ROL #}
+                        {% if user.role == 'ADMIN' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'lista_facturas' %}">
+                                    <i class="bi bi-receipt-cutoff"></i> Facturación
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'panel_admin' %}">
+                                    <i class="bi bi-speedometer2"></i> Panel Admin
+                                </a>
+                            </li>
+                        {% elif user.role == 'MEDICO' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'ver_agenda' %}">
                                     <i class="bi bi-calendar-check"></i> Mi Agenda
@@ -36,31 +51,48 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'crear_secretaria' %}">
-                                    <i class="bi bi-people-fill"></i> Mi Personal
+                                    <i class="bi bi-person-plus"></i> Registrar Personal
                                 </a>
                             </li>
-                            <li class="nav-item d-none d-lg-block mx-2 text-white-50">|</li>
+                        {% elif user.role == 'SECRETARIA' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'dashboard_secretaria' %}">
+                                    <i class="bi bi-speedometer2"></i> Gestión de Citas
+                                </a>
+                            </li>
                         {% endif %}
 
+                        <li class="nav-item d-none d-lg-block mx-2 text-white-50">|</li>
+
                         <li class="nav-item">
-                            <span class="nav-link fw-bold text-white">
-                                <i class="bi bi-person-circle"></i> Hola, {{ user.first_name|default:user.username }}
-                            </span>
+                            <div class="nav-link d-flex align-items-center">
+                                <div class="text-end me-2 d-none d-md-block">
+                                    <span class="d-block text-white fw-bold lh-1">{{ user.get_full_name|default:user.username }}</span>
+                                    {% if user.role == 'MEDICO' and user.perfil_medico.especialidad %}
+                                        <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">
+                                            <i class="bi bi-clipboard2-pulse-fill me-1"></i>{{ user.perfil_medico.especialidad.nombre }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-light text-primary" style="font-size: 0.65rem; text-transform: uppercase;">
+                                            {{ user.get_role_display }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <i class="bi bi-person-circle fs-4 text-white"></i>
+                            </div>
                         </li>
                         
-                        <li class="nav-item ms-2">
-                            <form action="{% url 'logout' %}" method="post" class="d-flex">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger btn-sm">
-                                    <i class="bi bi-box-arrow-right"></i> Salir
-                                </button>
-                            </form>
-                        </li>
+                        <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-link nav-link" style="display: inline; cursor: pointer;">
+                                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                            </button>
+                        </form>
 
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'login' %}">
-                                <i class="bi bi-box-arrow-in-right"></i> Ingresar
+                            <a class="nav-link text-white fw-bold" href="{% url 'login' %}">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Ingresar
                             </a>
                         </li>
                     {% endif %}
@@ -68,21 +100,57 @@
             </div>
         </div>
     </nav> 
-    
-    <div class="container mt-4">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        {% block content %}
-        {% endblock %}
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow {% if message.tags == 'success' %}autohide{% endif %}" role="alert">
+            <strong>
+            {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill"></i> ¡Éxito!
+            {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill"></i> Atención
+            {% elif message.tags == 'error' %}<i class="bi bi-x-dash-circle-fill"></i> Error
+            {% endif %}
+            </strong> 
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-auto-close="false" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <div class="container mt-3">
+        
+        <script>
+    // Esto hará que todos los mensajes del sistema desaparezcan en 5 segundos
+    setTimeout(function() {
+        let alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            let bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }, 5000);
+</script>
     </div>
 
+    <main class="container-fluid container-md py-3 py-md-4">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="text-center py-4 text-muted border-top mt-auto">
+        <small>&copy; 2026 MediSys Pro - Gestión Médica Integral</small>
+    </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-cerrar alertas con animación suave
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                let alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    let bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000); // 5 segundos para que de tiempo a leer
+        });
+    </script>
 </body>
 </html>

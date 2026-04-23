@@ -1,86 +1,207 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-calendar-week"></i> Mi Agenda Diaria</h2>
-        {% if user.perfil_medico %}
-            <a href="{% url 'reservar_cita' user.perfil_medico.id %}" class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> Agendar Nueva Cita
-            </a>
-        {% endif %}
-        
-        <form method="get" class="d-flex">
-            <input type="date" name="fecha" class="form-control me-2" value="{{ fecha_agenda|date:'Y-m-d' }}">
-            <button type="submit" class="btn btn-outline-primary">Ir</button>
-        </form>
+<div class="container mt-4 mb-4">
+    <div class="row align-items-center g-2">
+        <div class="col-12 col-md-4">
+            <h2 class="text-primary mb-0">
+                <i class="bi bi-calendar3"></i> Mi Agenda Diaria
+            </h2>
+        </div>
+        <div class="col-12 col-md-8 text-md-end">
+            <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                {% if user.role == 'ADMIN' %}
+                <a href="{% url 'panel_admin' %}" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-speedometer2"></i> Panel Admin
+                </a>
+                {% else %}
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-house-door"></i> Inicio
+                </a>
+                {% endif %}
+                <a href="{% url 'reservar_cita' request.user.perfil_medico.id %}" class="btn btn-success rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-plus-circle"></i> Nueva Cita
+                </a>
+            </div>
+        </div>
     </div>
+    <hr>
+</div>
 
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Citas para el {{ fecha_agenda|date:"l d F Y" }}</h5>
+<div class="card shadow-sm border-0 bg-light p-3 mb-3">
+    <form method="GET" class="row g-2 align-items-center">
+        <div class="col-auto">
+            <label class="fw-bold text-secondary">Consultar Fecha:</label>
         </div>
-        <div class="card-body p-0">
-            <table class="table table-hover table-striped mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Hora</th>
-                        <th>Paciente</th>
-                        <th>Motivo (Preliminar)</th>
-                        <th>Estado</th>
-                        <th class="text-end">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for cita in citas %}
-                    <tr>
-                        <td class="align-middle fs-5"><strong>{{ cita.hora|time:"H:i" }}</strong></td>
-                        <td class="align-middle">
-                            {{ cita.paciente.usuario.last_name }} {{ cita.paciente.usuario.first_name }}<br>
-                            <small class="text-muted">{{ cita.paciente.usuario.cedula }}</small>
-                        </td>
-                        <td class="align-middle">{{ cita.motivo|default:"Sin especificar" }}</td>
-                        
-                        <td class="align-middle">
-                            {% if cita.estado == 'PENDIENTE' %}
-                                <span class="badge bg-warning text-dark">Pendiente</span>
-                            {% elif cita.estado == 'FINALIZADA' %}
-                                <span class="badge bg-success">Atendido</span>
-                            {% else %}
-                                <span class="badge bg-danger">Cancelada</span>
-                            {% endif %}
-                        </td>
+        <div class="col-12 col-sm-auto">
+            <input type="date" name="fecha" class="form-control border-primary"
+                   value="{{ fecha_seleccionada|date:'Y-m-d'|default:hoy|date:'Y-m-d' }}">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                <i class="bi bi-search"></i> Ver
+            </button>
+        </div>
+        {% if fecha_seleccionada %}
+        <div class="col-auto">
+            <a href="{% url 'ver_agenda' %}" class="btn btn-link text-decoration-none text-muted">
+                <i class="bi bi-x-circle"></i> Limpiar
+            </a>
+        </div>
+        {% endif %}
+    </form>
+</div>
 
-                        <td class="text-end">
-                            {% if cita.estado == 'PENDIENTE' %}
-                                <a href="{% url 'crear_historia' cita.paciente.id %}" class="btn btn-success btn-sm">
-                                    <i class="bi bi-clipboard-pulse"></i> Atender
+<div class="card shadow border-0">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Citas para el {{ fecha_agenda|date:"l d F Y" }}</h5>
+    </div>
+    <div class="card-body p-0">
+
+        {# Vista escritorio #}
+        <div class="d-none d-md-block">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Hora</th>
+                            <th>Paciente</th>
+                            <th>Motivo</th>
+                            <th class="text-center">Historia</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        {% for cita in citas %}
+                        <tr>
+                            <td class="align-middle fs-5"><strong>{{ cita.hora|time:"H:i" }}</strong></td>
+                            <td class="align-middle">
+                                {{ cita.paciente.usuario.last_name }} {{ cita.paciente.usuario.first_name }}<br>
+                                <small class="text-muted">{{ cita.paciente.usuario.cedula }}</small>
+                            </td>
+                            <td class="align-middle">{{ cita.motivo|default:"Sin especificar" }}</td>
+                            <td class="align-middle text-center">
+                                <a href="{% url 'historial_medico' cita.paciente.id %}" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm">
+                                    <i class="bi bi-file-earmark-medical"></i> Ver Ficha
                                 </a>
-
-                                <form method="post" style="display:inline-block;" onsubmit="return confirm('¿Cancelar esta cita?');">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="cita_id" value="{{ cita.id }}">
-                                    <input type="hidden" name="accion" value="cancelar">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                                        <i class="bi bi-x-circle"></i>
-                                    </button>
-                                </form>
-                            {% else %}
-                                <button class="btn btn-secondary btn-sm" disabled>Cerrado</button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center py-5">
-                            <h4 class="text-muted">No hay citas programadas para este día.</h4>
-                            <p>¡Disfruta tu tiempo libre, Doctor!</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                            <td class="align-middle">
+                                {% if cita.estado == 'P' or cita.estado == 'PENDIENTE' %}
+                                    <span class="badge bg-warning text-dark px-3 rounded-pill shadow-sm">
+                                        <i class="bi bi-clock"></i> Pendiente
+                                    </span>
+                                {% elif cita.estado == 'E' or cita.estado == 'EN_ESPERA' %}
+                                    <span class="badge bg-info text-dark px-3 rounded-pill shadow-sm">
+                                        <i class="bi bi-person-check"></i> En Espera
+                                    </span>
+                                {% elif cita.estado == 'A' or cita.estado == 'FINALIZADA' %}
+                                    <span class="badge bg-success px-3 rounded-pill shadow-sm">
+                                        <i class="bi bi-check-circle"></i> Atendido
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger px-3 rounded-pill shadow-sm">
+                                        <i class="bi bi-x-circle"></i> {{ cita.get_estado_display|default:"Cancelada" }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end align-middle">
+                                {% if cita.estado == 'P' or cita.estado == 'PENDIENTE' or cita.estado == 'E' or cita.estado == 'EN_ESPERA' %}
+                                    <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                        {% if not cita.triaje %}
+                                        <a href="{% url 'registrar_triaje' cita.id %}" class="btn btn-warning btn-sm rounded-pill px-3 shadow-sm">
+                                            <i class="bi bi-thermometer-half me-1"></i> Triaje
+                                        </a>
+                                        {% else %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                                            <i class="bi bi-check2"></i> Triaje ✓
+                                        </span>
+                                        {% endif %}
+                                        <a href="{% url 'crear_historia' cita.paciente.id %}" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                                            <i class="bi bi-clipboard-pulse me-1"></i> Atender
+                                        </a>
+                                        <form method="post" class="d-inline" onsubmit="return confirm('¿Está seguro de cancelar esta cita?');">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="cita_id" value="{{ cita.id }}">
+                                            <input type="hidden" name="accion" value="cancelar">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-circle border-0" title="Cancelar Cita">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-light text-muted border px-3 rounded-pill">Consulta Cerrada</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <h4 class="text-muted">No hay citas programadas para este día.</h4>
+                                <p>¡Disfruta tu tiempo libre, Doctor!</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
+
+        {# Vista móvil: tarjetas #}
+        <div class="d-md-none">
+            {% for cita in citas %}
+            <div class="border-bottom p-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fs-5 fw-bold text-primary">{{ cita.hora|time:"H:i" }}</span>
+                    {% if cita.estado == 'P' or cita.estado == 'PENDIENTE' %}
+                        <span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-clock"></i> Pendiente</span>
+                    {% elif cita.estado == 'E' or cita.estado == 'EN_ESPERA' %}
+                        <span class="badge bg-info text-dark rounded-pill"><i class="bi bi-person-check"></i> En Espera</span>
+                    {% elif cita.estado == 'A' or cita.estado == 'FINALIZADA' %}
+                        <span class="badge bg-success rounded-pill"><i class="bi bi-check-circle"></i> Atendido</span>
+                    {% else %}
+                        <span class="badge bg-danger rounded-pill"><i class="bi bi-x-circle"></i> Cancelada</span>
+                    {% endif %}
+                </div>
+                <div class="fw-bold">{{ cita.paciente.usuario.last_name }} {{ cita.paciente.usuario.first_name }}</div>
+                <small class="text-muted">{{ cita.paciente.usuario.cedula }}</small><br>
+                <small class="text-secondary">{{ cita.motivo|default:"Sin especificar" }}</small>
+
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <a href="{% url 'historial_medico' cita.paciente.id %}" class="btn btn-outline-info btn-sm rounded-pill">
+                        <i class="bi bi-file-earmark-medical"></i> Ficha
+                    </a>
+                    {% if cita.estado == 'P' or cita.estado == 'PENDIENTE' or cita.estado == 'E' or cita.estado == 'EN_ESPERA' %}
+                        {% if not cita.triaje %}
+                        <a href="{% url 'registrar_triaje' cita.id %}" class="btn btn-warning btn-sm rounded-pill">
+                            <i class="bi bi-thermometer-half"></i> Triaje
+                        </a>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                            <i class="bi bi-check2"></i> Triaje ✓
+                        </span>
+                        {% endif %}
+                        <a href="{% url 'crear_historia' cita.paciente.id %}" class="btn btn-primary btn-sm rounded-pill">
+                            <i class="bi bi-clipboard-pulse"></i> Atender
+                        </a>
+                        <form method="post" class="d-inline" onsubmit="return confirm('¿Cancelar esta cita?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="cita_id" value="{{ cita.id }}">
+                            <input type="hidden" name="accion" value="cancelar">
+                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5">
+                <h5 class="text-muted">No hay citas para este día.</h5>
+            </div>
+            {% endfor %}
+        </div>
+
     </div>
 </div>
 {% endblock %}

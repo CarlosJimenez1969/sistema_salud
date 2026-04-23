@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-white mb-0">
+                <i class="bi bi-speedometer2 me-2"></i> Panel Administrador
+            </h2>
+            <p class="text-white-50 mb-0 small">{{ hoy|date:"l, d \d\e F \d\e Y" }}</p>
+        </div>
+    </div>
+
+    {# ── Tarjetas de resumen ── #}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-white h-100" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:14px;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="small opacity-75 mb-1 text-uppercase fw-bold">Médicos</p>
+                            <h2 class="fw-bold mb-0">{{ total_medicos }}</h2>
+                        </div>
+                        <i class="bi bi-person-badge-fill fs-2 opacity-50"></i>
+                    </div>
+                    <a href="{% url 'panel_admin' %}#medicos" class="text-white-50 small">Ver lista →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-white h-100" style="background:linear-gradient(135deg,#0891b2,#0e7490);border-radius:14px;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="small opacity-75 mb-1 text-uppercase fw-bold">Pacientes</p>
+                            <h2 class="fw-bold mb-0">{{ total_pacientes }}</h2>
+                        </div>
+                        <i class="bi bi-people-fill fs-2 opacity-50"></i>
+                    </div>
+                    <a href="{% url 'listar_pacientes' %}" class="text-white-50 small">Ver lista →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-white h-100" style="background:linear-gradient(135deg,#059669,#047857);border-radius:14px;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="small opacity-75 mb-1 text-uppercase fw-bold">Citas hoy</p>
+                            <h2 class="fw-bold mb-0">{{ citas_hoy }}</h2>
+                            <p class="small opacity-75 mb-0">{{ citas_pendientes }} pendientes</p>
+                        </div>
+                        <i class="bi bi-calendar-check-fill fs-2 opacity-50"></i>
+                    </div>
+                    <a href="{% url 'ver_agenda' %}" class="text-white-50 small">Ver agenda →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-white h-100" style="background:linear-gradient(135deg,#d97706,#b45309);border-radius:14px;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="small opacity-75 mb-1 text-uppercase fw-bold">Ingresos mes</p>
+                            <h2 class="fw-bold mb-0">${{ ingresos_mes|floatformat:2 }}</h2>
+                            <p class="small opacity-75 mb-0">{{ facturas_autorizadas }} fact. autorizadas</p>
+                        </div>
+                        <i class="bi bi-receipt-cutoff fs-2 opacity-50"></i>
+                    </div>
+                    <a href="{% url 'lista_facturas' %}" class="text-white-50 small">Ver facturas →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Acciones rápidas ── #}
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+        <div class="card-body py-3">
+            <h6 class="fw-bold text-muted text-uppercase small mb-3">Acciones Rápidas</h6>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'crear_paciente' %}" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-person-plus me-1"></i> Nuevo Paciente
+                </a>
+                <a href="{% url 'crear_secretaria' %}" class="btn btn-outline-primary rounded-pill px-4">
+                    <i class="bi bi-person-gear me-1"></i> Nueva Secretaria
+                </a>
+                <a href="{% url 'lista_facturas' %}" class="btn btn-outline-success rounded-pill px-4">
+                    <i class="bi bi-receipt me-1"></i> Ver Facturas
+                </a>
+                <a href="{% url 'ver_agenda' %}" class="btn btn-outline-info rounded-pill px-4">
+                    <i class="bi bi-calendar-day me-1"></i> Agenda de hoy
+                </a>
+                <a href="{% url 'listar_pacientes' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="bi bi-search me-1"></i> Buscar Paciente
+                </a>
+                <a href="/admin/" target="_blank" class="btn btn-outline-dark rounded-pill px-4">
+                    <i class="bi bi-gear me-1"></i> Admin Django
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        {# ── Lista de Médicos ── #}
+        <div class="col-12 col-lg-6" id="medicos">
+            <div class="card border-0 shadow-sm h-100" style="border-radius:14px;">
+                <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-person-badge me-2 text-primary"></i>Médicos registrados</h6>
+                    <span class="badge bg-primary rounded-pill">{{ total_medicos }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Nombre</th>
+                                    <th>Especialidad</th>
+                                    <th>Precio consulta</th>
+                                    <th>Suscripción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in medicos %}
+                                <tr>
+                                    <td class="ps-3 fw-semibold">Dr. {{ m.usuario.get_full_name }}</td>
+                                    <td class="text-muted">{{ m.especialidad }}</td>
+                                    <td>${{ m.precio_consulta|floatformat:2 }}</td>
+                                    <td>
+                                        {% if m.usuario.pago_realizado %}
+                                            <span class="badge bg-success rounded-pill">Activa</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark rounded-pill">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center text-muted py-3">No hay médicos registrados.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ── Últimas facturas ── #}
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100" style="border-radius:14px;">
+                <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-receipt-cutoff me-2 text-warning"></i>Últimas facturas</h6>
+                    {% if facturas_error %}
+                    <span class="badge bg-danger rounded-pill">{{ facturas_error }} con error</span>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">N° Factura</th>
+                                    <th>Receptor</th>
+                                    <th>Total</th>
+                                    <th class="text-center">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for f in ultimas_facturas %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <a href="{% url 'detalle_factura' f.id %}" class="text-primary fw-bold text-decoration-none">
+                                            {{ f.numero_secuencial }}
+                                        </a>
+                                    </td>
+                                    <td class="text-muted">{{ f.receptor_nombre|truncatechars:20 }}</td>
+                                    <td class="fw-bold">${{ f.total|floatformat:2 }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-{{ f.estado_badge }} rounded-pill">{{ f.get_estado_display }}</span>
+                                        {% if f.mensajes_sri and f.estado in 'RECHAZADA,ERROR' %}
+                                        <div class="text-danger" style="font-size:.65rem;">{{ f.mensajes_sri|truncatechars:30 }}</div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center text-muted py-3">No hay facturas.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="p-3 border-top">
+                        <a href="{% url 'lista_facturas' %}" class="btn btn-sm btn-outline-primary rounded-pill w-100">
+                            Ver todas las facturas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ── Secretarias ── #}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="border-radius:14px;">
+                <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-person-gear me-2 text-info"></i>Secretarias</h6>
+                    <div class="d-flex gap-2 align-items-center">
+                        <span class="badge bg-info rounded-pill">{{ total_secretarias }}</span>
+                        <a href="{% url 'crear_secretaria' %}" class="btn btn-sm btn-primary rounded-pill px-3">
+                            <i class="bi bi-plus-lg me-1"></i> Nueva
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Nombre</th>
+                                    <th>Email</th>
+                                    <th>Teléfono</th>
+                                    <th>Asiste a</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in secretarias %}
+                                <tr>
+                                    <td class="ps-3 fw-semibold">{{ s.usuario.get_full_name }}</td>
+                                    <td class="text-muted">{{ s.usuario.email }}</td>
+                                    <td class="text-muted">{{ s.telefono|default:"—" }}</td>
+                                    <td>Dr. {{ s.medico.usuario.get_full_name }}</td>
+                                    <td class="text-center">
+                                        <a href="{% url 'eliminar_secretaria' s.id %}"
+                                           class="btn btn-sm btn-outline-danger rounded-pill"
+                                           onclick="return confirm('¿Eliminar a {{ s.usuario.get_full_name }}?')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted py-3">No hay secretarias registradas.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% load factura_tags %}
+
+{% block content %}
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-white mb-0">
+                <i class="bi bi-receipt-cutoff me-2"></i> Facturas Electrónicas SRI
+            </h2>
+            <p class="text-white-50 mb-0 small">Registro de comprobantes emitidos y su estado ante el SRI</p>
+        </div>
+        {% if user.role == 'ADMIN' %}
+        <a href="{% url 'panel_admin' %}" class="btn btn-outline-light btn-sm rounded-pill">
+            <i class="bi bi-arrow-left me-1"></i> Panel Admin
+        </a>
+        {% endif %}
+    </div>
+
+    {# Filtros #}
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-12 col-md-4">
+                    <input type="text" name="q" value="{{ buscar }}"
+                           class="form-control" placeholder="Nombre, cédula o N° factura…">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small text-muted mb-1">Desde</label>
+                    <input type="date" name="fecha_desde" value="{{ fecha_desde }}" class="form-control">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small text-muted mb-1">Hasta</label>
+                    <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" class="form-control">
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small text-muted mb-1">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="">Todos</option>
+                        {% for valor, etiqueta in estados %}
+                        <option value="{{ valor }}" {% if estado_filtro == valor %}selected{% endif %}>
+                            {{ etiqueta }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary rounded-pill px-3 flex-grow-1">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'lista_facturas' %}" class="btn btn-outline-secondary rounded-pill px-3">
+                        <i class="bi bi-x"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# Tabla #}
+    <div class="card border-0 shadow-sm" style="border-radius:12px; overflow:hidden;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-4">N° Factura</th>
+                            <th>Receptor</th>
+                            <th>Cédula / RUC</th>
+                            <th class="text-end">Subtotal</th>
+                            <th class="text-end">IVA</th>
+                            <th class="text-end">Total</th>
+                            <th>Fecha Emisión</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        {% for f in facturas %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-primary">{{ f.numero_secuencial }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ f.receptor_nombre }}</div>
+                                <div class="text-muted small">{{ f.receptor_email }}</div>
+                            </td>
+                            <td class="text-muted">{{ f.receptor_identificacion }}</td>
+                            <td class="text-end">${{ f.subtotal|floatformat:2 }}</td>
+                            <td class="text-end text-muted small">{{ f.iva_porcentaje }}% = ${{ f.iva_valor|floatformat:2 }}</td>
+                            <td class="text-end fw-bold">${{ f.total|floatformat:2 }}</td>
+                            <td class="text-muted small">{{ f.fecha_emision|date:"d/m/Y H:i" }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-{{ f.estado_badge }} rounded-pill px-3">
+                                    {{ f.get_estado_display }}
+                                </span>
+                                {% if f.numero_autorizacion %}
+                                <div class="text-muted" style="font-size:.7rem;">
+                                    Aut: {{ f.numero_autorizacion|truncatechars:15 }}
+                                </div>
+                                {% endif %}
+                                {% if f.mensajes_sri and f.estado in 'RECHAZADA,ERROR' %}
+                                <div class="text-danger mt-1" style="font-size:.7rem; max-width:160px; word-break:break-word;">
+                                    <i class="bi bi-exclamation-circle me-1"></i>{{ f.mensajes_sri|truncatechars:60 }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{% url 'detalle_factura' f.id %}"
+                                   class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                    <i class="bi bi-eye me-1"></i> Ver
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                                No hay facturas registradas.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# Resumen de estados #}
+    <div class="row mt-4 g-3">
+        {% for valor, etiqueta in estados %}
+        <div class="col-6 col-md-2">
+            <div class="card border-0 shadow-sm text-center py-3" style="border-radius:10px;">
+                <div class="fw-bold fs-3">{{ resumen|get_item:valor|get_item:'cantidad'|default:'0' }}</div>
+                <div class="text-muted small">{{ etiqueta }}</div>
+                <div class="small fw-bold text-success">${{ resumen|get_item:valor|get_item:'total'|default:'0'|floatformat:2 }}</div>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="col-6 col-md-2">
+            <div class="card border-0 shadow-sm text-center py-3 bg-primary text-white" style="border-radius:10px;">
+                <div class="fw-bold fs-3">{{ facturas|length }}</div>
+                <div class="small">Total Facturas</div>
+                <div class="small fw-bold">${{ total_general|floatformat:2 }}</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

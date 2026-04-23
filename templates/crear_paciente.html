@@ -21,17 +21,34 @@
                         <div class="col-md-6 mb-3">{{ form.email.label_tag }} {{ form.email }}</div>
                     </div>
 
+                    <div class="col-md-12 mb-3">
+                        <label class="fw-bold"><i class="bi bi-geo-alt"></i> Dirección de Domicilio:</label>
+                        {{ form.direccion }}
+                        {% if form.direccion.errors %}
+                            <div class="text-danger small">{{ form.direccion.errors }}</div>
+                        {% endif %}
+                    </div>
+
                     <hr>
                     <h6 class="text-muted mb-3">Ficha Médica Inicial</h6>
+
                     {% for field in form %}
-                        {% if field.name not in 'first_name last_name cedula email' %}
+                        {% if field.name not in 'first_name last_name cedula email direccion' %}
                             <div class="mb-3">
                                 <label class="form-label">{{ field.label }}</label>
-                                {{ field }} </div>
+                                {{ field }} 
+                            </div>
                         {% endif %}
                     {% endfor %}
 
-                    <button type="submit" class="btn btn-success w-100 mt-3">Guardar Paciente</button>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-success w-75 shadow-sm">
+                            <i class="bi bi-save"></i> Guardar Paciente
+                        </button>
+                        <a href="{% url 'listar_pacientes' %}" class="btn btn-outline-secondary w-25">
+                            Cancelar
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>

@@ -14,7 +14,11 @@
                     <p class="card-text lead">{{ mensaje|default:"Ocurrió un error inesperado o no tienes permisos para ver esta página." }}</p>
                     
                     <hr>
+                    {% if user.role == 'ADMIN' %}
+                    <a href="{% url 'panel_admin' %}" class="btn btn-secondary btn-lg">Volver al Panel Admin</a>
+                    {% else %}
                     <a href="{% url 'home' %}" class="btn btn-secondary btn-lg">Volver al Inicio</a>
+                    {% endif %}
                 </div>
             </div>
         </div>

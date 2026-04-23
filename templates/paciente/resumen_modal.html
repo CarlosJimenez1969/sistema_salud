@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-primary shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clipboard2-pulse"></i> Resumen Clínico Rápido</h5>
+                    <span class="badge bg-light text-primary">{{ paciente.usuario.cedula }}</span>
+                </div>
+                <div class="card-body">
+                    <h4 class="fw-bold text-dark mb-4">{{ paciente.usuario.get_full_name }}</h4>
+                    
+                    {% if h %}
+                        <div class="row text-center g-3">
+                            <div class="col-4">
+                                <div class="p-3 border rounded bg-light">
+                                    <small class="text-muted d-block uppercase small fw-bold">Presión</small>
+                                    <span class="h5 mb-0 text-primary">{{ h.presion_arterial|default:"--" }}</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-3 border rounded bg-light">
+                                    <small class="text-muted d-block uppercase small fw-bold">Peso</small>
+                                    <span class="h5 mb-0 text-primary">{{ h.peso|default:"--" }} kg</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-3 border rounded bg-light">
+                                    <small class="text-muted d-block uppercase small fw-bold">Temp.</small>
+                                    <span class="h5 mb-0 text-primary">{{ h.temperatura|default:"--" }} °C</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h6 class="fw-bold text-secondary border-bottom pb-2">Último Diagnóstico ({{ h.fecha_atencion|date:"d/m/Y" }})</h6>
+                            <p class="card-text border-start border-4 ps-3 py-2 bg-light italic">
+                                "{{ h.diagnostico }}"
+                            </p>
+                        </div>
+
+                        <div class="mt-4">
+                            <h6 class="fw-bold text-secondary border-bottom pb-2">Plan de Tratamiento Anterior</h6>
+                            <p class="card-text small">{{ h.plan_tratamiento|linebreaks }}</p>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-folder-x display-1 text-muted opacity-25"></i>
+                            <p class="text-muted mt-3">Este paciente no tiene historias clínicas registradas anteriormente.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                    <a href="{% url 'dashboard_secretaria' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al Panel
+                    </a>
+                    
+                    <div class="btn-group">
+                        <a href="{% url 'historial_medico' paciente.id %}" class="btn btn-primary">
+                            <i class="bi bi-journal-medical"></i> Ver Historial
+                        </a>
+                        
+                        {# BOTÓN DE ACCIÓN RÁPIDA PARA EL MÉDICO #}
+                        <a href="{% url 'crear_historia' paciente.id %}" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Nueva Consulta
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

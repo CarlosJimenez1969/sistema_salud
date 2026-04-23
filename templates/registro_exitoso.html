@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro Exitoso - MediSys Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+
+                <div class="card-header bg-success text-white text-center py-4">
+                    <i class="bi bi-check-circle-fill display-4"></i>
+                    <h3 class="fw-bold mt-2 mb-0">¡Registro Exitoso!</h3>
+                    <small class="opacity-75">MediSys Pro</small>
+                </div>
+
+                <div class="card-body p-4 p-lg-5 text-center">
+
+                    <div class="alert alert-success border-0 bg-success bg-opacity-10 rounded-3 p-4 mb-4">
+                        <i class="bi bi-envelope-check-fill fs-2 text-success mb-2 d-block"></i>
+                        <h5 class="fw-bold text-success">Revisa tu correo electrónico</h5>
+                        <p class="mb-1">
+                            Hemos enviado un enlace a <strong>{{ email }}</strong>
+                        </p>
+                        <p class="text-muted small mb-0">
+                            Haz clic en el enlace del correo para <strong>crear tu contraseña</strong>
+                            y activar tu cuenta de médico.
+                        </p>
+                    </div>
+
+                    <div class="alert alert-warning border-0 rounded-3 p-3 mb-4 text-start">
+                        <h6 class="fw-bold"><i class="bi bi-info-circle me-2"></i>Si no ves el correo:</h6>
+                        <ul class="mb-0 small">
+                            <li>Revisa la carpeta de <strong>Spam</strong> o <strong>Correo no deseado</strong></li>
+                            <li>El remitente es <strong>Sistema Salud</strong></li>
+                            <li>Puede tardar hasta <strong>5 minutos</strong> en llegar</li>
+                            <li>Si no llega, usa <strong>"¿Olvidaste tu contraseña?"</strong> en el login</li>
+                        </ul>
+                    </div>
+
+                    <p class="text-muted small mb-4">
+                        Tu pago fue procesado correctamente y tu cuenta ha sido creada.<br>
+                        Podrás iniciar sesión una vez que establezcas tu contraseña.
+                    </p>
+
+                    <a href="{% url 'login' %}" class="btn btn-primary px-5 rounded-pill fw-bold">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Ir al Login
+                    </a>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

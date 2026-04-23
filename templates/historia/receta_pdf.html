@@ -308,14 +308,33 @@
         <p><strong>Diagnóstico (CIE-10):</strong> {{ h.diagnostico }}</p>
     </div>
 
-    <div class="firma">
-        <div class="linea-firma"></div>
-        <p>Firma y Sello</p>
+    <div style="margin-top: 15px; padding: 10px; border: 1.5px solid #dc3545; background-color: #fff5f5; border-radius: 5px;">
+        <strong style="color: #dc3545; font-size: 11px; text-transform: uppercase;">
+            <i class="bi bi-exclamation-triangle"></i> IMPORTANTE - SIGNOS DE ALARMA:
+        </strong>
+        <p style="font-size: 11px; margin: 5px 0 0 0; color: #333; line-height: 1.3; text-align: justify;">
+            {{ signos_alarma_print }}
+        </p>
     </div>
 
-    <div class="footer">
-        Generado por Sistema Médico SaludDigital<br>
-        Este documento es informativo y válido para farmacias.
+    {% if h.proxima_cita_control %}
+    <div style="margin-top: 15px; padding: 10px; border: 1px dashed #007bff; background-color: #f0f7ff; text-align: center; border-radius: 5px;">
+        <span style="color: #007bff; font-weight: bold; font-size: 11px; text-transform: uppercase;">
+            PRÓXIMO CONTROL SUGERIDO:
+        </span>
+        <br>
+        <span style="font-size: 13px; color: #000; font-weight: bold;">
+            {{ h.proxima_cita_control|date:"l, d \d\e F \d\e Y" }} a las {{ h.proxima_cita_control|date:"H:i" }}
+        </span>
+    </div>
+    {% endif %}
+
+    <div class="firma">
+        <br><br>
+        <div class="linea-firma"></div>
+        <p style="font-size: 12px; margin: 0;"><strong>Dr. {{ h.medico.usuario.get_full_name }}</strong></p>
+        <p style="font-size: 10px; margin: 0; color: #666;">{{ h.medico.especialidad.nombre }}</p>
+        <p style="font-size: 10px; margin: 0; color: #666;">Cod. Registro: {{ h.medico.registro_senescyt }}</p>
     </div>
 </body>
 </html>

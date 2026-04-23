@@ -35,3 +35,26 @@ class Medico(models.Model):
 
     def __str__(self):
         return f"Dr. {self.usuario.last_name} - {self.especialidad}"
+    
+class Secretaria(models.Model):
+    # Relación uno a uno con el usuario de Django
+    usuario = models.OneToOneField(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='perfil_secretaria'
+    )
+    # Relación con el médico al que asiste (Muchos a uno)
+    medico = models.ForeignKey(
+        'Medico', 
+        on_delete=models.CASCADE, 
+        related_name='mis_secretarias'
+    )
+    telefono = models.CharField(max_length=20, blank=True, null=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Secretaria: {self.usuario.get_full_name()} (Asiste al Dr. {self.medico.usuario.last_name})"
+
+    class Meta:
+        verbose_name = "Secretaria"
+        verbose_name_plural = "Secretarias"

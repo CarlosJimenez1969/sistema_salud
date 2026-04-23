@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #222; margin: 0; padding: 0; }
+  .page { padding: 20px; }
+
+  /* Cabecera */
+  .header { border: 1px solid #333; margin-bottom: 8px; }
+  .header-top { display: table; width: 100%; }
+  .header-emisor { display: table-cell; width: 60%; padding: 8px; border-right: 1px solid #333; vertical-align: top; }
+  .header-comprobante { display: table-cell; width: 40%; padding: 8px; text-align: center; vertical-align: middle; }
+  .emisor-nombre { font-size: 13px; font-weight: bold; color: #003366; }
+  .emisor-dato { margin: 2px 0; }
+  .comprobante-titulo { font-size: 12px; font-weight: bold; border: 1px solid #333; padding: 4px; margin-bottom: 6px; }
+  .comprobante-num { font-size: 11px; font-weight: bold; color: #003366; }
+  .ambiente-badge { background: #f0ad4e; padding: 2px 6px; font-size: 9px; font-weight: bold; }
+
+  /* Clave de acceso */
+  .clave-acceso { background: #f5f5f5; border: 1px solid #ccc; padding: 5px 8px; font-size: 8px; font-family: monospace; margin-bottom: 8px; word-break: break-all; }
+  .clave-label { font-size: 9px; font-weight: bold; margin-bottom: 2px; }
+
+  /* Datos receptor */
+  .seccion { border: 1px solid #ccc; margin-bottom: 8px; }
+  .seccion-titulo { background: #003366; color: white; padding: 4px 8px; font-size: 10px; font-weight: bold; }
+  .seccion-body { padding: 6px 8px; }
+  .fila { display: table; width: 100%; margin-bottom: 3px; }
+  .col-label { display: table-cell; width: 35%; color: #555; font-weight: bold; }
+  .col-valor { display: table-cell; width: 65%; }
+
+  /* Detalle */
+  table.detalle { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  table.detalle th { background: #003366; color: white; padding: 4px 6px; text-align: left; font-size: 9px; }
+  table.detalle td { padding: 4px 6px; border-bottom: 1px solid #eee; font-size: 9px; }
+  table.detalle tr:nth-child(even) { background: #f9f9f9; }
+
+  /* Totales */
+  .totales { float: right; width: 45%; border: 1px solid #ccc; margin-bottom: 8px; }
+  .totales table { width: 100%; border-collapse: collapse; }
+  .totales td { padding: 3px 8px; font-size: 10px; }
+  .totales .total-final { background: #003366; color: white; font-weight: bold; font-size: 11px; }
+  .clearfix { clear: both; }
+
+  /* Pie */
+  .pie { border-top: 1px solid #ccc; padding-top: 6px; font-size: 8px; color: #666; text-align: center; }
+  .autorizacion { font-size: 8px; color: #555; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- CABECERA -->
+  <div class="header">
+    <div class="header-top">
+      <div class="header-emisor">
+        <div class="emisor-nombre">{{ emisor_razon_social }}</div>
+        <div class="emisor-dato"><strong>Nombre Comercial:</strong> {{ emisor_nombre_comercial }}</div>
+        <div class="emisor-dato"><strong>RUC:</strong> {{ emisor_ruc }}</div>
+        <div class="emisor-dato"><strong>Dirección Matriz:</strong> {{ emisor_direccion }}</div>
+        <div class="emisor-dato"><strong>Obligado a llevar contabilidad:</strong> {{ emisor_obligado }}</div>
+      </div>
+      <div class="header-comprobante">
+        <div class="comprobante-titulo">FACTURA</div>
+        <div class="comprobante-num">N° {{ factura.numero_secuencial }}</div>
+        <br>
+        <div class="ambiente-badge">
+          {% if ambiente == '1' %}AMBIENTE DE PRUEBAS{% else %}AMBIENTE DE PRODUCCIÓN{% endif %}
+        </div>
+        <br><br>
+        <div><strong>Fecha de Emisión:</strong><br>{{ factura.fecha_emision|date:"d/m/Y H:i" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLAVE DE ACCESO -->
+  <div class="clave-label">CLAVE DE ACCESO:</div>
+  <div class="clave-acceso">{{ factura.clave_acceso }}</div>
+
+  <!-- DATOS DEL RECEPTOR -->
+  <div class="seccion">
+    <div class="seccion-titulo">DATOS DEL RECEPTOR</div>
+    <div class="seccion-body">
+      <div class="fila">
+        <div class="col-label">Razón Social / Nombre:</div>
+        <div class="col-valor">{{ factura.receptor_nombre }}</div>
+      </div>
+      <div class="fila">
+        <div class="col-label">Identificación:</div>
+        <div class="col-valor">{{ factura.receptor_identificacion }}</div>
+      </div>
+      <div class="fila">
+        <div class="col-label">Tipo Identificación:</div>
+        <div class="col-valor">{{ factura.get_receptor_tipo_id_display }}</div>
+      </div>
+      <div class="fila">
+        <div class="col-label">Dirección:</div>
+        <div class="col-valor">{{ factura.receptor_direccion }}</div>
+      </div>
+      <div class="fila">
+        <div class="col-label">Email:</div>
+        <div class="col-valor">{{ factura.receptor_email }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETALLE DE SERVICIOS -->
+  <div class="seccion">
+    <div class="seccion-titulo">DETALLE</div>
+    <div class="seccion-body" style="padding:0;">
+      <table class="detalle">
+        <thead>
+          <tr>
+            <th style="width:10%">Cód.</th>
+            <th style="width:50%">Descripción</th>
+            <th style="width:10%; text-align:right;">Cant.</th>
+            <th style="width:15%; text-align:right;">P. Unitario</th>
+            <th style="width:15%; text-align:right;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>001</td>
+            <td>{{ factura.descripcion }}</td>
+            <td style="text-align:right;">1.00</td>
+            <td style="text-align:right;">${{ factura.subtotal|floatformat:2 }}</td>
+            <td style="text-align:right;">${{ factura.subtotal|floatformat:2 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TOTALES -->
+  <div class="totales">
+    <table>
+      <tr>
+        <td>Subtotal sin IVA:</td>
+        <td style="text-align:right;">${{ factura.subtotal|floatformat:2 }}</td>
+      </tr>
+      <tr>
+        <td>IVA ({{ factura.iva_porcentaje }}%):</td>
+        <td style="text-align:right;">${{ factura.iva_valor|floatformat:2 }}</td>
+      </tr>
+      <tr class="total-final">
+        <td>TOTAL:</td>
+        <td style="text-align:right;">${{ factura.total|floatformat:2 }}</td>
+      </tr>
+    </table>
+  </div>
+  <div class="clearfix"></div>
+
+  <!-- AUTORIZACIÓN -->
+  {% if factura.numero_autorizacion %}
+  <div class="autorizacion">
+    <strong>N° AUTORIZACIÓN SRI:</strong> {{ factura.numero_autorizacion }}<br>
+    <strong>FECHA AUTORIZACIÓN:</strong> {{ factura.fecha_autorizacion|date:"d/m/Y H:i:s" }}
+  </div>
+  {% endif %}
+
+  <!-- PIE -->
+  <div class="pie">
+    Documento generado electrónicamente — Válido como comprobante tributario según Resolución NAC-DGERCGC16-00000247 del SRI.
+  </div>
+
+</div>
+</body>
+</html>

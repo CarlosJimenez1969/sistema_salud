@@ -3,100 +3,86 @@
 {% block content %}
 <div class="container mt-5 mb-5">
     <div class="row justify-content-center">
-        <div class="col-lg-8"> <div class="card shadow">
+        <div class="col-lg-7"> 
+            <div class="card shadow border-0">
                 <div class="card-header bg-success text-white text-center py-3">
                     <h3 class="mb-0"><i class="bi bi-person-badge"></i> Registro Profesional</h3>
-                    <small>Completa tu perfil para activar tu consultorio</small>
+                    <p class="mb-0 small">Paso 1: Datos de la cuenta y perfil médico</p>
                 </div>
 
                 <div class="card-body p-4">
-                    <form method="post">
+                    <form method="post" novalidate>
                         {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
 
                         <h5 class="text-success border-bottom pb-2 mb-3">1. Datos de Acceso</h5>
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label class="form-label fw-bold">Nombre de Usuario (Login)</label>
-                                {{ form.username }}
-                                <div class="text-danger small">{{ form.username.errors }}</div>
-                            </div>
-                            
-                            {% if form.password %}
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold">Contraseña</label>
-                                    {{ form.password }} 
-                                </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre de Usuario (Login)</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="text-danger small">{{ form.username.errors|striptags }}</div>
                             {% endif %}
-                            
-                            </div>
+                            <div class="form-text">Este será tu nombre único para ingresar al sistema.</div>
+                        </div>
 
                         <h5 class="text-success border-bottom pb-2 mb-3 mt-4">2. Información Personal</h5>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.first_name.label }}</label>
+                                <label class="form-label">Nombres</label>
                                 {{ form.first_name }}
-                                <div class="text-danger small">{{ form.first_name.errors }}</div>
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small">{{ form.first_name.errors|striptags }}</div>
+                                {% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.last_name.label }}</label>
+                                <label class="form-label">Apellidos</label>
                                 {{ form.last_name }}
-                                <div class="text-danger small">{{ form.last_name.errors }}</div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.cedula.label }}</label>
-                                {{ form.cedula }}
-                                <div class="text-danger small">{{ form.cedula.errors }}</div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.email.label }}</label>
-                                {{ form.email }}
-                                <div class="text-danger small">{{ form.email.errors }}</div>
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small">{{ form.last_name.errors|striptags }}</div>
+                                {% endif %}
                             </div>
                         </div>
 
-                        <h5 class="text-success border-bottom pb-2 mb-3 mt-4">3. Datos del Consultorio</h5>
-                        
                         <div class="mb-3">
-                            <label class="form-label fw-bold">{{ form.especialidad.label }}</label>
+                            <label class="form-label">Correo Electrónico</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors|striptags }}</div>
+                            {% endif %}
+                            <div class="form-text">Aquí recibirás el enlace para crear tu contraseña después del pago.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Cédula / Identificación</label>
+                            {{ form.cedula }}
+                            {% if form.cedula.errors %}
+                                <div class="text-danger small">{{ form.cedula.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Especialidad</label>
                             {{ form.especialidad }}
-                            <div class="form-text">Selecciona tu especialidad principal.</div>
-                            <div class="text-danger small">{{ form.especialidad.errors }}</div>
+                            {% if form.especialidad.errors %}
+                                <div class="text-danger small">{{ form.especialidad.errors|striptags }}</div>
+                            {% endif %}
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.telefono_consultorio.label }}</label>
-                                {{ form.telefono_consultorio }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.precio_consulta.label }}</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    {{ form.precio_consulta }}
-                                </div>
-                            </div>
+                        <div class="alert alert-info small mt-4">
+                            <i class="bi bi-shield-lock me-1"></i>
+                            Tus datos se guardarán temporalmente. Serás redirigido a PayPal para activar tu suscripción profesional de 50.00 USD.
                         </div>
 
-                        <div class="row">
-                            <label class="form-label fw-bold mb-2">Horario de Atención General</label>
-                            <div class="col-md-6 mb-3">
-                                <label class="small text-muted">Hora Inicio</label>
-                                {{ form.hora_inicio }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="small text-muted">Hora Fin</label>
-                                {{ form.hora_fin }}
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label">{{ form.direccion_consultorio.label }}</label>
-                            {{ form.direccion_consultorio }}
-                        </div>
-
-                        <div class="d-grid gap-2">
+                        <div class="d-grid gap-2 mt-4">
                             <button type="submit" class="btn btn-success btn-lg shadow">
-                                <i class="bi bi-check-circle-fill"></i> Registrarse y Pagar
+                                Validar y Continuar al Pago <i class="bi bi-arrow-right-circle ms-1"></i>
                             </button>
                             <a href="{% url 'home' %}" class="btn btn-outline-secondary">Cancelar</a>
                         </div>

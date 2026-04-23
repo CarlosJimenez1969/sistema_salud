@@ -6,6 +6,17 @@ from datetime import datetime, timedelta, date, time
 from .models import Cita
 from medico.models import Medico, Especialidad
 from paciente.models import Paciente
+from django.utils import timezone
+from .forms import CitaForm
+from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist
+
+import ssl
+from django.core.mail import get_connection, send_mail
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.conf import settings
 
 # 1. Pantalla para buscar médicos por especialidad
 def buscar_medico(request):
@@ -25,98 +36,115 @@ def buscar_medico(request):
 # 2. Pantalla Gráfica de Turnos (La Lógica Maestra)
 @login_required
 def reservar_cita(request, medico_id):
-    medico = get_object_or_404(Medico, id=medico_id)
+    # --- BLOQUEO DE SEGURIDAD PARA SECRETARIAS ---
+    es_secretaria = getattr(request.user, 'role', '') == 'SECRETARIA'
     
-    # --- Lógica para saber si el usuario es Médico ---
-    es_medico = hasattr(request.user, 'perfil_medico')
-    lista_pacientes = []
-    
-    # Si es médico, traemos todos los pacientes para que pueda elegir
-    if es_medico:
-        lista_pacientes = Paciente.objects.all()
+    if es_secretaria:
+        # Forzamos que el médico sea ÚNICAMENTE el vinculado a ella
+        medico = get_object_or_404(Medico, mis_secretarias__usuario=request.user)
+    else:
+        medico = get_object_or_404(Medico, id=medico_id)
 
-    # 1. Obtener la fecha
+    es_medico = hasattr(request.user, 'perfil_medico')
+    es_administrativo = (es_secretaria or es_medico)
+
+    # 1. Obtener Paciente y Fecha
+    paciente_seleccionado_id = request.GET.get('paciente_id')
     fecha_str = request.GET.get('fecha')
+    
     if fecha_str:
         fecha_seleccionada = datetime.strptime(fecha_str, '%Y-%m-%d').date()
     else:
         fecha_seleccionada = date.today()
 
-    # 2. Navegación Día Anterior / Siguiente
-    dia_anterior = fecha_seleccionada - timedelta(days=1)
-    dia_siguiente = fecha_seleccionada + timedelta(days=1)
-    if dia_anterior < date.today():
-        dia_anterior = None
-
-    # 3. LÓGICA DE TURNOS
-    horarios_disponibles = []
-    
-    citas_ocupadas = Cita.objects.filter(
+    # 2. OBTENER CITAS DEL MÉDICO
+    citas_medico = Cita.objects.filter(
         medico=medico,
         fecha=fecha_seleccionada,
-        estado='PENDIENTE'
-    ).values_list('hora', flat=True)
+        estado='P'
+    ).select_related('paciente__usuario')
+
+    dict_ocupados_medico = {
+        c.hora.strftime('%H:%M'): {'id': c.paciente.id, 'nombre': c.paciente.usuario.get_full_name()} 
+        for c in citas_medico
+    }
+
+    # 3. CITAS DEL PACIENTE SELECCIONADO
+    lista_horas_paciente = []
+    if paciente_seleccionado_id:
+        citas_p = Cita.objects.filter(
+            paciente_id=paciente_seleccionado_id,
+            fecha=fecha_seleccionada,
+            estado='P'
+        ).values_list('hora', flat=True)
+        lista_horas_paciente = [h.strftime('%H:%M') for h in citas_p]
+
+    # 4. LÓGICA DE TIEMPO ACTUAL Y GENERACIÓN DE HORARIOS
+    ahora = timezone.localtime(timezone.now())
+    hoy = date.today()
+    minutos_ahora = (ahora.hour * 60) + ahora.minute
+
+    # --- CORRECCIÓN: Horarios por defecto si están vacíos ---
+    h_inicio = medico.hora_inicio or time(8, 0)  # 8:00 AM si es None
+    h_fin = medico.hora_fin or time(18, 0)      # 6:00 PM si es None
+
+    horarios = []
+    hora_actual = h_inicio
     
-    lista_horas_ocupadas = [t.strftime('%H:%M') for t in citas_ocupadas]
+    # El bucle ahora usa nuestras variables de respaldo
+    while hora_actual < h_fin:
+        hora_str = hora_actual.strftime('%H:%M')
+        info_cita = dict_ocupados_medico.get(hora_str)
+        minutos_slot = (hora_actual.hour * 60) + hora_actual.minute
+        
+        esta_ocupado_cita = (hora_str in dict_ocupados_medico) or (hora_str in lista_horas_paciente)
+        es_pasada = (fecha_seleccionada == hoy) and (minutos_slot < minutos_ahora)
 
-    if medico.hora_inicio and medico.hora_fin:
-        hora_actual = medico.hora_inicio
-        while hora_actual < medico.hora_fin:
-            hora_actual_str = hora_actual.strftime('%H:%M')
-            esta_ocupado = hora_actual_str in lista_horas_ocupadas
-            
-            horarios_disponibles.append({
-                'hora': hora_actual,
-                'ocupado': esta_ocupado 
-            })
-            
-            dt = datetime.combine(date.today(), hora_actual) + timedelta(minutes=30)
-            hora_actual = dt.time()
+        horarios.append({
+            'hora': hora_actual,
+            'ocupado': esta_ocupado_cita or es_pasada,
+            'paciente_nombre': info_cita['nombre'] if info_cita else None,
+            'paciente_id': info_cita['id'] if info_cita else None,
+            'conflicto_paciente': hora_str in lista_horas_paciente,
+            'es_pasada': es_pasada 
+        })
+        
+        # Incrementar 30 minutos
+        dt_aux = datetime.combine(date.today(), hora_actual) + timedelta(minutes=30)
+        hora_actual = dt_aux.time()
 
-    # 4. Procesar Reserva (POST)
+    # --- Lógica de POST ---
     if request.method == 'POST':
-        try:
-            hora_post = request.POST.get('hora')
-            
-            # --- AQUÍ ESTÁ LA CORRECCIÓN CLAVE ---
-            if es_medico:
-                # Si soy médico, obtengo el ID del paciente desde el formulario
-                paciente_id = request.POST.get('paciente_id')
-                if not paciente_id:
-                    raise Exception("Debes seleccionar un paciente.")
-                paciente = get_object_or_404(Paciente, id=paciente_id)
-            else:
-                # Si soy paciente, me uso a mí mismo
-                paciente = request.user.perfil_paciente
-
-            # Guardamos la cita
-            Cita.objects.create(
-                medico=medico,
-                paciente=paciente,
-                fecha=fecha_seleccionada,
-                hora=hora_post,
-                estado='PENDIENTE'
-            )
-            messages.success(request, '¡Cita reservada con éxito!')
-            
-            # Si es médico, quizás quieras volver a la agenda, si es paciente al home
-            if es_medico:
-                return redirect('ver_agenda') 
-            return redirect('home')
-            
-        except AttributeError:
-            messages.error(request, 'Error: Tu usuario no tiene perfil de paciente.')
-        except Exception as e:
-            messages.error(request, f'Error al reservar: {e}')
+        hora_post = request.POST.get('hora')
+        p_id = request.POST.get('paciente_id') or paciente_seleccionado_id
+        
+        if not hora_post:
+            messages.error(request, "Debe seleccionar una hora.")
+        else:
+            try:
+                paciente = get_object_or_404(Paciente, id=p_id) if es_administrativo else request.user.perfil_paciente
+                
+                Cita.objects.create(
+                    medico=medico,
+                    paciente=paciente,
+                    fecha=fecha_seleccionada,
+                    hora=hora_post,
+                    estado='P'
+                )
+                messages.success(request, f'Cita agendada con el Dr. {medico.usuario.last_name} para {paciente}')
+                return redirect('dashboard_secretaria' if es_secretaria else 'home')
+            except Exception as e:
+                messages.error(request, f"Error: {e}")
 
     return render(request, 'reservar_cita.html', {
         'medico': medico,
-        'horarios': horarios_disponibles,
+        'horarios': horarios,
         'fecha_seleccionada': fecha_seleccionada,
-        'dia_anterior': dia_anterior,
-        'dia_siguiente': dia_siguiente,
-        'es_medico': es_medico,          # <--- Pasamos este dato al HTML
-        'lista_pacientes': lista_pacientes # <--- Pasamos la lista al HTML
+        'lista_pacientes': Paciente.objects.all().order_by('usuario__last_name'),
+        'es_administrativo': es_administrativo,
+        'paciente_seleccionado_id': paciente_seleccionado_id,
+        'dia_anterior': fecha_seleccionada - timedelta(days=1) if fecha_seleccionada > hoy else None,
+        'dia_siguiente': fecha_seleccionada + timedelta(days=1),
     })
 
 @login_required
@@ -147,11 +175,11 @@ def ver_agenda(request):
         cita = get_object_or_404(Cita, id=cita_id, medico=medico)
         
         if accion == 'cancelar':
-            cita.estado = 'CANCELADA'
+            cita.estado = 'C'
             cita.save()
             messages.warning(request, 'Cita cancelada.')
         elif accion == 'finalizar':
-            cita.estado = 'FINALIZADA'
+            cita.estado = 'A'
             cita.save()
             messages.success(request, 'Cita finalizada.')
             
@@ -162,3 +190,154 @@ def ver_agenda(request):
         'fecha_agenda': fecha_agenda,
         'hoy': date.today()
     })
+
+@login_required
+def dashboard_secretaria(request):
+    # 1. Obtener el perfil de secretaria y su médico vinculado
+    try:
+        perfil_sec = request.user.perfil_secretaria 
+        medico_vinculado = perfil_sec.medico
+    except AttributeError:
+        messages.error(request, "No tienes un perfil de secretaria asignado.")
+        return redirect('home')
+
+    from django.utils import timezone
+    hoy = timezone.now().date()
+    
+    # 2. Lógica del Buscador Preventivo (Opcional, pero recomendada)
+    query = request.GET.get('buscar_paciente', '').strip()
+    resultado_busqueda = None
+    if query:
+        resultado_busqueda = Cita.objects.filter(
+            medico=medico_vinculado,
+            fecha=hoy,
+            paciente__usuario__cedula__icontains=query
+        ).first()
+
+    # 3. Obtener Citas de hoy con optimización (prefetch_related para las historias)
+    # Usamos prefetch_related('paciente__historias') para que el template 
+    # sepa si hay historias sin hacer una consulta nueva por cada fila.
+    citas_hoy = Cita.objects.filter(
+        medico=medico_vinculado, 
+        fecha=hoy
+    ).select_related('paciente__usuario').prefetch_related('paciente__historias').order_by('hora')
+
+    context = {
+        'medico': medico_vinculado,
+        'citas_hoy': citas_hoy,
+        'total_citas': citas_hoy.count(),
+        'query': query,
+        'resultado_busqueda': resultado_busqueda,
+    }
+    
+    return render(request, 'dashboard_secretaria.html', context)
+
+@login_required
+def cambiar_estado_cita(request, cita_id, nuevo_estado):
+    if request.method == 'POST':
+        cita = get_object_or_404(Cita, id=cita_id)
+        
+        # Validamos que el estado sea uno de los permitidos
+        estado_map = {'COMPLETADA': 'A', 'CANCELADA': 'C', 'A': 'A', 'C': 'C'}
+        if nuevo_estado in estado_map:
+            cita.estado = estado_map[nuevo_estado]
+            cita.save()
+
+            if cita.estado == 'A':
+                messages.success(request, f"Cita de {cita.paciente.usuario.first_name} marcada como ATENDIDA.")
+            else:
+                messages.warning(request, f"Cita de {cita.paciente.usuario.first_name} ha sido CANCELADA.")
+    
+    # El redirect automático es clave: regresa al usuario a la página donde estaba
+    # (sea el dashboard de secretaria o el panel del médico)
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard_secretaria'))
+
+@login_required
+def editar_cita(request, cita_id):
+    cita = get_object_or_404(Cita, id=cita_id)
+    
+    if request.method == 'POST':
+        form = CitaForm(request.POST, instance=cita)
+        if form.is_valid():
+            form.save()
+            # Mensaje de éxito para el usuario
+            return redirect('dashboard_secretaria')
+    else:
+        # Aquí cargamos los datos actuales de la cita en el formulario
+        form = CitaForm(instance=cita)
+    
+    return render(request, 'citas/editar_cita.html', {'form': form, 'cita': cita})
+
+@login_required
+def eliminar_cita(request, cita_id):
+    if request.method == 'POST':
+        cita = get_object_or_404(Cita, id=cita_id)
+        nombre_paciente = cita.paciente.usuario.get_full_name()
+        cita.delete()
+        messages.error(request, f"La cita de {nombre_paciente} ha sido eliminada permanentemente.")
+    
+    return redirect('dashboard_secretaria')
+
+def enviar_correo_activacion(request, user):
+    """
+    Genera un token de seguridad y envía el enlace de activación 
+    según el rol del usuario (Médico o Secretaria).
+    """
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.http import urlsafe_base64_encode
+    from django.utils.encoding import force_bytes
+    import ssl
+
+    # 1. Generar los datos de seguridad
+    token = default_token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    
+    # 2. Construir el enlace
+    link = f"http://{request.get_host()}/reset/{uid}/{token}/"
+
+    # 3. Detectar el rol para personalizar el mensaje
+    # Usamos .upper() por si acaso el rol está en minúsculas
+    rol_nombre = "Médico" if str(user.role).upper() == 'MEDICO' else "Secretaria"
+
+    asunto = f"Bienvenida a MediSys Pro - Activa tu cuenta de {rol_nombre}"
+    
+    mensaje = (
+        f"Hola {user.first_name},\n\n"
+        f"Se ha creado tu perfil de {rol_nombre.lower()} en el sistema.\n"
+        f"Para activar tu cuenta y configurar tu contraseña, haz clic en el siguiente enlace:\n\n"
+        f"{link}\n\n"
+        f"Si no solicitaste esta cuenta, por favor ignora este mensaje."
+    )
+
+    # 4. Enviar el correo usando la configuración de settings.py
+    # Mantenemos tu lógica de bypass SSL por si tu entorno local lo requiere
+    try:
+        context = ssl._create_unverified_context()
+        connection = get_connection(
+            backend=settings.EMAIL_BACKEND,
+            use_tls=settings.EMAIL_USE_TLS,
+            ssl_context=context
+        )
+
+        send_mail(
+            asunto,
+            mensaje,
+            settings.EMAIL_HOST_USER,
+            [user.email],
+            connection=connection,
+            fail_silently=False,
+        )
+        print(f"DEBUG: Correo de {rol_nombre} enviado exitosamente a {user.email}")
+    except Exception as e:
+        print(f"ERR: Error físico enviando correo: {e}")
+        raise e # Re-lanzamos para que confirmar_pago vea el error
+    
+@login_required
+def detalle_cita(request, cita_id):
+    # Aseguramos que la secretaria solo vea citas de su médico vinculado
+    if request.user.role == 'SECRETARIA':
+        cita = get_object_or_404(Cita, id=cita_id, medico=request.user.perfil_secretaria.medico)
+    else:
+        cita = get_object_or_404(Cita, id=cita_id)
+        
+    return render(request, 'detalle_cita_modal.html', {'cita': cita})

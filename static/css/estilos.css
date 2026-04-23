@@ -127,3 +127,20 @@ body {
     border-color: #2dd4bf; /* Color Teal al enfocar */
     box-shadow: 0 0 0 0.25rem rgba(45, 212, 191, 0.2);
 }
+
+textarea[name="signos_alarma"] {
+    resize: none;
+    border-left: 5px solid #dc3545; /* Un borde rojo para resaltar importancia */
+    font-style: italic;
+}
+
+input[name="proxima_cita"] {
+    border-left: 5px solid #0d6efd;
+}
+
+/* Mejora la apariencia del botón de salida */
+#logout-form button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+    transition: all 0.2s ease;
+}

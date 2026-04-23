@@ -10,11 +10,15 @@ class PacienteForm(forms.ModelForm):
 
     class Meta:
         model = Paciente
-        fields = ['fecha_nacimiento', 'telefono', 'tipo_sangre', 'alergias', 'enfermedades_cronicas']
+        fields = ['fecha_nacimiento', 'sexo', 'telefono', 'tipo_sangre', 'alergias', 'enfermedades_cronicas', 'direccion']
         widgets = {
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
             'alergias': forms.Textarea(attrs={'rows': 2}),
             'enfermedades_cronicas': forms.Textarea(attrs={'rows': 2}),
+            'direccion': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Av. Amazonas y Colon, Edificio 1',
+            }),
         }
 
     # --- NUEVO: ESTO CARGA LOS DATOS AL EDITAR ---

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="card shadow-lg p-4 col-md-6 mx-auto">
+        <h2 class="text-primary mb-4">Registro de Nuevo Médico</h2>
+        <p class="text-muted">Para habilitar su cuenta en **Sistema-Salud**, por favor complete el pago de suscripción inicial.</p>
+        <hr>
+        <h4 class="mb-4">Total a pagar: $50.00</h4>
+        
+        <div id="paypal-button-container"></div>
+    </div>
+</div>
+
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency=USD"></script>
+
+<script>
+    paypal.Buttons({
+        createOrder: function(data, actions) {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: { value: '{{ monto }}' }
+                }]
+            });
+        },
+        onApprove: function(data, actions) {
+            return actions.order.capture().then(function(details) {
+                // Si el pago es exitoso, redirigimos automáticamente al registro
+                window.location.href = "{% url 'crear_medico' %}?pago=exitoso&id_transaccion=" + details.id;
+            });
+        },
+        onCancel: function (data) {
+            alert("El pago fue cancelado. No podrá registrarse sin completar el proceso.");
+        }
+    }).render('#paypal-button-container');
+</script>
+{% endblock %}

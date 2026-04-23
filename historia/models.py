@@ -7,10 +7,27 @@ class HistoriaClinica(models.Model):
     medico = models.ForeignKey(Medico, on_delete=models.PROTECT, related_name='historias_creadas')
     fecha_atencion = models.DateTimeField(auto_now_add=True)
     
-    # --- SECCIÓN 1: MOTIVO Y ENFERMEDAD (MSP) ---
+    # --- SECCIÓN 1: MOTIVO Y ENFERMEDAD (MSP Formulario 002) ---
     motivo_consulta = models.TextField(help_text="Motivo por el cual viene el paciente")
     enfermedad_actual = models.TextField(help_text="Descripción detallada de la molestia")
-    
+
+    # --- SECCIÓN 1b: ANTECEDENTES (MSP Formulario 002 - obligatorio) ---
+    antecedentes_personales = models.TextField(
+        blank=True, null=True,
+        verbose_name="Antecedentes Personales",
+        help_text="Enfermedades previas, cirugías, alergias, medicamentos actuales"
+    )
+    antecedentes_familiares = models.TextField(
+        blank=True, null=True,
+        verbose_name="Antecedentes Familiares",
+        help_text="Enfermedades hereditarias o relevantes en familiares directos"
+    )
+    revision_sistemas = models.TextField(
+        blank=True, null=True,
+        verbose_name="Revisión de Órganos y Sistemas",
+        help_text="Síntomas positivos y negativos relevantes por sistemas"
+    )
+
     # --- SECCIÓN 2: SIGNOS VITALES ---
     temperatura = models.DecimalField(max_digits=4, decimal_places=1, help_text="°C", null=True, blank=True)
     presion_arterial = models.CharField(max_length=20, help_text="Ej: 120/80", null=True, blank=True)
@@ -18,10 +35,28 @@ class HistoriaClinica(models.Model):
     peso = models.DecimalField(max_digits=5, decimal_places=2, help_text="Kg", null=True, blank=True)
     altura = models.DecimalField(max_digits=5, decimal_places=2, help_text="Metros o CM", null=True, blank=True)
     
-    # --- SECCIÓN 3: EXAMEN Y DIAGNÓSTICO ---
+    # --- SECCIÓN 3: EXAMEN Y DIAGNÓSTICO (MSP Formulario 002) ---
     examen_fisico = models.TextField(help_text="Hallazgos del examen físico")
-    diagnostico = models.TextField(help_text="Diagnóstico Presuntivo o Definitivo (CIE-10)")
+    TIPO_DX = [('PRESUNTIVO', 'Presuntivo'), ('DEFINITIVO', 'Definitivo')]
+    tipo_diagnostico = models.CharField(
+        max_length=12, choices=TIPO_DX, default='PRESUNTIVO',
+        verbose_name="Tipo de Diagnóstico"
+    )
+    diagnostico = models.TextField(help_text="Diagnóstico CIE-10")
     tratamiento = models.TextField(help_text="Indicaciones y medicamentos")
+    plan_educacional = models.TextField(
+        blank=True, null=True,
+        verbose_name="Plan Educacional",
+        help_text="Instrucciones y educación entregada al paciente"
+    )
+
+    proxima_cita_control = models.DateTimeField(null=True, blank=True)
+    signos_alarma = models.TextField(
+        null=True, 
+        blank=True,
+        #help_text="Instrucciones de emergencia para el paciente" 
+        default=""
+    )
     
     def __str__(self):
         return f"Historia {self.id} - {self.paciente} ({self.fecha_atencion.date()})"
@@ -59,6 +94,9 @@ class HistoriaPediatria(models.Model):
     lactancia = models.CharField(max_length=50, choices=[('MATERNA', 'Materna Exclusiva'), ('FORMULA', 'Fórmula'), ('MIXTA', 'Mixta')], default='MATERNA')
     vacunas_completas = models.BooleanField(default=False, verbose_name="Vacunas al día")
     observaciones_crecimiento = models.TextField(blank=True, verbose_name="Desarrollo Psicomotriz")
+    
+    # --- NUEVO CAMPO AGREGADO ---
+    archivo_pediatrico = models.FileField(upload_to='historias/pediatria/', null=True, blank=True, verbose_name="Adjuntar Carnet/Examen")
 
     def __str__(self):
         return f"Pediatría - {self.historia_clinica.paciente}"
@@ -113,7 +151,7 @@ class HistoriaOdontologia(models.Model):
     procedimiento = models.TextField(verbose_name="Procedimiento Realizado (Obturación, Exodoncia, Profilaxis...)")
     
     # Plan
-    proxima_cita = models.DateField(null=True, blank=True, verbose_name="Próxima Cita / Control")
+    proxima_cita_control = models.DateField(null=True, blank=True, verbose_name="Próxima Cita / Control")
 
     def __str__(self):
         return f"Odonto - {self.historia_clinica.paciente}"
@@ -179,3 +217,217 @@ class HistoriaTraumatologia(models.Model):
 
     def __str__(self):
         return f"Trauma - {self.historia_clinica.paciente}"
+    
+# --- HISTORIA CLÍNICA: GASTROENTEROLOGÍA ---
+class HistoriaGastro(models.Model):
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='gastro')
+    dolor_abdominal = models.TextField(verbose_name="Localización y tipo de dolor", blank=True, null=True)
+    habito_intestinal = models.CharField(max_length=100, verbose_name="Hábito intestinal (Frecuencia/Consistencia)", blank=True, null=True)
+    endoscopia_previa = models.TextField(verbose_name="Resultados de endoscopias/colonoscopias previas", blank=True, null=True)
+    reflejo_hepatoyugular = models.BooleanField(default=False)
+    observaciones_digestivas = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Gastro - {self.historia_clinica}"
+
+# --- HISTORIA CLÍNICA: PSIQUIATRÍA ---
+class HistoriaPsiquiatria(models.Model):
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='psiquiatria')
+    examen_mental = models.TextField(verbose_name="Descripción del examen mental actual", blank=True, null=True)
+    ideacion_suicida = models.BooleanField(default=False, verbose_name="Presencia de ideación suicida")
+    medicacion_psicotropica = models.TextField(verbose_name="Medicamentos actuales y dosis", blank=True, null=True)
+    antecedentes_psiquiatricos = models.TextField(blank=True, null=True)
+    estado_conciencia = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return f"Psiquiatría - {self.historia_clinica}"
+
+# --- HISTORIA CLÍNICA: REUMATOLOGÍA ---
+class HistoriaReumatologia(models.Model):
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='reumatologia')
+    rigidez_matutina = models.CharField(max_length=100, verbose_name="Duración de rigidez matutina (min/horas)", blank=True, null=True)
+    articulaciones_afectadas = models.TextField(verbose_name="Articulaciones con dolor o inflamación", blank=True, null=True)
+    factor_reumatoide = models.CharField(max_length=50, verbose_name="Resultado Factor Reumatoide / Anti-CCP", blank=True, null=True)
+    capacidad_funcional = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Reumatología - {self.historia_clinica}"
+
+# --- HISTORIA CLÍNICA: GERIATRÍA ---
+class HistoriaGeriatria(models.Model):
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='geriatria')
+    escala_kartz = models.CharField(max_length=50, verbose_name="Escala de Katz (Actividades vida diaria)", blank=True, null=True)
+    deterioro_cognitivo = models.TextField(verbose_name="Evaluación cognitiva (Ej: Minimental)", blank=True, null=True)
+    polifarmacia = models.TextField(verbose_name="Lista de todos los fármacos consumidos", blank=True, null=True)
+    riesgo_caidas = models.BooleanField(default=False, verbose_name="Antecedentes o riesgo de caídas")
+    soporte_familiar = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Geriatría - {self.historia_clinica}"
+    
+# --- HISTORIA CLÍNICA: NEUROLOGÍA ---
+class HistoriaNeurologia(models.Model):
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='neurologia')
+    escala_glasgow = models.CharField(max_length=20, verbose_name="Escala de Glasgow (O+V+M)", blank=True, null=True)
+    pares_craneales = models.TextField(verbose_name="Exploración de pares craneales", blank=True, null=True)
+    fuerza_motora = models.CharField(max_length=100, verbose_name="Fuerza motora MMSS/MMII", blank=True, null=True)
+    reflejos = models.CharField(max_length=100, verbose_name="Reflejos osteotendinosos", blank=True, null=True)
+    coordinacion = models.CharField(max_length=100, verbose_name="Coordinación y equilibrio", blank=True, null=True)
+    sensibilidad_neuro = models.CharField(max_length=100, verbose_name="Sensibilidad", blank=True, null=True)
+    neuroimagen = models.TextField(verbose_name="TAC / RMN / EEG (hallazgos)", blank=True, null=True)
+    escala_nihss = models.CharField(max_length=20, verbose_name="Escala NIHSS (si aplica ACV)", blank=True, null=True)
+
+    def __str__(self):
+        return f"Neurología - {self.historia_clinica}"
+
+
+# --- HISTORIA CLÍNICA: ENDOCRINOLOGÍA ---
+class HistoriaEndocrinologia(models.Model):
+    TIPO_DM = [('DM1','DM Tipo 1'),('DM2','DM Tipo 2'),('GEST','Gestacional'),('OTRO','Otro / No aplica')]
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='endocrinologia')
+    tipo_diabetes = models.CharField(max_length=10, choices=TIPO_DM, default='OTRO', verbose_name="Tipo de Diabetes")
+    glucosa_ayunas = models.CharField(max_length=20, verbose_name="Glucosa en ayunas (mg/dL)", blank=True, null=True)
+    hba1c = models.CharField(max_length=10, verbose_name="HbA1c (%)", blank=True, null=True)
+    insulina_basal = models.CharField(max_length=50, verbose_name="Insulina / dosis actual", blank=True, null=True)
+    tsh = models.CharField(max_length=20, verbose_name="TSH (mUI/L)", blank=True, null=True)
+    t3_t4 = models.CharField(max_length=50, verbose_name="T3 / T4 libre", blank=True, null=True)
+    cortisol = models.CharField(max_length=20, verbose_name="Cortisol sérico", blank=True, null=True)
+    objetivos_terapeuticos = models.TextField(verbose_name="Objetivos terapéuticos / Plan", blank=True, null=True)
+
+    def __str__(self):
+        return f"Endocrinología - {self.historia_clinica}"
+
+
+# --- HISTORIA CLÍNICA: MEDICINA INTERNA ---
+class HistoriaMedicinaInterna(models.Model):
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='medicina_interna')
+    mucosas = models.CharField(max_length=100, verbose_name="Mucosas", blank=True, null=True)
+    ganglios = models.CharField(max_length=100, verbose_name="Adenopatías / Ganglios", blank=True, null=True)
+    tiroides_examen = models.CharField(max_length=100, verbose_name="Tiroides al examen", blank=True, null=True)
+    examen_pulmonar = models.TextField(verbose_name="Examen pulmonar (auscultación)", blank=True, null=True)
+    examen_cardiaco = models.TextField(verbose_name="Examen cardíaco (auscultación)", blank=True, null=True)
+    examen_abdominal = models.TextField(verbose_name="Examen abdominal", blank=True, null=True)
+    examen_extremidades = models.TextField(verbose_name="Extremidades / Edemas", blank=True, null=True)
+    examenes_laboratorio = models.TextField(verbose_name="Laboratorio / Imagen relevante", blank=True, null=True)
+
+    def __str__(self):
+        return f"Medicina Interna - {self.historia_clinica}"
+
+
+# --- HISTORIA CLÍNICA: CIRUGÍA GENERAL ---
+class HistoriaCirugia(models.Model):
+    ASA = [('I','ASA I - Sano'),('II','ASA II - Enfermedad leve'),('III','ASA III - Enfermedad grave'),('IV','ASA IV - Riesgo vital'),('V','ASA V - Moribundo')]
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='cirugia')
+    tipo_cirugia = models.CharField(max_length=150, verbose_name="Tipo / Nombre de la cirugía", blank=True, null=True)
+    clasificacion_asa = models.CharField(max_length=5, choices=ASA, default='I', verbose_name="Clasificación ASA")
+    hallazgos_intraop = models.TextField(verbose_name="Hallazgos intraoperatorios", blank=True, null=True)
+    tecnica_quirurgica = models.TextField(verbose_name="Técnica quirúrgica empleada", blank=True, null=True)
+    complicaciones_qx = models.TextField(verbose_name="Complicaciones", blank=True, null=True)
+    plan_postoperatorio = models.TextField(verbose_name="Plan postoperatorio / Indicaciones", blank=True, null=True)
+    fecha_cirugia = models.DateField(verbose_name="Fecha de cirugía", null=True, blank=True)
+
+    def __str__(self):
+        return f"Cirugía General - {self.historia_clinica}"
+
+
+# --- HISTORIA CLÍNICA: UROLOGÍA ---
+class HistoriaUrologia(models.Model):
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='urologia')
+    sintomas_miccionales = models.CharField(max_length=100, verbose_name="Síntomas miccionales / Score IPSS", blank=True, null=True)
+    psa = models.CharField(max_length=20, verbose_name="PSA total (ng/mL)", blank=True, null=True)
+    creatinina_uro = models.CharField(max_length=20, verbose_name="Creatinina sérica (mg/dL)", blank=True, null=True)
+    urocultivo = models.CharField(max_length=100, verbose_name="Urocultivo / Uroanálisis", blank=True, null=True)
+    ecografia = models.TextField(verbose_name="Ecografía renal / Prostática (hallazgos)", blank=True, null=True)
+    residuo_postmiccional = models.CharField(max_length=50, verbose_name="Residuo postmiccional (mL)", blank=True, null=True)
+    cistoscopia = models.TextField(verbose_name="Cistoscopia (hallazgos)", blank=True, null=True)
+
+    def __str__(self):
+        return f"Urología - {self.historia_clinica}"
+
+
+# --- HISTORIA CLÍNICA: NEUMOLOGÍA ---
+class HistoriaNeurologia_Neumologia(models.Model):
+    PATRON = [('NORMAL','Normal'),('OBSTR','Obstructivo'),('REST','Restrictivo'),('MIXTO','Mixto')]
+    TABACO = [('NO','No fumador'),('EX','Ex-fumador'),('SI','Fumador activo')]
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='neumologia')
+    saturacion_o2 = models.CharField(max_length=10, verbose_name="Saturación O2 (%)", blank=True, null=True)
+    fev1 = models.CharField(max_length=20, verbose_name="FEV1 (L / %)", blank=True, null=True)
+    fvc = models.CharField(max_length=20, verbose_name="FVC (L / %)", blank=True, null=True)
+    relacion_fev1_fvc = models.CharField(max_length=20, verbose_name="Relación FEV1/FVC", blank=True, null=True)
+    patron_espirometrico = models.CharField(max_length=10, choices=PATRON, default='NORMAL', verbose_name="Patrón espirométrico")
+    tabaquismo = models.CharField(max_length=5, choices=TABACO, default='NO', verbose_name="Tabaquismo")
+    indice_paquete_anio = models.CharField(max_length=20, verbose_name="Índice paquete/año", blank=True, null=True)
+    rx_tac_torax = models.TextField(verbose_name="Rx / TAC de tórax (hallazgos)", blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Historia Neumología"
+
+    def __str__(self):
+        return f"Neumología - {self.historia_clinica}"
+
+
+# --- HISTORIA CLÍNICA: NEFROLOGÍA ---
+class HistoriaNefrologia(models.Model):
+    ESTADIO_ERC = [('1','ERC 1 (TFG≥90)'),('2','ERC 2 (TFG 60-89)'),('3A','ERC 3a (TFG 45-59)'),
+                   ('3B','ERC 3b (TFG 30-44)'),('4','ERC 4 (TFG 15-29)'),('5','ERC 5 (TFG<15)'),('5D','ERC 5D - Diálisis')]
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='nefrologia')
+    creatinina_nef = models.CharField(max_length=20, verbose_name="Creatinina sérica (mg/dL)", blank=True, null=True)
+    tfg = models.CharField(max_length=20, verbose_name="TFG estimada (mL/min/1.73m²)", blank=True, null=True)
+    proteinuria = models.CharField(max_length=50, verbose_name="Proteinuria (mg/24h o ratio)", blank=True, null=True)
+    urea_bun = models.CharField(max_length=20, verbose_name="Urea / BUN", blank=True, null=True)
+    estadio_erc = models.CharField(max_length=5, choices=ESTADIO_ERC, default='1', verbose_name="Estadio ERC")
+    en_hemodialisis = models.BooleanField(default=False, verbose_name="En hemodiálisis")
+    acceso_vascular = models.CharField(max_length=100, verbose_name="Acceso vascular", blank=True, null=True)
+    control_pa = models.CharField(max_length=50, verbose_name="Control de PA", blank=True, null=True)
+
+    def __str__(self):
+        return f"Nefrología - {self.historia_clinica}"
+
+
+# --- HISTORIA CLÍNICA: MEDICINA DE EMERGENCIAS ---
+class HistoriaEmergencias(models.Model):
+    TRIAGE = [('1','Rojo - Nivel 1 (Crítico)'),('2','Naranja - Nivel 2 (Urgente)'),
+              ('3','Amarillo - Nivel 3 (Menos urgente)'),('4','Verde - Nivel 4 (No urgente)'),('5','Azul - Nivel 5 (Sin urgencia)')]
+    DESTINO = [('ALTA','Alta domiciliaria'),('HOSP','Hospitalización'),('UCI','UCI / Cuidados intensivos'),
+               ('CX','Quirófano'),('TRASL','Traslado'),('FALL','Fallecimiento')]
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='emergencias')
+    nivel_triage = models.CharField(max_length=3, choices=TRIAGE, default='3', verbose_name="Nivel de Triage (MSP)")
+    mecanismo_trauma = models.TextField(verbose_name="Mecanismo de lesión / Causa consulta emergencia", blank=True, null=True)
+    glasgow_emergencia = models.CharField(max_length=20, verbose_name="Glasgow (O+V+M)", blank=True, null=True)
+    via_aerea = models.CharField(max_length=100, verbose_name="A - Vía aérea", blank=True, null=True)
+    respiracion_emerg = models.CharField(max_length=100, verbose_name="B - Respiración / Ventilación", blank=True, null=True)
+    circulacion_emerg = models.CharField(max_length=100, verbose_name="C - Circulación / Hemorragia", blank=True, null=True)
+    procedimientos = models.TextField(verbose_name="Procedimientos realizados", blank=True, null=True)
+    medicacion_urgente = models.TextField(verbose_name="Medicación administrada en emergencia", blank=True, null=True)
+    destino_paciente = models.CharField(max_length=10, choices=DESTINO, default='ALTA', verbose_name="Destino del paciente")
+
+    def __str__(self):
+        return f"Emergencias - {self.historia_clinica}"
+
+
+class Receta(models.Model):
+    # Relación con la historia clínica (una historia puede tener una receta)
+    historia_clinica = models.OneToOneField('HistoriaClinica', on_delete=models.CASCADE, related_name='receta')
+    
+    # El contenido principal
+    prescripcion = models.TextField(help_text="Lista de medicamentos y dosis")
+    indicaciones_generales = models.TextField(blank=True, null=True, help_text="Reposo, dieta, etc.")
+    
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Receta - {self.historia_clinica.paciente.usuario.get_full_name()}"
+    
+class Triaje(models.Model):
+    paciente = models.ForeignKey('paciente.Paciente', on_delete=models.CASCADE)
+    cita = models.OneToOneField('citas.Cita', on_delete=models.CASCADE, related_name='triaje')
+    peso = models.DecimalField(max_digits=5, decimal_places=2, help_text="Peso en kg")
+    talla = models.DecimalField(max_digits=5, decimal_places=2, help_text="Talla en cm")
+    presion_arterial = models.CharField(max_length=20) # Ejemplo: 120/80
+    frecuencia_cardiaca = models.IntegerField(help_text="LPM")
+    temperatura = models.DecimalField(max_digits=4, decimal_places=1, help_text="°C")
+    saturacion_oxigeno = models.IntegerField(help_text="% SpO2")
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Triaje - {self.paciente} - {self.fecha_registro.date()}"

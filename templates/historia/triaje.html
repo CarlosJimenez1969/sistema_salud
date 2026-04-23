@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0" style="border-radius: 20px;">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h4 class="mb-0 fw-bold text-center">
+                        <i class="bi bi-thermometer-half me-2"></i> REGISTRO DE TRIAJE
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info border-0 shadow-sm d-flex align-items-center">
+                        <i class="bi bi-person-bounding-box fs-2 me-3"></i>
+                        <div>
+                            <h5 class="mb-0">{{ paciente.usuario.get_full_name|upper }}</h5>
+                            <small>Cita programada para las: <strong>{{ cita.hora|time:"H:i" }}</strong></small>
+                        </div>
+                    </div>
+
+                    <form method="POST" class="mt-4">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            {% for field in form %}
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-secondary">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="text-danger small">{{ field.errors }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow">
+                                <i class="bi bi-save me-2"></i> Guardar Signos Vitales
+                            </button>
+                            <a href="{% url 'dashboard_secretaria' %}" class="btn btn-light rounded-pill">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilizamos los inputs del formulario para que se vean modernos */
+    input, select, textarea {
+        border-radius: 10px !important;
+        border: 2px solid #eee !important;
+        padding: 10px !important;
+    }
+    input:focus {
+        border-color: #ffc107 !important;
+        box-shadow: none !important;
+    }
+</style>
+{% endblock %}

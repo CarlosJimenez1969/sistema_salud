@@ -1,0 +1,1439 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% if triaje_cargado %}
+    <div class="alert alert-info border-0 shadow-sm d-flex align-items-center">
+        <i class="bi bi-info-circle-fill fs-4 me-2"></i>
+        <div>
+            <strong>Signos vitales importados:</strong> Los datos de peso, talla y presión se cargaron automáticamente desde el triaje de recepción.
+        </div>
+    </div>
+{% endif %}
+<div class="container mb-5">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-dark text-white">
+                    Paciente
+                </div>
+                <div class="card-body text-center">
+                    <h1 class="display-4"><i class="bi bi-person-circle"></i></h1>
+                    <h5>{{ paciente.usuario.last_name }} {{ paciente.usuario.first_name }}</h5>
+                    <p class="text-muted">{{ paciente.usuario.cedula }}</p>
+                    <hr>
+                    <small><strong>Sangre:</strong> {{ paciente.tipo_sangre }}</small><br>
+                    <small><strong>Edad:</strong> {{ paciente.fecha_nacimiento|timesince }}</small>
+                    <div class="alert alert-warning mt-3 p-1">
+                        <small><strong>Alergias:</strong><br> {{ paciente.alergias|default:"Ninguna" }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <span class="h5 mb-0">
+                        <i class="bi bi-journal-medical"></i> 
+                        Consulta de {{ request.user.perfil_medico.especialidad.nombre }}
+                    </span>
+
+                    <small class="text-white-50">
+                        <i class="bi bi-calendar-event"></i> {% now "d \d\e F, Y" %}
+                    </small>
+                </div>
+                <div class="card-body">
+                    <form id="formHistoria" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <h3>¡Atención! Hay errores:</h3>
+                                {{ form.errors }}
+                            </div>
+                        {% endif %}
+
+                        <h5 class="text-primary border-bottom pb-2">1. Motivo y Antecedentes</h5>
+                        <div class="card border-secondary mb-3 shadow-sm">
+                            <div class="card-body bg-light">
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Motivo de Consulta:</label>
+                                    {{ form.motivo_consulta }}
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Enfermedad Actual:</label>
+                                    {{ form.enfermedad_actual }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <h5 class="text-primary border-bottom pb-2 mt-4">2. Antecedentes (MSP Form. 002)</h5>
+                        <div class="card border-warning mb-4 shadow-sm">
+                            <div class="card-header bg-warning text-dark py-2">
+                                <h6 class="mb-0"><i class="bi bi-clock-history"></i> Antecedentes del Paciente</h6>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="fw-bold text-dark">Antecedentes Personales Patológicos:</label>
+                                        {{ form.antecedentes_personales }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="fw-bold text-dark">Antecedentes Familiares:</label>
+                                        {{ form.antecedentes_familiares }}
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="fw-bold text-dark">Revisión de Órganos y Sistemas:</label>
+                                    {{ form.revision_sistemas }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4 shadow-sm border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="bi bi-activity"></i> Signos Vitales</h5>
+                            <button type="button" class="btn btn-sm btn-outline-info" id="btnCargarSignos">
+                                <i class="bi bi-arrow-repeat"></i> Importar últimos datos
+                            </button>
+                        </div>
+                        <div class="card-body bg-light">
+                            <div class="row">
+                                <div class="col-md-4 mb-2">
+                                    <label class="small fw-bold text-dark">Presión Arterial:</label>
+                                    {{ form.presion_arterial }}
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <label class="small fw-bold text-dark">Pulso (LPM):</label>
+                                    {{ form.pulso }}
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <label class="small fw-bold text-dark">Temperatura (°C):</label>
+                                    {{ form.temperatura }}
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-2">
+                                <div class="col-md-3 mb-2">
+                                    <label class="small fw-bold text-dark">Peso (kg):</label>
+                                    {{ form.peso }}
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="small fw-bold text-dark">Altura (m/cm):</label>
+                                    {{ form.altura }}
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="small fw-bold text-dark">IMC:</label>
+                                    <div id="resultado-imc" class="form-control bg-light text-center fw-bold" style="min-height:38px;">—</div>
+                                    <div class="alert alert-info py-1 px-2 mt-1 mb-0 small"><i class="bi bi-calculator-fill me-1"></i><strong>Automático:</strong> Peso ÷ Talla²</div>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="small fw-bold text-dark">PAM:</label>
+                                    <div id="resultado-pam" class="form-control bg-light text-center fw-bold" style="min-height:38px;">—</div>
+                                    <div class="alert alert-info py-1 px-2 mt-1 mb-0 small"><i class="bi bi-calculator-fill me-1"></i><strong>Automático:</strong> (PAS + 2×PAD) ÷ 3</div>
+                                </div>
+                            </div>
+
+                            </div>
+
+                        {% if es_oftalmologo %}
+                        <div class="card border-info mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="bi bi-eye-fill"></i> Evaluación Oftalmológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row text-center mb-2">
+                                    <div class="col-6"><h6 class="text-primary fw-bold">OJO DERECHO (OD)</h6></div>
+                                    <div class="col-6"><h6 class="text-primary fw-bold">OJO IZQUIERDO (OI)</h6></div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6 border-end">
+                                        <label class="fw-bold text-dark">Agudeza Visual</label>
+                                        <input type="text" name="agudeza_od" class="form-control" placeholder="Ej: 20/20">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Agudeza Visual</label>
+                                        <input type="text" name="agudeza_oi" class="form-control" placeholder="Ej: 20/20">
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6 border-end">
+                                        <label class="fw-bold text-dark">Presión Intraocular (PIO)</label>
+                                        <div class="input-group">
+                                            <input type="text" name="presion_od" class="form-control" placeholder="Ej: 14">
+                                            <span class="input-group-text">mmHg</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Presión Intraocular (PIO)</label>
+                                        <div class="input-group">
+                                            <input type="text" name="presion_oi" class="form-control" placeholder="Ej: 15">
+                                            <span class="input-group-text">mmHg</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group mt-3">
+                                    <label class="fw-bold text-dark"><i class="bi bi-search"></i> Fondo de Ojo / Observaciones:</label>
+                                    <textarea name="fondo_ojo" class="form-control" rows="3" placeholder="Descripción de retina, mácula, nervio óptico..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if es_pediatra %}
+                        <div class="card border-warning mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0"><i class="bi bi-emoji-smile-fill"></i> Historia Pediátrica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="small text-dark fw-bold">Tipo de Parto</label>
+                                        <select name="tipo_parto" class="form-select">
+                                            <option value="">-- Seleccionar --</option>
+                                            <option value="NORMAL">Normal</option>
+                                            <option value="CESAREA">Cesárea</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small text-dark fw-bold">Lactancia Actual</label>
+                                        <select name="lactancia" class="form-select">
+                                            <option value="">-- Seleccionar --</option>
+                                            <option value="MATERNA">Materna Exclusiva</option>
+                                            <option value="FORMULA">Fórmula</option>
+                                            <option value="MIXTA">Mixta</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small text-dark fw-bold">Test APGAR</label>
+                                        <input type="text" name="apgar" class="form-control" placeholder="Ej: 9/10">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="small text-dark fw-bold">Peso al Nacer</label>
+                                        <input type="text" name="peso_nacimiento" class="form-control" placeholder="Ej: 3200g">
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-center">
+                                        <div class="form-check form-switch mt-4">
+                                            <input class="form-check-input" type="checkbox" name="vacunas" id="vacunasCheck">
+                                            <label class="form-check-label fw-bold text-dark" for="vacunasCheck">¿Esquema de Vacunas Completo?</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="text-dark fw-bold">Notas de Desarrollo Psicomotriz:</label>
+                                    <textarea name="observaciones_crecimiento" class="form-control" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_ginecologo %}
+                        <div class="card border-danger mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0"><i class="bi bi-gender-female"></i> Historia Gineco-Obstétrica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-danger">FUM (Ultima Menstruación)</label>
+                                        <input type="date" name="fum" class="form-control">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="fw-bold text-dark">Regularidad / Ciclo</label>
+                                        <input type="text" name="ciclo_menstrual" class="form-control" placeholder="Ej: Regular 28 días">
+                                    </div>
+                                </div>
+                                
+                                <label class="small text-muted fw-bold">Antecedentes Obstétricos:</label>
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text bg-white">G (Gestas)</span>
+                                    <input type="number" name="gestas" class="form-control" value="0">
+                                    <span class="input-group-text bg-white">P (Partos)</span>
+                                    <input type="number" name="partos" class="form-control" value="0">
+                                    <span class="input-group-text bg-white">C (Cesáreas)</span>
+                                    <input type="number" name="cesareas" class="form-control" value="0">
+                                    <span class="input-group-text bg-white">A (Abortos)</span>
+                                    <input type="number" name="abortos" class="form-control" value="0">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Método Anticonceptivo Actual:</label>
+                                    <input type="text" name="anticonceptivos" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_cardiologo %}
+                        <div class="card border-danger mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0"><i class="bi bi-heart-pulse-fill"></i> Evaluación Cardiológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-danger">Riesgo Cardiovascular</label>
+                                        <select name="riesgo" class="form-select">
+                                            <option value="BAJO">Bajo</option>
+                                            <option value="MODERADO">Moderado</option>
+                                            <option value="ALTO">Alto</option>
+                                            <option value="MUY_ALTO">Muy Alto</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-danger">Clase Funcional (NYHA)</label>
+                                        <select name="clase_funcional" class="form-select">
+                                            <option value="I">I - Sin limitación</option>
+                                            <option value="II">II - Leve limitación</option>
+                                            <option value="III">III - Marcada limitación</option>
+                                            <option value="IV">IV - Incapacidad / Reposo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Antecedentes Familiares Cardíacos:</label>
+                                    <textarea name="antecedentes_familiares" class="form-control" rows="2"></textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label>Hallazgos EKG:</label>
+                                        <textarea name="electrocardiograma" class="form-control" rows="2"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label>Hallazgos Ecocardiograma:</label>
+                                        <textarea name="ecocardiograma" class="form-control" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_dermatologo %}
+                        <div class="card border-primary mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-person-bounding-box"></i> Evaluación Dermatológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label>Fototipo (Fitzpatrick)</label>
+                                        <input type="text" name="fototipo" class="form-control" placeholder="Ej: III">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label>Lesión Primaria</label>
+                                        <input type="text" name="lesion_primaria" class="form-control" placeholder="Ej: Mácula eritematosa...">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label>Localización</label>
+                                        <input type="text" name="localizacion" class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label>Distribución</label>
+                                        <input type="text" name="distribucion" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="biopsia" id="biopsiaCheck">
+                                    <label class="form-check-label fw-bold text-danger" for="biopsiaCheck">¿Se toma Biopsia?</label>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_odontologo %}
+                        <div class="card border-secondary mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0"><i class="bi bi-mouth"></i> Odontograma / Procedimiento</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-secondary">Higiene Oral</label>
+                                        <select name="higiene_oral" class="form-select">
+                                            <option value="BUENA">Buena</option>
+                                            <option value="REGULAR" selected>Regular</option>
+                                            <option value="MALA">Mala</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-secondary">Estado de Encías</label>
+                                        <select name="encias" class="form-select">
+                                            <option value="SANAS">Sanas</option>
+                                            <option value="INFLAMADAS">Inflamadas (Gingivitis)</option>
+                                            <option value="SANGRANTES">Sangrantes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Piezas Dentales Tratadas (Separar por comas):</label>
+                                    <input type="text" name="dientes_tratados" class="form-control" placeholder="Ej: 18, 24, 36 (Molares superiores)">
+                                </div>
+                                <div class="mb-3">
+                                    <label>Procedimiento Realizado:</label>
+                                    <textarea name="procedimiento" class="form-control" rows="3" placeholder="Ej: Profilaxis profunda, restauración con resina..."></textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-primary">
+                                            <i class="bi bi-clock-history"></i> Próxima Cita (Control - Fecha y Hora):
+                                        </label>
+                                        {{ form.proxima_cita_control }}
+                                        <small class="text-muted d-block">Indique el día y la hora sugerida para el retorno.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_psicologo %}
+                        <div class="card border-info mb-4 shadow-sm mt-4" style="border-color: #6f42c1 !important;">
+                            <div class="card-header text-white" style="background-color: #6f42c1;">
+                                <h5 class="mb-0"><i class="bi bi-brain"></i> Salud Mental / Psicología</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark" style="color: #6f42c1;">Apariencia y Comportamiento:</label>
+                                    <textarea name="apariencia_comportamiento" class="form-control" rows="2" placeholder="Higiene, vestimenta, contacto visual, inquietud motora..."></textarea>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label>Estado de Ánimo / Afecto</label>
+                                        <input type="text" name="estado_animo" class="form-control" placeholder="Ej: Ansioso, Depresivo, Eutímico">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label>Sueño y Apetito</label>
+                                        <input type="text" name="sueno_apetito" class="form-control" placeholder="Ej: Insomnio conciliación, hiporexia">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Funciones Cognitivas (Atención, Memoria):</label>
+                                    <input type="text" name="funciones_cognitivas" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="fw-bold text-dark">Plan Terapéutico / Próximas Sesiones:</label>
+                                    <textarea name="plan_sesiones" class="form-control" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_nutricionista %}
+                        <div class="card border-success mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-apple"></i> Evaluación Nutricional</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <p class="small text-muted mb-2">Nota: Ingrese Peso y Talla en la sección de Signos Vitales arriba.</p>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-success">IMC (Calculado)</label>
+                                        <input type="text" name="imc" class="form-control" placeholder="Ej: 24.5">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">% Grasa Corporal:</label>
+                                        <input type="text" name="grasa_corporal" class="form-control" placeholder="Ej: 18%">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">% Masa Muscular:</label>
+                                        <input type="text" name="masa_muscular" class="form-control" placeholder="Ej: 42%">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Circunferencia Cintura (cm):</label>
+                                        <input type="number" step="0.1" name="circunferencia_cintura" id="campo-cintura" class="form-control" placeholder="Ej: 88">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Circunferencia Cadera (cm):</label>
+                                        <input type="number" step="0.1" name="circunferencia_cadera" id="campo-cadera" class="form-control" placeholder="Ej: 96">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="fw-bold text-dark">ICC:</label>
+                                        <div id="resultado-icc" class="form-control bg-white text-center fw-bold border-warning" style="min-height:38px;">—</div>
+                                        <div class="alert alert-info py-1 px-2 mt-1 mb-0 small"><i class="bi bi-calculator-fill me-1"></i><strong>Automático:</strong> Cintura ÷ Cadera</div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="fw-bold text-dark">Plan Alimenticio / Tipo de Dieta:</label>
+                                    <textarea name="tipo_dieta" class="form-control" rows="3" placeholder="Ej: Dieta Hiperproteica 2500kcal, baja en sodio..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_otorrino %}
+                        <div class="card border-dark mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0"><i class="bi bi-ear"></i> Otorrinolaringología (ORL)</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <h6 class="text-primary border-bottom pb-1">1. Otoscopia (Oídos)</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Oído Derecho (OD)</label>
+                                        <input type="text" name="otoscopia_od" class="form-control" value="Conducto permeable, Membrana íntegra">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Oído Izquierdo (OI)</label>
+                                        <input type="text" name="otoscopia_oi" class="form-control" value="Conducto permeable, Membrana íntegra">
+                                    </div>
+                                </div>
+
+                                <h6 class="text-primary border-bottom pb-1 mt-3">2. Rinoscopia (Nariz)</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Tabique Nasal:</label>
+                                        <select name="tabique" class="form-select">
+                                            <option value="CENTRADO">Centrado</option>
+                                            <option value="DESVIADO_D">Desviado a Derecha</option>
+                                            <option value="DESVIADO_I">Desviado a Izquierda</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="fw-bold text-dark">Mucosa / Cornetes / Secreciones:</label>
+                                        <input type="text" name="rinoscopia" class="form-control" placeholder="Ej: Mucosa pálida, hipertrofia de cornetes...">
+                                    </div>
+                                </div>
+
+                                <h6 class="text-primary border-bottom pb-1 mt-3">3. Orofaringe y Cuello</h6>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Amígdalas / Faringe:</label>
+                                    <textarea name="orofaringe" class="form-control" rows="2" placeholder="Ej: Amígdalas grado II, crípticas..."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Audiometría (Opcional):</label>
+                                    <input type="text" name="audiometria" class="form-control" placeholder="Ej: Hipoacusia conductiva leve OD">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_traumatologo %}
+                        <div class="card border-dark mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0"><i class="bi bi-bandaid-fill"></i> Traumatología y Ortopedia</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Zona Afectada:</label>
+                                        <input type="text" name="zona_afectada" class="form-control" placeholder="Ej: Rodilla Derecha, Hombro Izq...">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Mecanismo de Lesión:</label>
+                                        <input type="text" name="mecanismo_lesion" class="form-control" placeholder="Ej: Caída de propia altura, Trauma directo...">
+                                    </div>
+                                </div>
+
+                                <h6 class="text-primary border-bottom pb-1 mt-3">Examen Físico Dirigido</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Movilidad (ROM):</label>
+                                        <input type="text" name="movilidad" class="form-control" value="Arcos Completos">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Fuerza (Daniels):</label>
+                                        <select name="fuerza_muscular" class="form-select">
+                                            <option value="5/5 (Normal)">5/5 (Normal)</option>
+                                            <option value="4/5 (Mov contra resistencia)">4/5 (Buena)</option>
+                                            <option value="3/5 (Mov contra gravedad)">3/5 (Regular)</option>
+                                            <option value="2/5 (Sin gravedad)">2/5 (Mala)</option>
+                                            <option value="1/5 (Contracción visible)">1/5 (Vestigios)</option>
+                                            <option value="0/5 (Parálisis)">0/5 (Nula)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Sensibilidad:</label>
+                                        <input type="text" name="sensibilidad" class="form-control" value="Conservada">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Pruebas Especiales (Maniobras):</label>
+                                    <textarea name="pruebas_especiales" class="form-control" rows="2" placeholder="Ej: Cajón anterior (+), McMurray (-)..."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Plan de Rehabilitación / Inmovilización:</label>
+                                    <textarea name="plan_rehabilitacion" class="form-control" rows="2" placeholder="Ej: Férula por 3 semanas, Fisioterapia 10 sesiones..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if es_gastro %}
+                        <div class="card border-success mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-lungs-fill"></i> Evaluación Gastroenterológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="mb-3">
+                                    <label class="fw-bold text-success">Dolor Abdominal (Localización/Tipo):</label>
+                                    <textarea name="dolor_abdominal" class="form-control" rows="2" placeholder="Ej: Epigastrio, tipo ardor, irradia a espalda..."></textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label>Hábito Intestinal:</label>
+                                        <input type="text" name="habito_intestinal" class="form-control" placeholder="Ej: Estreñimiento, 3 veces/semana">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label>Endoscopias/Colonoscopias Previas:</label>
+                                        <input type="text" name="endoscopia_previa" class="form-control" placeholder="Fecha y hallazgos relevantes">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_psiquiatra %}
+                        <div class="card border-primary mb-4 shadow-sm mt-4" style="border-color: #5a2d81 !important;">
+                            <div class="card-header text-white" style="background-color: #5a2d81;">
+                                <h5 class="mb-0"><i class="bi bi-headset-vr"></i> Examen Mental y Psiquiatría</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark" style="color: #5a2d81;">Descripción del Examen Mental:</label>
+                                    <textarea name="examen_mental" class="form-control" rows="3" placeholder="Orientación, lenguaje, pensamiento, afecto..."></textarea>
+                                </div>
+                                <div class="row align-items-center mb-3">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch p-3 bg-white border rounded">
+                                            <input class="form-check-input" type="checkbox" name="ideacion_suicida" id="suicidioCheck">
+                                            <label class="form-check-label fw-bold text-danger" for="suicidioCheck">¿Presencia de Ideación Suicida?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label>Medicación Psicotrópica Actual:</label>
+                                        <input type="text" name="medicacion" class="form-control" placeholder="Fármaco y dosis">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_reumato %}
+                        <div class="card border-info mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="bi bi-person-wheelchair"></i> Evaluación Reumatológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Rigidez Matutina (Duración):</label>
+                                        <input type="text" name="rigidez" class="form-control" placeholder="Ej: 45 minutos">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Factor Reumatoide / Anti-CCP:</label>
+                                        <input type="text" name="factor_reumatoide" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Articulaciones Afectadas:</label>
+                                    <textarea name="articulaciones" class="form-control" rows="2" placeholder="Ej: Metacarpofalángicas 2da y 3ra bilaterial..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_geriatra %}
+                        <div class="card border-dark mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0"><i class="bi bi-person-walking"></i> Valoración Geriátrica Integral</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Escala de Katz (AVD):</label>
+                                        <input type="text" name="escala_kartz" class="form-control" placeholder="Ej: A (Independiente)">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="fw-bold text-dark">Deterioro Cognitivo (Minimental/Pfeiffer):</label>
+                                        <input type="text" name="deterioro_cognitivo" class="form-control" placeholder="Ej: Minimental 24/30 - Deterioro leve | Pfeiffer: 3 errores - Normal">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-danger">Polifarmacia (Lista de medicamentos):</label>
+                                    <textarea name="polifarmacia" class="form-control" rows="2" placeholder="Ej: Metformina 850mg, Enalapril 10mg, Atorvastatina 20mg..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_neurologo %}
+                        <div class="card border-primary mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-activity"></i> Examen Neurológico</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Escala de Glasgow:</label>
+                                        <input type="text" name="glasgow" class="form-control" placeholder="Ej: O4 V5 M6 = 15">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Escala NIHSS (ACV):</label>
+                                        <input type="text" name="nihss" class="form-control" placeholder="Ej: 4 - Déficit leve">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Fuerza Motora MMSS/MMII:</label>
+                                        <input type="text" name="fuerza_motora" class="form-control" placeholder="Ej: 5/5 bilateral">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Reflejos Osteotendinosos:</label>
+                                        <input type="text" name="reflejos" class="form-control" placeholder="Ej: Normales / Hiperreflexia D">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Coordinación y Equilibrio:</label>
+                                        <input type="text" name="coordinacion" class="form-control" placeholder="Ej: Marcha normal, Romberg (-)">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Sensibilidad:</label>
+                                        <input type="text" name="sensibilidad_neuro" class="form-control" placeholder="Ej: Conservada / Hipoestesia distal">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Pares Craneales:</label>
+                                        <input type="text" name="pares_craneales" class="form-control" placeholder="Ej: II-XII íntegros">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">TAC / RMN / EEG (hallazgos):</label>
+                                    <textarea name="neuroimagen" class="form-control" rows="2" placeholder="Ej: RMN: área isquémica en territorio de ACM derecha..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_endocrinologo %}
+                        <div class="card border-warning mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0"><i class="bi bi-droplet-half"></i> Evaluación Endocrinológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Tipo de Diabetes:</label>
+                                        <select name="tipo_diabetes" class="form-select">
+                                            <option value="OTRO">No aplica / Otro</option>
+                                            <option value="DM1">DM Tipo 1</option>
+                                            <option value="DM2">DM Tipo 2</option>
+                                            <option value="GEST">Gestacional</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Glucosa en ayunas (mg/dL):</label>
+                                        <input type="text" name="glucosa_ayunas" class="form-control" placeholder="Ej: 126 mg/dL">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">HbA1c (%):</label>
+                                        <input type="text" name="hba1c" id="campo-hba1c" class="form-control" placeholder="Ej: 7.2%">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark" style="visibility:hidden">.</label>
+                                        <div id="resultado-hba1c" class="alert alert-info py-1 px-2 mb-0 w-100 small" style="display:none!important"></div>
+                                        <div class="alert alert-info py-1 px-2 mt-1 mb-0 small"><i class="bi bi-calculator-fill me-1"></i><strong>Automático:</strong> GME = HbA1c × 28.7 − 46.7</div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">TSH (mUI/L):</label>
+                                        <input type="text" name="tsh" class="form-control" placeholder="Ej: 2.5 mUI/L">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">T3 / T4 libre:</label>
+                                        <input type="text" name="t3_t4" class="form-control" placeholder="Ej: T4L: 1.2 ng/dL">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Cortisol sérico:</label>
+                                        <input type="text" name="cortisol" class="form-control" placeholder="Ej: 18 µg/dL (matutino)">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Insulina / Dosis actual:</label>
+                                        <input type="text" name="insulina_basal" class="form-control" placeholder="Ej: Glargina 20 UI nocturna">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Objetivos terapéuticos / Plan:</label>
+                                        <textarea name="objetivos_terapeuticos" class="form-control" rows="2" placeholder="Ej: Meta HbA1c < 7%, ajuste de dosis..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_internista %}
+                        <div class="card border-secondary mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0"><i class="bi bi-clipboard2-pulse"></i> Examen Físico por Sistemas</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Mucosas:</label>
+                                        <input type="text" name="mucosas" class="form-control" placeholder="Ej: Húmedas, rosadas, normales">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Adenopatías / Ganglios:</label>
+                                        <input type="text" name="ganglios" class="form-control" placeholder="Ej: No se palpan adenopatías">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Tiroides al examen:</label>
+                                        <input type="text" name="tiroides_examen" class="form-control" placeholder="Ej: Normal, sin bocio">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Examen Pulmonar:</label>
+                                        <textarea name="examen_pulmonar" class="form-control" rows="2" placeholder="Ej: MV conservado bilateral, sin crepitantes"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Examen Cardíaco:</label>
+                                        <textarea name="examen_cardiaco" class="form-control" rows="2" placeholder="Ej: RCR sin soplos, FC 78 lpm"></textarea>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Examen Abdominal:</label>
+                                        <textarea name="examen_abdominal" class="form-control" rows="2" placeholder="Ej: Blando, depresible, RHA (+), sin visceromegalias"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Extremidades / Edemas:</label>
+                                        <textarea name="examen_extremidades" class="form-control" rows="2" placeholder="Ej: Sin edemas, pulsos periféricos normales"></textarea>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Laboratorio / Imagen relevante:</label>
+                                    <textarea name="examenes_laboratorio" class="form-control" rows="2" placeholder="Ej: BHC: Hb 11.2, Leucos 8500; BUN 18, Creatinina 0.9..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_cirujano %}
+                        <div class="card border-danger mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0"><i class="bi bi-scissors"></i> Cirugía General</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Tipo / Nombre de la Cirugía:</label>
+                                        <input type="text" name="tipo_cirugia" class="form-control" placeholder="Ej: Colecistectomía laparoscópica">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Clasificación ASA:</label>
+                                        <select name="clasificacion_asa" class="form-select">
+                                            <option value="I">ASA I - Sano</option>
+                                            <option value="II">ASA II - Enfermedad leve</option>
+                                            <option value="III">ASA III - Enfermedad grave</option>
+                                            <option value="IV">ASA IV - Riesgo vital</option>
+                                            <option value="V">ASA V - Moribundo</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Fecha de Cirugía:</label>
+                                        <input type="date" name="fecha_cirugia" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Técnica Quirúrgica:</label>
+                                        <textarea name="tecnica_quirurgica" class="form-control" rows="2" placeholder="Ej: Laparoscopía 4 trócares, extracción en bolsa..."></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Hallazgos Intraoperatorios:</label>
+                                        <textarea name="hallazgos_intraop" class="form-control" rows="2" placeholder="Ej: Vesícula biliar distendida con cálculos múltiples..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Complicaciones:</label>
+                                        <textarea name="complicaciones_qx" class="form-control" rows="2" placeholder="Ej: Sin complicaciones intraoperatorias"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Plan Postoperatorio / Indicaciones:</label>
+                                        <textarea name="plan_postoperatorio" class="form-control" rows="2" placeholder="Ej: Dieta líquida 24h, analgesia, control en 7 días..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_urologo %}
+                        <div class="card border-info mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="bi bi-droplet"></i> Evaluación Urológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Síntomas miccionales / Score IPSS:</label>
+                                        <input type="text" name="sintomas_miccionales" class="form-control" placeholder="Ej: IPSS 12 - Síntomas moderados">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">PSA total (ng/mL):</label>
+                                        <input type="text" name="psa" class="form-control" placeholder="Ej: 1.8 ng/mL">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Creatinina sérica (mg/dL):</label>
+                                        <input type="text" name="creatinina_uro" class="form-control" placeholder="Ej: 0.9 mg/dL">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Urocultivo / Uroanálisis:</label>
+                                        <input type="text" name="urocultivo" class="form-control" placeholder="Ej: Urocultivo (+) E.Coli sensible Cipro">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Residuo postmiccional (mL):</label>
+                                        <input type="text" name="residuo_postmiccional" class="form-control" placeholder="Ej: 35 mL (normal < 50mL)">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Ecografía renal / Prostática:</label>
+                                        <textarea name="ecografia_uro" class="form-control" rows="2" placeholder="Ej: Próstata 35cc, riñones sin litiasis..."></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Cistoscopia (hallazgos):</label>
+                                        <textarea name="cistoscopia" class="form-control" rows="2" placeholder="Ej: No realizada / Mucosa vesical normal..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_neumolog %}
+                        <div class="card border-info mb-4 shadow-sm mt-4" style="border-color:#0dcaf0!important">
+                            <div class="card-header text-white" style="background-color:#0dcaf0">
+                                <h5 class="mb-0 text-dark"><i class="bi bi-lungs"></i> Evaluación Neumológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Saturación O2 (%):</label>
+                                        <input type="text" name="saturacion_o2" class="form-control" placeholder="Ej: 97%">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">FEV1 (L):</label>
+                                        <input type="number" step="0.01" name="fev1" id="campo-fev1" class="form-control" placeholder="Ej: 2.1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">FVC (L):</label>
+                                        <input type="number" step="0.01" name="fvc" id="campo-fvc" class="form-control" placeholder="Ej: 3.2">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Relación FEV1/FVC:</label>
+                                        <div id="resultado-fev1fvc" class="form-control bg-white text-center fw-bold border-primary" style="min-height:38px;">—</div>
+                                        <div class="alert alert-info py-1 px-2 mt-1 mb-0 small"><i class="bi bi-calculator-fill me-1"></i><strong>Automático:</strong> FEV1 ÷ FVC (normal ≥ 0.70)</div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Patrón Espirométrico:</label>
+                                        <select name="patron_espirometrico" class="form-select">
+                                            <option value="NORMAL">Normal</option>
+                                            <option value="OBSTR">Obstructivo</option>
+                                            <option value="REST">Restrictivo</option>
+                                            <option value="MIXTO">Mixto</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Tabaquismo:</label>
+                                        <select name="tabaquismo" class="form-select">
+                                            <option value="NO">No fumador</option>
+                                            <option value="EX">Ex-fumador</option>
+                                            <option value="SI">Fumador activo</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Índice paquete/año:</label>
+                                        <input type="text" name="indice_paquete" class="form-control" placeholder="Ej: 20 (cigarr/día × años ÷ 20)">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Rx / TAC de tórax (hallazgos):</label>
+                                    <textarea name="rx_tac_torax" class="form-control" rows="2" placeholder="Ej: Rx: Hiperinsuflación, aplanamiento diafragmático..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_nefrologo %}
+                        <div class="card mb-4 shadow-sm mt-4" style="border-color:#6f42c1!important">
+                            <div class="card-header text-white" style="background-color:#6f42c1">
+                                <h5 class="mb-0"><i class="bi bi-filter-circle"></i> Evaluación Nefrológica</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Creatinina sérica (mg/dL):</label>
+                                        <input type="number" step="0.01" name="creatinina_nef" id="campo-creatinina" class="form-control" placeholder="Ej: 1.8">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">TFG estimada (mL/min/1.73m²):</label>
+                                        <div id="resultado-tfg" class="form-control bg-white text-center fw-bold border-primary" style="min-height:38px;">—</div>
+                                        <input type="hidden" name="tfg" id="campo-tfg-hidden">
+                                        <div class="alert alert-info py-1 px-2 mt-1 mb-0 small"><i class="bi bi-calculator-fill me-1"></i><strong>Automático:</strong> Fórmula CKD-EPI 2021 (creatinina + edad + sexo)</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Proteinuria:</label>
+                                        <input type="text" name="proteinuria" class="form-control" placeholder="Ej: 450 mg/24h">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Urea / BUN:</label>
+                                        <input type="text" name="urea_bun" class="form-control" placeholder="Ej: BUN 28 mg/dL">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Estadio ERC (KDIGO):</label>
+                                        <select name="estadio_erc" class="form-select">
+                                            <option value="1">ERC 1 (TFG ≥ 90)</option>
+                                            <option value="2">ERC 2 (TFG 60-89)</option>
+                                            <option value="3A">ERC 3a (TFG 45-59)</option>
+                                            <option value="3B">ERC 3b (TFG 30-44)</option>
+                                            <option value="4">ERC 4 (TFG 15-29)</option>
+                                            <option value="5">ERC 5 (TFG &lt; 15)</option>
+                                            <option value="5D">ERC 5D - Diálisis</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Control de PA:</label>
+                                        <input type="text" name="control_pa_nef" class="form-control" placeholder="Ej: PA 138/85 mmHg - Controlada">
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end pb-2">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="hemodialisis" id="hemodialisis" class="form-check-input">
+                                            <label for="hemodialisis" class="form-check-label fw-bold text-dark">En Hemodiálisis</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Acceso vascular:</label>
+                                    <input type="text" name="acceso_vascular" class="form-control" placeholder="Ej: Fístula AV braquiocefálica funcional">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_emergencias %}
+                        <div class="card border-danger mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Atención de Emergencias (MSP)</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Nivel de Triage MSP:</label>
+                                        <select name="nivel_triage" class="form-select">
+                                            <option value="1">&#x1F534; Rojo - Nivel 1 (Crítico)</option>
+                                            <option value="2">&#x1F7E0; Naranja - Nivel 2 (Urgente)</option>
+                                            <option value="3" selected>&#x1F7E1; Amarillo - Nivel 3 (Menos urgente)</option>
+                                            <option value="4">&#x1F7E2; Verde - Nivel 4 (No urgente)</option>
+                                            <option value="5">&#x26AA; Azul - Nivel 5 (Sin urgencia)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Glasgow (O+V+M):</label>
+                                        <input type="text" name="glasgow_emergencia" class="form-control" placeholder="Ej: O4 V5 M6 = 15">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Destino del Paciente:</label>
+                                        <select name="destino_paciente" class="form-select">
+                                            <option value="ALTA">Alta domiciliaria</option>
+                                            <option value="HOSP">Hospitalización</option>
+                                            <option value="UCI">UCI / Cuidados intensivos</option>
+                                            <option value="CX">Quirófano</option>
+                                            <option value="TRASL">Traslado</option>
+                                            <option value="FALL">Fallecimiento</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Mecanismo de Lesión / Causa:</label>
+                                    <textarea name="mecanismo_trauma" class="form-control" rows="2" placeholder="Ej: Accidente de tránsito, impacto frontal, conductor sin cinturón..."></textarea>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">A - Vía aérea:</label>
+                                        <input type="text" name="via_aerea" class="form-control" placeholder="Ej: Permeable, sin obstrucción">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">B - Respiración / Ventilación:</label>
+                                        <input type="text" name="respiracion_emerg" class="form-control" placeholder="Ej: FR 18, Sat O2 98%, simétrica">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">C - Circulación / Hemorragia:</label>
+                                        <input type="text" name="circulacion_emerg" class="form-control" placeholder="Ej: PA 120/80, FC 88, sin sangrado activo">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Procedimientos Realizados:</label>
+                                        <textarea name="procedimientos_emerg" class="form-control" rows="2" placeholder="Ej: Acceso IV #18, suero fisiológico 500cc, inmovilización cervical..."></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Medicación Administrada en Emergencia:</label>
+                                        <textarea name="medicacion_urgente" class="form-control" rows="2" placeholder="Ej: Ketorolaco 30mg IV, Ondansetrón 4mg IV..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <h5 class="text-primary border-bottom pb-2 mt-4">3. Examen Físico General</h5>
+                        <div class="card border-secondary mb-3 shadow-sm">
+                            <div class="card-body bg-light">
+                                <label class="fw-bold text-dark">Hallazgos del Examen Físico:</label>
+                                {{ form.examen_fisico }}
+                            </div>
+                        </div>
+
+                        <div id="contenedor-archivos-fijo" class="d-block w-100">
+                            <div class="card border-secondary mt-4 shadow-sm">
+                                <div class="card-header bg-secondary text-white py-1">
+                                    <small><i class="bi bi-images"></i> EVIDENCIA Y ARCHIVOS ADJUNTOS</small>
+                                </div>
+                                <div class="card-body bg-light">
+                                    <p class="small mb-2 text-dark">
+                                        Seleccione radiografías, carnet de vacunas o resultados. 
+                                        <strong>Puede seleccionar varios archivos a la vez.</strong>
+                                    </p>
+                                    <input type="file" name="imagenes_campo" id="id_imagenes_campo" multiple class="form-control border-secondary">
+                                </div>
+                            </div>
+                        </div>
+
+                        <h5 class="text-primary border-bottom pb-2 mt-4">4. Diagnóstico y Tratamiento</h5>
+                        <div class="card border-primary mb-3 shadow-sm">
+                            <div class="card-body bg-light">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Tipo de Diagnóstico:</label>
+                                        {{ form.tipo_diagnostico }}
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="fw-bold text-dark">Diagnóstico (CIE-10):</label>
+                                        {{ form.diagnostico }}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Tratamiento / Receta:</label>
+                                    {{ form.tratamiento }}
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Plan Educacional al Paciente:</label>
+                                    {{ form.plan_educacional }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card border-primary mb-4 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Plan de Seguimiento y Receta</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="fw-bold text-primary"><i class="bi bi-clock-history"></i> Próxima Cita (Control):</label>
+                                        {{ form.proxima_cita_control }}
+                                        <small class="text-muted">Deje en blanco si no requiere retorno.</small>
+                                    </div>
+
+                                    <div class="col-md-8 mb-3">
+                                        <label class="fw-bold text-danger"><i class="bi bi-exclamation-triangle"></i> Signos de Alarma:</label>
+                                        {{ form.signos_alarma }}
+                                        <small class="text-muted">Instrucciones críticas para el paciente en caso de emergencia.</small>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-info d-flex align-items-center mb-0" role="alert">
+                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                    <div>
+                                        Al guardar, se generará automáticamente el PDF y se enviará al correo: 
+                                        <strong>{{ paciente.usuario.email|default:"(Sin correo registrado)" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-3 mt-5 border-top pt-4">
+                            <button type="submit" id="btnGuardar" class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm d-flex align-items-center">
+                                <span id="btnText">
+                                    <i class="bi bi-check2-circle fs-4 me-2"></i> Finalizar y Guardar Consulta
+                                </span>
+                                <span id="btnLoading" class="d-none">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    Enviando receta y guardando...
+                                </span>
+                            </button>
+
+                            <a href="{% url 'ver_agenda' %}" class="btn btn-light btn-lg rounded-pill px-4 border text-secondary d-flex align-items-center">
+                                <i class="bi bi-arrow-left-short fs-4 me-1"></i> Cancelar y Volver
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+
+<style>
+    /* Estilos para móviles */
+    @media (max-width: 576px) {
+        .btn-lg {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+    /* Estilo para que el campo de fecha se vea mejor */
+    .flatpickr-input {
+        background-color: #f8f9fa !important;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- LÓGICA 1: SELECTOR DE FECHA Y HORA (FLATPICKR) ---
+    flatpickr("input[name='proxima_cita_control']", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        time_24hr: true,
+        minuteIncrement: 15,
+        locale: "es",
+        minDate: "today",
+        altInput: true,
+        altFormat: "j F, Y - H:i"
+    });
+
+    // --- LÓGICA 2: CARGAR SIGNOS VITALES ---
+    const btnCargar = document.getElementById('btnCargarSignos');
+    if (btnCargar) {
+        btnCargar.addEventListener('click', function() {
+            const pacienteId = "{{ paciente.id }}";
+            fetch(`/historia/obtener_signos/${pacienteId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.error) {
+                        const campos = ['temperatura', 'presion_arterial', 'pulso', 'peso', 'altura'];
+                        campos.forEach(campo => {
+                            const input = document.querySelector(`[name="${campo}"]`);
+                            if (input) input.value = data[campo] || '';
+                        });
+                        this.classList.replace('btn-outline-info', 'btn-success');
+                        setTimeout(() => this.classList.replace('btn-success', 'btn-outline-info'), 2000);
+                    }
+                });
+        });
+    }
+
+    // --- LÓGICA 3: BLOQUEADOR DE DESAPARICIÓN (EL RESCATE) ---
+    const contenedorImg = document.getElementById('contenedor-archivos-fijo');
+    
+    // Función que fuerza la visibilidad
+    const forzarVisibilidad = () => {
+        if (contenedorImg && contenedorImg.style.display === 'none') {
+            console.warn("¡Detectado intento de ocultar las imágenes! Forzando visibilidad...");
+            contenedorImg.style.setProperty('display', 'block', 'important');
+        }
+    };
+
+    // Vigilar cada 500ms durante los primeros 5 segundos
+    let intentos = 0;
+    const interval = setInterval(() => {
+        forzarVisibilidad();
+        intentos++;
+        if (intentos > 10) clearInterval(interval);
+    }, 500);
+
+    // --- LÓGICA 4: SPINNER AL GUARDAR ---
+    const form = document.getElementById('form_historia') || document.getElementById('formHistoria');
+    const btnGuardar = document.getElementById('btnGuardar');
+    
+    if (form && btnGuardar) {
+        form.addEventListener('submit', function() {
+            if (form.checkValidity()) {
+                document.getElementById('btnText').classList.add('d-none');
+                document.getElementById('btnLoading').classList.remove('d-none');
+                btnGuardar.disabled = true;
+            }
+        });
+    }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// ═══════════════════════════════════════════════════════
+//   CÁLCULOS AUTOMÁTICOS MÉDICOS
+// ═══════════════════════════════════════════════════════
+
+// ── Utilidad: mostrar badge de resultado ───────────────
+function setBadge(elId, texto, color) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.textContent = texto;
+    el.className = 'form-control text-center fw-bold border-2';
+    const colores = {
+        'success': 'bg-success-subtle text-success border-success',
+        'warning': 'bg-warning-subtle text-warning border-warning',
+        'danger':  'bg-danger-subtle text-danger border-danger',
+        'info':    'bg-info-subtle text-info border-info',
+        'secondary':'bg-secondary-subtle text-secondary border-secondary',
+    };
+    el.classList.add(...(colores[color] || colores['info']).split(' '));
+}
+
+// ── 1. IMC + PAM (signos vitales) ──────────────────────
+function calcularIMC() {
+    const peso   = parseFloat(document.getElementById('id_peso')?.value);
+    let   altura = parseFloat(document.getElementById('id_altura')?.value);
+    if (!peso || !altura) { setBadge('resultado-imc','—','secondary'); return; }
+    if (altura > 3) altura = altura / 100; // cm → m
+    const imc = peso / (altura * altura);
+    let cat, color;
+    if      (imc < 18.5) { cat = 'Bajo peso';   color = 'warning'; }
+    else if (imc < 25)   { cat = 'Normal';       color = 'success'; }
+    else if (imc < 30)   { cat = 'Sobrepeso';    color = 'warning'; }
+    else if (imc < 35)   { cat = 'Obesidad I';   color = 'danger';  }
+    else if (imc < 40)   { cat = 'Obesidad II';  color = 'danger';  }
+    else                 { cat = 'Obesidad III'; color = 'danger';  }
+    setBadge('resultado-imc', imc.toFixed(1) + ' — ' + cat, color);
+}
+
+function calcularPAM() {
+    const pa = document.getElementById('id_presion_arterial')?.value || '';
+    const partes = pa.split('/');
+    if (partes.length !== 2) { setBadge('resultado-pam','—','secondary'); return; }
+    const pas = parseFloat(partes[0]);
+    const pad = parseFloat(partes[1]);
+    if (isNaN(pas) || isNaN(pad)) { setBadge('resultado-pam','—','secondary'); return; }
+    const pam = ((pas + 2 * pad) / 3).toFixed(0);
+    const color = pam < 70 ? 'danger' : pam < 100 ? 'success' : 'warning';
+    setBadge('resultado-pam', pam + ' mmHg', color);
+}
+
+document.getElementById('id_peso')?.addEventListener('input', calcularIMC);
+document.getElementById('id_altura')?.addEventListener('input', calcularIMC);
+document.getElementById('id_presion_arterial')?.addEventListener('input', calcularPAM);
+calcularIMC(); calcularPAM();
+
+// ── 2. HbA1c → Glucosa media estimada ──────────────────
+function calcularHbA1c() {
+    const el = document.getElementById('campo-hba1c');
+    const res = document.getElementById('resultado-hba1c');
+    if (!el || !res) return;
+    const val = parseFloat(el.value);
+    if (isNaN(val)) { res.style.display = 'none'; return; }
+    const gme = (val * 28.7 - 46.7).toFixed(0);
+    let texto, color;
+    if      (val < 5.7) { texto = 'Normal';          color = 'success'; }
+    else if (val < 6.5) { texto = 'Pre-diabetes';    color = 'warning'; }
+    else                { texto = 'Diabetes';         color = 'danger';  }
+    res.style.display = 'block';
+    res.className = 'alert py-1 px-2 mb-0 w-100 small fw-bold alert-' + (color === 'success' ? 'success' : color === 'warning' ? 'warning' : 'danger');
+    res.innerHTML = `<i class="bi bi-calculator me-1"></i>GME: <strong>${gme} mg/dL</strong> · ${texto}`;
+}
+document.getElementById('campo-hba1c')?.addEventListener('input', calcularHbA1c);
+
+// ── 3. FEV1 / FVC → Relación + Patrón ─────────────────
+function calcularFEV1FVC() {
+    const fev1 = parseFloat(document.getElementById('campo-fev1')?.value);
+    const fvc  = parseFloat(document.getElementById('campo-fvc')?.value);
+    if (!fev1 || !fvc || fvc === 0) { setBadge('resultado-fev1fvc','—','secondary'); return; }
+    const rel = (fev1 / fvc).toFixed(2);
+    let patron, color;
+    if      (rel >= 0.7)  { patron = 'Normal (≥0.70)';       color = 'success'; }
+    else if (rel >= 0.6)  { patron = 'Obstrucción leve';     color = 'warning'; }
+    else if (rel >= 0.5)  { patron = 'Obstrucción moderada'; color = 'warning'; }
+    else                  { patron = 'Obstrucción severa';   color = 'danger';  }
+    setBadge('resultado-fev1fvc', rel + ' · ' + patron, color);
+    // Auto-seleccionar patrón espirométrico
+    const sel = document.querySelector('select[name="patron_espirometrico"]');
+    if (sel) sel.value = rel >= 0.7 ? 'NORMAL' : 'OBSTR';
+}
+document.getElementById('campo-fev1')?.addEventListener('input', calcularFEV1FVC);
+document.getElementById('campo-fvc')?.addEventListener('input', calcularFEV1FVC);
+
+// ── 4. TFG con CKD-EPI + Estadio ERC automático ────────
+// Fórmula CKD-EPI 2021 (sin raza). Necesita edad y sexo del paciente.
+const EDAD_PACIENTE = parseInt('{{ paciente.edad|default:"50" }}') || 50;
+const SEXO_PACIENTE = '{{ paciente.sexo|default:"M" }}';
+
+function calcularTFG() {
+    const cr = parseFloat(document.getElementById('campo-creatinina')?.value);
+    if (!cr || cr <= 0) { setBadge('resultado-tfg','—','secondary'); return; }
+
+    // CKD-EPI 2021 simplificada
+    let kappa, alpha;
+    const esMujer = SEXO_PACIENTE === 'F';
+    kappa = esMujer ? 0.7 : 0.9;
+    alpha = esMujer ? -0.241 : -0.302;
+    const ratio = cr / kappa;
+    let tfg = 142 * Math.pow(Math.min(ratio, 1), alpha)
+                  * Math.pow(Math.max(ratio, 1), -1.200)
+                  * Math.pow(0.9938, EDAD_PACIENTE)
+                  * (esMujer ? 1.012 : 1.0);
+    tfg = Math.round(tfg);
+
+    let estadio, color;
+    if      (tfg >= 90) { estadio = 'ERC 1'; color = 'success';   }
+    else if (tfg >= 60) { estadio = 'ERC 2'; color = 'success';   }
+    else if (tfg >= 45) { estadio = 'ERC 3a';color = 'warning';   }
+    else if (tfg >= 30) { estadio = 'ERC 3b';color = 'warning';   }
+    else if (tfg >= 15) { estadio = 'ERC 4'; color = 'danger';    }
+    else                { estadio = 'ERC 5'; color = 'danger';     }
+
+    setBadge('resultado-tfg', tfg + ' mL/min · ' + estadio, color);
+
+    // Guardar en campo oculto para enviar al servidor
+    const hidden = document.getElementById('campo-tfg-hidden');
+    if (hidden) hidden.value = tfg + ' mL/min (' + estadio + ')';
+
+    // Auto-seleccionar estadio ERC
+    const sel = document.querySelector('select[name="estadio_erc"]');
+    if (sel) {
+        if      (tfg >= 90) sel.value = '1';
+        else if (tfg >= 60) sel.value = '2';
+        else if (tfg >= 45) sel.value = '3A';
+        else if (tfg >= 30) sel.value = '3B';
+        else if (tfg >= 15) sel.value = '4';
+        else                sel.value = '5';
+    }
+}
+document.getElementById('campo-creatinina')?.addEventListener('input', calcularTFG);
+
+// ── 5. Índice Cintura/Cadera (ICC) ─────────────────────
+function calcularICC() {
+    const cintura = parseFloat(document.getElementById('campo-cintura')?.value);
+    const cadera  = parseFloat(document.getElementById('campo-cadera')?.value);
+    if (!cintura || !cadera) { setBadge('resultado-icc','—','secondary'); return; }
+    const icc = (cintura / cadera).toFixed(2);
+    // Riesgo: Hombre >1.0 alto, Mujer >0.85 alto
+    const esMujer = SEXO_PACIENTE === 'F';
+    const limite = esMujer ? 0.85 : 1.0;
+    const color = icc > limite ? 'danger' : 'success';
+    const texto = icc > limite ? 'Riesgo alto' : 'Normal';
+    setBadge('resultado-icc', icc + ' · ' + texto, color);
+}
+document.getElementById('campo-cintura')?.addEventListener('input', calcularICC);
+document.getElementById('campo-cadera')?.addEventListener('input', calcularICC);
+
+}); // fin DOMContentLoaded
+</script>
+{% endblock %}
