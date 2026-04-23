@@ -31,7 +31,10 @@ from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.contrib.auth.forms import PasswordResetForm
 
-from django.contrib.auth import get_user_model # 👈 IMPORTANTE: Esto busca tu modelo real
+from django.contrib.auth import get_user_model
+from django.contrib.auth.views import PasswordResetConfirmView
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
 
 @login_required
 def home(request):
@@ -354,6 +357,25 @@ def asignar_password(request, user_id):
         form = SetPasswordForm(user)
     
     return render(request, 'asignar_password.html', {'form': form, 'user_obj': user})
+
+class ActivarCuentaConfirmView(PasswordResetConfirmView):
+    """
+    Igual que PasswordResetConfirmView pero activa la cuenta al guardar la contraseña.
+    Usado cuando una secretaria o médico nuevo establece su contraseña por primera vez.
+    """
+    template_name = 'registration/password_reset_confirm.html'
+    success_url = '/login/'
+
+    def form_valid(self, form):
+        user = form.save()
+        user.is_active = True
+        user.save(update_fields=['is_active'])
+        messages.success(
+            self.request,
+            f"Contraseña creada correctamente. Ya puedes iniciar sesión, {user.first_name}."
+        )
+        return redirect('login')
+
 
 @login_required
 def redirect_by_role(request):
