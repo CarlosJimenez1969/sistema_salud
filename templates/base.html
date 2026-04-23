@@ -119,14 +119,14 @@
     <div class="container mt-3">
         
         <script>
-    // Esto hará que todos los mensajes del sistema desaparezcan en 5 segundos
+    // Esto hará que todos los mensajes del sistema desaparezcan en 10 segundos
     setTimeout(function() {
         let alerts = document.querySelectorAll('.alert');
         alerts.forEach(function(alert) {
             let bsAlert = new bootstrap.Alert(alert);
             bsAlert.close();
         });
-    }, 5000);
+    }, 10000);
 </script>
     </div>
 
@@ -149,7 +149,7 @@
                     let bsAlert = new bootstrap.Alert(alert);
                     bsAlert.close();
                 });
-            }, 5000); // 5 segundos para que de tiempo a leer
+            }, 10000); // 10 segundos para que de tiempo a leer
         });
     </script>
 </body>

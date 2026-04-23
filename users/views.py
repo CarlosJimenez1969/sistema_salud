@@ -222,11 +222,11 @@ def crear_secretaria(request):
     if role == 'ADMIN':
         medico_id = request.GET.get('medico_id') or request.POST.get('medico_id')
         medico_actual = Medico.objects.filter(id=medico_id).first() if medico_id else None
-        secretarias_actuales = Secretaria.objects.select_related('usuario', 'medico__usuario').all()
+        secretarias_actuales = Secretaria.objects.select_related('usuario', 'medico__usuario').filter(usuario__is_active=True)
         medicos_disponibles = Medico.objects.select_related('usuario').all()
     elif hasattr(request.user, 'perfil_medico'):
         medico_actual = request.user.perfil_medico
-        secretarias_actuales = Secretaria.objects.filter(medico=medico_actual)
+        secretarias_actuales = Secretaria.objects.filter(medico=medico_actual, usuario__is_active=True)
         medicos_disponibles = None
     else:
         messages.error(request, "Acceso denegado.")
@@ -269,7 +269,7 @@ def crear_secretaria(request):
                             last_name=cd['last_name'],
                             cedula=cd.get('cedula'),
                             role='SECRETARIA',
-                            is_active=True
+                            is_active=False,
                         )
                         user.set_unusable_password()
                         user.save()
@@ -339,13 +339,16 @@ def asignar_password(request, user_id):
         form = SetPasswordForm(user, request.POST)
         if form.is_valid():
             user = form.save()
-            
+
             # Protección: solo asigna MEDICO si el usuario es nuevo o PACIENTE
             if user.role in [None, 'PACIENTE', '']:
                  user.role = 'MEDICO'
-                 user.save()
-            
-            messages.success(request, "Contraseña establecida. Ya puede iniciar sesión.")
+
+            # Activar cuenta al establecer la contraseña
+            user.is_active = True
+            user.save()
+
+            messages.success(request, "Contraseña establecida correctamente. Ya puede iniciar sesión.")
             return redirect('login')
     else:
         form = SetPasswordForm(user)
