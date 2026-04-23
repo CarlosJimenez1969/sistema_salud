@@ -217,12 +217,20 @@ def crear_orden_paypal(request):
 # --- VISTA 1: CREA EL USUARIO Y SALTA A LA CONTRASEÑA ---
 @login_required
 def crear_secretaria(request):
-    if not hasattr(request.user, 'perfil_medico'):
+    role = getattr(request.user, 'role', '')
+
+    if role == 'ADMIN':
+        medico_id = request.GET.get('medico_id') or request.POST.get('medico_id')
+        medico_actual = Medico.objects.filter(id=medico_id).first() if medico_id else None
+        secretarias_actuales = Secretaria.objects.select_related('usuario', 'medico__usuario').all()
+        medicos_disponibles = Medico.objects.select_related('usuario').all()
+    elif hasattr(request.user, 'perfil_medico'):
+        medico_actual = request.user.perfil_medico
+        secretarias_actuales = Secretaria.objects.filter(medico=medico_actual)
+        medicos_disponibles = None
+    else:
         messages.error(request, "Acceso denegado.")
         return redirect('home')
-
-    medico_actual = request.user.perfil_medico
-    secretarias_actuales = Secretaria.objects.filter(medico=medico_actual)
     
     # Detectamos si el usuario envió un ID oculto para editar
     secretaria_id = request.POST.get('secretaria_id_hidden')
@@ -266,10 +274,17 @@ def crear_secretaria(request):
                         user.set_unusable_password()
                         user.save()
 
+                        medico_para_crear = medico_actual
+                        if role == 'ADMIN':
+                            medico_id_post = request.POST.get('medico_id')
+                            medico_para_crear = Medico.objects.filter(id=medico_id_post).first()
+                            if not medico_para_crear:
+                                raise ValueError("Debe seleccionar un médico.")
+
                         Secretaria.objects.create(
                             usuario=user,
-                            medico=medico_actual,
-                            telefono=request.POST.get('telefono') # Asegúrate de capturar el telf aquí
+                            medico=medico_para_crear,
+                            telefono=request.POST.get('telefono'),
                         )
                         
                         from django.contrib.auth.models import Group
@@ -278,9 +293,17 @@ def crear_secretaria(request):
 
                     try:
                         enviar_correo_activacion(request, user)
-                        messages.success(request, f"Secretaria {user.first_name} registrada y correo enviado.")
+                        messages.success(
+                            request,
+                            f"✔ Secretaria {user.get_full_name()} registrada correctamente. "
+                            f"Se envió un correo a {user.email} para que cree su contraseña y pueda ingresar al sistema."
+                        )
                     except Exception as mail_error:
-                        messages.warning(request, f"Secretaria creada, pero el correo falló: {mail_error}")
+                        messages.warning(
+                            request,
+                            f"Secretaria {user.get_full_name()} creada, pero el correo no se pudo enviar ({mail_error}). "
+                            f"Usa 'Asignar Contraseña' para darle acceso manualmente."
+                        )
                     
                     return redirect('crear_secretaria') 
 
@@ -291,7 +314,9 @@ def crear_secretaria(request):
 
     return render(request, 'crear_secretaria.html', {
         'form': form,
-        'secretarias': secretarias_actuales
+        'secretarias': secretarias_actuales,
+        'medicos_disponibles': medicos_disponibles,
+        'es_admin': role == 'ADMIN',
     })
 
 # 3. Nueva función para eliminar
