@@ -144,3 +144,17 @@ input[name="proxima_cita"] {
     transform: scale(1.05);
     transition: all 0.2s ease;
 }
+
+/* === SECCIONES CON FONDO CLARO (formularios) === */
+.bg-light, .bg-light label, .bg-light p, .bg-light span, .bg-light small {
+    color: #212529 !important;
+}
+.bg-light .form-control, .bg-light .form-select {
+    background-color: #ffffff;
+    color: #212529;
+    border-color: #dee2e6;
+}
+.bg-light .form-control:focus, .bg-light .form-select:focus {
+    background-color: #ffffff;
+    color: #212529;
+}
