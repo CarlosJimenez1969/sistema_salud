@@ -35,7 +35,7 @@
         </div>
         <div class="col-12 col-sm-auto">
             <input type="date" name="fecha" class="form-control border-primary"
-                   value="{{ fecha_seleccionada|date:'Y-m-d'|default:hoy|date:'Y-m-d' }}"
+                   value="{{ fecha_agenda|date:'Y-m-d' }}"
                    onchange="this.form.submit()">
         </div>
         {% if fecha_seleccionada %}
