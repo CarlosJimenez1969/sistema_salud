@@ -2,11 +2,20 @@ from django import forms
 from users.models import User
 from .models import Paciente
 
+TIPOS_SANGRE = [
+    ('', '— Seleccione —'),
+    ('A+', 'A+'), ('A-', 'A-'),
+    ('B+', 'B+'), ('B-', 'B-'),
+    ('AB+', 'AB+'), ('AB-', 'AB-'),
+    ('O+', 'O+'), ('O-', 'O-'),
+]
+
 class PacienteForm(forms.ModelForm):
     first_name = forms.CharField(label="Nombres", required=True)
     last_name = forms.CharField(label="Apellidos", required=True)
     cedula = forms.CharField(label="Cédula", required=True)
     email = forms.EmailField(label="Correo Electrónico", required=True)
+    tipo_sangre = forms.ChoiceField(label="Tipo de Sangre", choices=TIPOS_SANGRE, required=False)
 
     class Meta:
         model = Paciente
