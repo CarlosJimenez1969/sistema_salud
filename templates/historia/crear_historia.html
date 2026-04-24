@@ -43,6 +43,10 @@
                     </small>
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-warning border-0 py-2 px-3 mb-3 small">
+                        <i class="bi bi-asterisk text-danger me-1"></i>
+                        Los campos marcados con <strong class="text-danger">*</strong> son <strong>obligatorios</strong>.
+                    </div>
                     <form id="formHistoria" method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
                         
@@ -57,11 +61,11 @@
                         <div class="card border-secondary mb-3 shadow-sm">
                             <div class="card-body bg-light">
                                 <div class="mb-3">
-                                    <label class="fw-bold text-dark">Motivo de Consulta:</label>
+                                    <label class="fw-bold text-dark">Motivo de Consulta: <span class="text-danger">*</span></label>
                                     {{ form.motivo_consulta }}
                                 </div>
                                 <div class="mb-3">
-                                    <label class="fw-bold text-dark">Enfermedad Actual:</label>
+                                    <label class="fw-bold text-dark">Enfermedad Actual: <span class="text-danger">*</span></label>
                                     {{ form.enfermedad_actual }}
                                 </div>
                             </div>
@@ -1121,12 +1125,12 @@
                                         {{ form.tipo_diagnostico }}
                                     </div>
                                     <div class="col-md-8">
-                                        <label class="fw-bold text-dark">Diagnóstico (CIE-10):</label>
+                                        <label class="fw-bold text-dark">Diagnóstico (CIE-10): <span class="text-danger">*</span></label>
                                         {{ form.diagnostico }}
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="fw-bold text-dark">Tratamiento / Receta:</label>
+                                    <label class="fw-bold text-dark">Tratamiento / Receta: <span class="text-danger">*</span></label>
                                     {{ form.tratamiento }}
                                 </div>
                                 <div class="mb-3">
