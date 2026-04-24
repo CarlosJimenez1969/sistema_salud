@@ -500,20 +500,22 @@ def confirmar_pago(request):
             direccion_consultorio=datos.get('direccion_consultorio', ''),
         )
 
-        # 6. Enviar correo de activación
-        try:
-            enviar_correo_activacion(request, user)
-        except Exception as email_error:
-            print(f"[EMAIL ERROR] No se pudo enviar correo de activación: {email_error}")
+        # 6 y 7. Enviar correo y generar factura en segundo plano para no bloquear la respuesta
+        import threading
 
-        # 7. Generar factura electrónica SRI (no bloqueante)
-        try:
-            from facturacion.services.sri import SriService
-            from decimal import Decimal
-            SriService().crear_factura_pago(medico_obj, Decimal('50.00'))
-        except Exception as factura_error:
-            # La factura falla silenciosamente; el admin puede reenviar desde el panel
-            print(f"[FACTURACIÓN] Error al generar factura: {factura_error}")
+        def tareas_segundo_plano(u, m):
+            try:
+                enviar_correo_activacion(request, u)
+            except Exception as e:
+                print(f"[EMAIL ERROR] {e}")
+            try:
+                from facturacion.services.sri import SriService
+                from decimal import Decimal
+                SriService().crear_factura_pago(m, Decimal('50.00'))
+            except Exception as e:
+                print(f"[FACTURACIÓN] {e}")
+
+        threading.Thread(target=tareas_segundo_plano, args=(user, medico_obj), daemon=True).start()
 
         # 8. Guardar email para mostrarlo en la página de éxito, luego limpiar sesión
         email_registrado = datos.get('email', '')

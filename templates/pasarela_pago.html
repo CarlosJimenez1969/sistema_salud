@@ -78,6 +78,9 @@
             document.getElementById('spinner-text').innerText =
                 'Verificando el pago con PayPal, no cierre esta ventana...';
 
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seg máximo
+
             return fetch("{% url 'confirmar_pago' %}", {
                 method: 'POST',
                 headers: {
@@ -85,8 +88,17 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ orderID: data.orderID }),
+                signal: controller.signal,
             })
-            .then(function (res) { return res.json(); })
+            .then(function (res) {
+                clearTimeout(timeoutId);
+                if (!res.ok) {
+                    return res.json().then(function(e) {
+                        throw new Error(e.error || 'Error del servidor: ' + res.status);
+                    });
+                }
+                return res.json();
+            })
             .then(function (result) {
                 if (result.redirect) {
                     window.location.href = result.redirect;
@@ -95,11 +107,13 @@
                 }
             })
             .catch(function (err) {
+                clearTimeout(timeoutId);
                 document.getElementById('loading-spinner').style.display = 'none';
                 document.getElementById('error-container').style.display = 'block';
-                document.getElementById('error-container').innerText =
-                    '⚠️ ' + err.message +
-                    ' Si ya fue cobrado, contacte a soporte con su correo registrado.';
+                let msg = err.name === 'AbortError'
+                    ? 'El servidor tardó demasiado en responder. El pago puede haberse procesado — revise su correo antes de volver a intentar.'
+                    : err.message;
+                document.getElementById('error-container').innerText = '⚠️ ' + msg;
             });
         },
 
