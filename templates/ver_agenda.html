@@ -38,11 +38,6 @@
                    value="{{ fecha_seleccionada|date:'Y-m-d'|default:hoy|date:'Y-m-d' }}"
                    onchange="this.form.submit()">
         </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary px-4 shadow-sm">
-                <i class="bi bi-search"></i> Ver
-            </button>
-        </div>
         {% if fecha_seleccionada %}
         <div class="col-auto">
             <a href="{% url 'ver_agenda' %}" class="btn btn-link text-decoration-none text-muted">
