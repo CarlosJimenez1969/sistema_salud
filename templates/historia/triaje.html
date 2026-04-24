@@ -33,6 +33,16 @@
                             {% endfor %}
                         </div>
                         
+                        <!-- PAM calculado automáticamente -->
+                        <div class="col-md-6 mt-2">
+                            <label class="form-label fw-bold text-secondary">PAM (Presión Arterial Media)</label>
+                            <div id="resultado-pam" class="form-control text-center fw-bold"
+                                 style="border-radius:10px; border:2px solid #eee; padding:10px; background:#f8f9fa; min-height:44px;">
+                                — ingrese presión arterial —
+                            </div>
+                            <small class="text-muted">Normal: 70–100 mmHg</small>
+                        </div>
+
                         <div class="d-grid gap-2 mt-5">
                             <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow">
                                 <i class="bi bi-save me-2"></i> Guardar Signos Vitales
@@ -58,4 +68,52 @@
         box-shadow: none !important;
     }
 </style>
+
+<script>
+function calcularPAM() {
+    const campo = document.querySelector('input[name="presion_arterial"]');
+    const resultado = document.getElementById('resultado-pam');
+    if (!campo || !resultado) return;
+
+    const partes = campo.value.split('/');
+    if (partes.length !== 2) {
+        resultado.textContent = '— ingrese presión arterial —';
+        resultado.style.color = '#6c757d';
+        resultado.style.borderColor = '#eee';
+        return;
+    }
+
+    const pas = parseFloat(partes[0]);
+    const pad = parseFloat(partes[1]);
+    if (isNaN(pas) || isNaN(pad)) {
+        resultado.textContent = 'Formato inválido (use 120/80)';
+        resultado.style.color = '#dc3545';
+        return;
+    }
+
+    const pam = ((pas + 2 * pad) / 3).toFixed(0);
+
+    if (pam < 70) {
+        resultado.textContent = pam + ' mmHg ⚠️ Bajo';
+        resultado.style.color = '#dc3545';
+        resultado.style.borderColor = '#dc3545';
+    } else if (pam <= 100) {
+        resultado.textContent = pam + ' mmHg ✓ Normal';
+        resultado.style.color = '#198754';
+        resultado.style.borderColor = '#198754';
+    } else {
+        resultado.textContent = pam + ' mmHg ⚠️ Elevado';
+        resultado.style.color = '#fd7e14';
+        resultado.style.borderColor = '#fd7e14';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const campo = document.querySelector('input[name="presion_arterial"]');
+    if (campo) {
+        campo.addEventListener('input', calcularPAM);
+        calcularPAM();
+    }
+});
+</script>
 {% endblock %}
