@@ -28,11 +28,11 @@
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="form-label small text-muted mb-1">Desde</label>
-                    <input type="date" name="fecha_desde" value="{{ fecha_desde }}" class="form-control">
+                    <input type="date" name="fecha_desde" value="{{ fecha_desde }}" class="form-control" onchange="this.form.submit()">
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="form-label small text-muted mb-1">Hasta</label>
-                    <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" class="form-control">
+                    <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" class="form-control" onchange="this.form.submit()">
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label small text-muted mb-1">Estado</label>
