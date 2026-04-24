@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-primary text-white py-3 text-center rounded-top-4">
+                    <h4 class="mb-0"><i class="bi bi-clock-history me-2"></i>Configurar Horario de Atención</h4>
+                </div>
+                <div class="card-body bg-light p-4">
+
+                    <p class="text-muted small mb-4">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Defina el horario en que atiende pacientes. Esto generará los turnos disponibles en su agenda.
+                    </p>
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-bold text-secondary small">Hora de Inicio</label>
+                                <input type="time" name="hora_inicio" class="form-control"
+                                       value="{{ medico.hora_inicio|time:'H:i'|default:'' }}" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold text-secondary small">Hora de Fin</label>
+                                <input type="time" name="hora_fin" class="form-control"
+                                       value="{{ medico.hora_fin|time:'H:i'|default:'' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-secondary small">Duración de cada cita</label>
+                            <select name="intervalo_minutos" class="form-select">
+                                <option value="15" {% if medico.intervalo_minutos == 15 %}selected{% endif %}>15 minutos</option>
+                                <option value="20" {% if medico.intervalo_minutos == 20 %}selected{% endif %}>20 minutos</option>
+                                <option value="30" {% if medico.intervalo_minutos == 30 or not medico.intervalo_minutos %}selected{% endif %}>30 minutos</option>
+                                <option value="45" {% if medico.intervalo_minutos == 45 %}selected{% endif %}>45 minutos</option>
+                                <option value="60" {% if medico.intervalo_minutos == 60 %}selected{% endif %}>60 minutos</option>
+                            </select>
+                        </div>
+
+                        {% if medico.hora_inicio and medico.hora_fin %}
+                        <div class="alert alert-info small py-2">
+                            <i class="bi bi-calendar-check me-1"></i>
+                            Horario actual: <strong>{{ medico.hora_inicio|time:"H:i" }} — {{ medico.hora_fin|time:"H:i" }}</strong>
+                            · Turnos de <strong>{{ medico.intervalo_minutos }} min</strong>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill shadow-sm">
+                                <i class="bi bi-check-circle me-1"></i> Guardar Horario
+                            </button>
+                            <a href="{% url 'home' %}" class="btn btn-outline-secondary rounded-pill">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

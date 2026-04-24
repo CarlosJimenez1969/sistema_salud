@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 
 # Importamos las vistas
 from users.views import home, registro_medico, pasarela_pago, pago_exitoso, crear_orden_paypal, registro_exitoso, panel_admin
+from medico.views import configurar_horario
 from paciente.views import listar_pacientes, crear_paciente, editar_paciente
 from historia.views import crear_historia, historial_medico, imprimir_receta, registrar_triaje  # <--- IMPORTANTE: Importar historial_medico
 from citas.views import buscar_medico, reservar_cita, ver_agenda
@@ -62,6 +63,7 @@ urlpatterns = [
          name='password_reset_complete'),
 
     path('panel-admin/', panel_admin, name='panel_admin'),
+    path('configurar-horario/', configurar_horario, name='configurar_horario'),
     path('login-success/', views.redirect_by_role, name='login_success'),
     path('citas/resumen/<int:paciente_id>/', paciente_views.resumen_paciente_rapido, name='resumen_paciente'),
 

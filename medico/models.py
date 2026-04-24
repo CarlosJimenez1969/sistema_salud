@@ -32,6 +32,7 @@ class Medico(models.Model):
     # Horario de atención (Simplificado para empezar)
     hora_inicio = models.TimeField(null=True, blank=True)
     hora_fin = models.TimeField(null=True, blank=True)
+    intervalo_minutos = models.PositiveIntegerField(default=30, help_text="Duración de cada cita en minutos")
 
     def __str__(self):
         return f"Dr. {self.usuario.last_name} - {self.especialidad}"

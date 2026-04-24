@@ -76,7 +76,13 @@
                             <a href="{% url 'listar_pacientes' %}" class="btn btn-outline-light">
                                 <i class="bi bi-search"></i> Buscar o crear pacientes
                             </a>
-                            
+
+                            {% if user.role == 'MEDICO' %}
+                            <a href="{% url 'configurar_horario' %}" class="btn btn-outline-light">
+                                <i class="bi bi-clock-history"></i> Configurar Horario
+                            </a>
+                            {% endif %}
+
                             {% if user.role == 'ADMIN' %}
                                 <a href="{% url 'panel_admin' %}" class="btn btn-secondary">
                                     <i class="bi bi-speedometer2"></i> Panel Administrador

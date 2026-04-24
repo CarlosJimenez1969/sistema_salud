@@ -109,8 +109,8 @@ def reservar_cita(request, medico_id):
             'es_pasada': es_pasada 
         })
         
-        # Incrementar 30 minutos
-        dt_aux = datetime.combine(date.today(), hora_actual) + timedelta(minutes=30)
+        intervalo = medico.intervalo_minutos or 30
+        dt_aux = datetime.combine(date.today(), hora_actual) + timedelta(minutes=intervalo)
         hora_actual = dt_aux.time()
 
     # --- Lógica de POST ---
