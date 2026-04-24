@@ -71,15 +71,15 @@
 
 <script>
 function calcularPAM() {
-    const campo = document.querySelector('input[name="presion_arterial"]');
+    const campo = document.getElementById('id_presion_arterial');
     const resultado = document.getElementById('resultado-pam');
     if (!campo || !resultado) return;
 
-    const partes = campo.value.split('/');
+    const partes = campo.value.trim().split('/');
     if (partes.length !== 2) {
-        resultado.textContent = '— ingrese presión arterial —';
+        resultado.textContent = '— ingrese presión (ej: 120/80) —';
         resultado.style.color = '#6c757d';
-        resultado.style.borderColor = '#eee';
+        resultado.style.background = '#f8f9fa';
         return;
     }
 
@@ -91,28 +91,27 @@ function calcularPAM() {
         return;
     }
 
-    const pam = ((pas + 2 * pad) / 3).toFixed(0);
+    const pam = Math.round((pas + 2 * pad) / 3);
 
     if (pam < 70) {
         resultado.textContent = pam + ' mmHg ⚠️ Bajo';
         resultado.style.color = '#dc3545';
-        resultado.style.borderColor = '#dc3545';
+        resultado.style.background = '#fff5f5';
     } else if (pam <= 100) {
         resultado.textContent = pam + ' mmHg ✓ Normal';
         resultado.style.color = '#198754';
-        resultado.style.borderColor = '#198754';
+        resultado.style.background = '#f0fff4';
     } else {
         resultado.textContent = pam + ' mmHg ⚠️ Elevado';
         resultado.style.color = '#fd7e14';
-        resultado.style.borderColor = '#fd7e14';
+        resultado.style.background = '#fff8f0';
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const campo = document.querySelector('input[name="presion_arterial"]');
+    const campo = document.getElementById('id_presion_arterial');
     if (campo) {
         campo.addEventListener('input', calcularPAM);
-        calcularPAM();
     }
 });
 </script>
