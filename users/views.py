@@ -59,7 +59,13 @@ def home(request):
             pass
 
     # --- LOGICA PARA MÉDICOS / ADMINS ---
-    total_pacientes = Paciente.objects.count()
+    if request.user.role == 'MEDICO':
+        try:
+            total_pacientes = Paciente.objects.filter(citas__medico=request.user.perfil_medico).distinct().count()
+        except:
+            total_pacientes = 0
+    else:
+        total_pacientes = Paciente.objects.count()
     total_medicos = Medico.objects.count()
     citas_hoy_count = 0
     grafico_meses = []

@@ -9,22 +9,26 @@ from django.db.models import Q
 
 @login_required
 def listar_pacientes(request):
-    # 1. Identificamos al médico/clínica para el contexto (opcional para filtros futuros)
-    if request.user.role == 'SECRETARIA':
-        medico_id = request.user.perfil_secretaria.medico_id
+    from citas.models import Cita
+
+    # ADMIN ve todos los pacientes; MEDICO y SECRETARIA solo los suyos
+    if request.user.role == 'ADMIN':
+        pacientes = Paciente.objects.all().select_related('usuario').order_by('-id')
+    elif request.user.role == 'SECRETARIA':
+        medico = request.user.perfil_secretaria.medico
+        pacientes = Paciente.objects.filter(
+            citas__medico=medico
+        ).select_related('usuario').distinct().order_by('-id')
     else:
-        medico_id = request.user.perfil_medico.id
+        medico = request.user.perfil_medico
+        pacientes = Paciente.objects.filter(
+            citas__medico=medico
+        ).select_related('usuario').distinct().order_by('-id')
 
-    # 2. CAMBIO CLAVE: Quitamos el filtro obligatorio de citas.
-    # Ahora buscamos TODOS los pacientes para que el nuevo aparezca de inmediato.
-    # Usamos order_by('-id') para que el recién creado sea el PRIMERO en la lista.
-    pacientes = Paciente.objects.all().select_related('usuario').order_by('-id')
-
-    # 3. OPCIONAL: Si quieres mantener el buscador (muy recomendado)
     query = request.GET.get('q')
     if query:
         pacientes = pacientes.filter(
-            Q(usuario__first_name__icontains=query) | 
+            Q(usuario__first_name__icontains=query) |
             Q(usuario__last_name__icontains=query) |
             Q(usuario__cedula__icontains=query)
         ).distinct()
