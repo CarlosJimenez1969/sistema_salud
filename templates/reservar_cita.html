@@ -148,12 +148,60 @@
             return;
         }
         const nombrePaciente = pacienteSelect.options[pacienteSelect.selectedIndex].text;
-        const mensaje = `¿AGENDAR ESTA CITA?\n\n👤 PACIENTE: ${nombrePaciente}\n⏰ HORA: ${hora}\n📅 FECHA: {{ fecha_seleccionada|date:"d/m/Y" }}\n👨‍⚕️ MÉDICO: Dr. {{ medico.usuario.last_name }}`;
-        
-        if (confirm(mensaje)) {
+
+        // Llenar el modal con la información
+        document.getElementById('modal-paciente').textContent = nombrePaciente;
+        document.getElementById('modal-hora').textContent = hora;
+        document.getElementById('modal-fecha').textContent = '{{ fecha_seleccionada|date:"d/m/Y" }}';
+        document.getElementById('modal-medico').textContent = 'Dr. {{ medico.usuario.last_name }}';
+
+        // Guardar la hora en el botón confirmar
+        document.getElementById('btn-confirmar-cita').onclick = function() {
             document.getElementById('input_hora_hidden').value = hora;
             document.getElementById('mainForm').submit();
-        }
+        };
+
+        new bootstrap.Modal(document.getElementById('modalConfirmarCita')).show();
     }
 </script>
+<!-- Modal de confirmación de cita -->
+<div class="modal fade" id="modalConfirmarCita" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-calendar-check me-2"></i>Confirmar Cita</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light p-4">
+                <p class="text-muted mb-3">¿Desea agendar la siguiente cita?</p>
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td class="fw-bold text-secondary" style="width:40%"><i class="bi bi-person me-2"></i>Paciente</td>
+                        <td id="modal-paciente" class="fw-bold text-dark"></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-secondary"><i class="bi bi-person-badge me-2"></i>Médico</td>
+                        <td id="modal-medico" class="text-dark"></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-secondary"><i class="bi bi-calendar3 me-2"></i>Fecha</td>
+                        <td id="modal-fecha" class="text-dark"></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-secondary"><i class="bi bi-clock me-2"></i>Hora</td>
+                        <td id="modal-hora" class="fw-bold text-primary"></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <button type="button" id="btn-confirmar-cita" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-check-circle me-1"></i> Confirmar Cita
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
