@@ -5,7 +5,14 @@
     <div class="alert alert-info border-0 shadow-sm d-flex align-items-center">
         <i class="bi bi-info-circle-fill fs-4 me-2"></i>
         <div>
-            <strong>Signos vitales importados:</strong> Los datos de peso, talla y presión se cargaron automáticamente desde el triaje de recepción.
+            <strong>Signos vitales importados:</strong> Datos cargados desde el triaje de recepción de hoy. Puede modificarlos.
+        </div>
+    </div>
+{% elif vitales_ultima_consulta %}
+    <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center">
+        <i class="bi bi-clock-history fs-4 me-2"></i>
+        <div>
+            <strong>Signos vitales de la última consulta:</strong> Se cargaron los valores de la consulta anterior. Verifique y actualice si es necesario.
         </div>
     </div>
 {% endif %}
@@ -1335,7 +1342,9 @@ function calcularPAM() {
 document.getElementById('id_peso')?.addEventListener('input', calcularIMC);
 document.getElementById('id_altura')?.addEventListener('input', calcularIMC);
 document.getElementById('id_presion_arterial')?.addEventListener('input', calcularPAM);
-calcularIMC(); calcularPAM();
+
+// Ejecutar al cargar para mostrar resultados de valores pre-cargados
+setTimeout(function() { calcularIMC(); calcularPAM(); }, 100);
 
 // ── 2. HbA1c → Glucosa media estimada ──────────────────
 function calcularHbA1c() {

@@ -59,6 +59,14 @@ def crear_historia(request, paciente_id):
     es_nefrologo = "nefro" in esp_nombre
     es_emergencias = "emergencia" in esp_nombre or "urgencia" in esp_nombre
 
+    # Si no hay triaje de hoy, usar signos vitales de la última consulta
+    if not triaje_previo:
+        ultima_historia = HistoriaClinica.objects.filter(
+            paciente=paciente
+        ).order_by('-fecha_atencion').first()
+    else:
+        ultima_historia = None
+
     if request.method == 'POST':
         form = HistoriaForm(request.POST)
         imagenes = request.FILES.getlist('imagenes_campo') 
@@ -372,7 +380,6 @@ def crear_historia(request, paciente_id):
             
             return redirect('historial_medico', paciente_id=paciente.id)
     else:
-        # Solo pre-llenar signos vitales del triaje — los campos clínicos siempre vacíos
         initial = {}
         if triaje_previo:
             initial = {
@@ -382,12 +389,21 @@ def crear_historia(request, paciente_id):
                 'peso':             triaje_previo.peso,
                 'altura':           triaje_previo.talla,
             }
+        elif ultima_historia:
+            initial = {
+                'temperatura':      ultima_historia.temperatura,
+                'presion_arterial': ultima_historia.presion_arterial,
+                'pulso':            ultima_historia.pulso,
+                'peso':             ultima_historia.peso,
+                'altura':           ultima_historia.altura,
+            }
         form = HistoriaForm(initial=initial)
 
     return render(request, 'historia/crear_historia.html', {
         'form': form, 
         'paciente': paciente,
         'triaje_cargado': bool(triaje_previo),
+        'vitales_ultima_consulta': bool(ultima_historia and not triaje_previo),
         'es_oftalmologo': es_oftalmologo, 'es_pediatra': es_pediatra,
         'es_ginecologo': es_ginecologo, 'es_cardiologo': es_cardiologo,
         'es_dermatologo': es_dermatologo, 'es_odontologo': es_odontologo,
