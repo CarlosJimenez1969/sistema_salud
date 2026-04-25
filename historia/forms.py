@@ -5,7 +5,7 @@ class HistoriaForm(forms.ModelForm):
     tipo_diagnostico = forms.ChoiceField(
         choices=[('', '-- Seleccionar --'), ('PRESUNTIVO', 'Presuntivo'), ('DEFINITIVO', 'Definitivo')],
         widget=forms.Select(attrs={'class': 'form-select'}),
-        required=False,
+        required=True,
     )
 
     class Meta:
