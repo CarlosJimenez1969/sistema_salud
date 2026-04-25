@@ -370,7 +370,7 @@ def crear_historia(request, paciente_id):
             # Mostramos el mensaje final unificado al médico
             messages.success(request, msg_final)
             
-            return redirect('ver_agenda')     
+            return redirect('historial_medico', paciente_id=paciente.id)
     else:
         # Solo pre-llenar signos vitales del triaje — los campos clínicos siempre vacíos
         initial = {}
