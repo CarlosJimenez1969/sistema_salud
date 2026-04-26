@@ -1353,11 +1353,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Imagen a ancho completo en panel fijo derecho
                     const bloque = document.createElement('div');
                     bloque.style.cssText = 'margin-bottom:12px;';
+                    const imgPanel = document.createElement('img');
+                    imgPanel.src = objectUrl;
+                    imgPanel.style.cssText = 'width:100%; border-radius:5px; cursor:zoom-in;';
+                    imgPanel.title = 'Doble clic para ampliar';
+                    imgPanel.addEventListener('dblclick', function() {
+                        abrirLightbox(objectUrl, archivo.name);
+                    });
                     bloque.innerHTML = `
                         <p style="color:#aaa; font-size:11px; margin-bottom:4px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
                             ${idx+1}. ${archivo.name}
-                        </p>
-                        <img src="${objectUrl}" style="width:100%; border-radius:5px;" alt="${archivo.name}">`;
+                        </p>`;
+                    bloque.appendChild(imgPanel);
                     listaPreviews.appendChild(bloque);
 
                     // Thumbnail pequeño debajo del input
