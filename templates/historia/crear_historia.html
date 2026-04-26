@@ -1370,7 +1370,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     imgPanel.src = objectUrl;
                     imgPanel.style.cssText = 'width:100%; border-radius:5px; cursor:zoom-in;';
                     imgPanel.title = 'Doble clic para ampliar';
-                    imgPanel.addEventListener('dblclick', function() {
+                    imgPanel.addEventListener('click', function() {
                         abrirLightbox(objectUrl, archivo.name);
                     });
                     bloque.innerHTML = `
