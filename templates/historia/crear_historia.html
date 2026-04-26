@@ -18,26 +18,26 @@
 {% endif %}
 <div class="container mb-5">
     <div class="row">
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card shadow-sm sticky-top" style="top: 20px;">
-                <div class="card-header bg-dark text-white">
-                    Paciente
+                <div class="card-header bg-dark text-white py-2 text-center">
+                    <small>Paciente</small>
                 </div>
-                <div class="card-body text-center">
-                    <h1 class="display-4"><i class="bi bi-person-circle"></i></h1>
-                    <h5>{{ paciente.usuario.last_name }} {{ paciente.usuario.first_name }}</h5>
-                    <p class="text-muted">{{ paciente.usuario.cedula }}</p>
-                    <hr>
-                    <small><strong>Sangre:</strong> {{ paciente.tipo_sangre }}</small><br>
-                    <small><strong>Edad:</strong> {{ paciente.fecha_nacimiento|timesince }}</small>
-                    <div class="alert alert-warning mt-3 p-1">
-                        <small><strong>Alergias:</strong><br> {{ paciente.alergias|default:"Ninguna" }}</small>
+                <div class="card-body text-center p-2">
+                    <i class="bi bi-person-circle fs-2"></i>
+                    <p class="fw-bold mb-0 mt-1" style="font-size:0.8rem;">{{ paciente.usuario.last_name }} {{ paciente.usuario.first_name }}</p>
+                    <p class="text-muted mb-1" style="font-size:0.75rem;">{{ paciente.usuario.cedula }}</p>
+                    <hr class="my-1">
+                    <p class="mb-0" style="font-size:0.75rem;"><strong>Sangre:</strong> {{ paciente.tipo_sangre }}</p>
+                    <p class="mb-1" style="font-size:0.75rem;"><strong>Edad:</strong> {{ paciente.fecha_nacimiento|timesince }}</p>
+                    <div class="alert alert-warning mt-2 p-1">
+                        <small style="font-size:0.7rem;"><strong>Alergias:</strong><br>{{ paciente.alergias|default:"Ninguna" }}</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-9">
+        <div class="col-md-10">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <span class="h5 mb-0">
