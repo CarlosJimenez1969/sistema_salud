@@ -37,7 +37,7 @@
             </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-md-9">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <span class="h5 mb-0">
@@ -1200,26 +1200,21 @@
             </div>
         </div>
 
-        <!-- Panel derecho: Vista previa de imágenes -->
-        <div class="col-md-3">
-            <div class="card shadow-sm sticky-top" style="top: 20px; max-height: 90vh; overflow-y: auto;">
-                <div class="card-header bg-dark text-white py-2">
-                    <small><i class="bi bi-images me-1"></i> <strong>Imágenes / Exámenes</strong></small>
-                    <span id="contador-imgs" class="badge bg-secondary ms-1">0</span>
-                </div>
-                <div class="card-body p-2" id="panel-previews">
-                    <div id="placeholder-imgs" class="text-center text-muted py-4">
-                        <i class="bi bi-cloud-upload fs-1 opacity-25"></i>
-                        <p class="small mt-2">Suba imágenes y aparecerán aquí para consultarlas mientras trabaja</p>
-                    </div>
-                    <div id="grid-previews" class="d-none">
-                        <div id="lista-previews"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
     </div>
+</div>
+
+<!-- Panel fijo de imágenes (siempre visible en la derecha) -->
+<div id="panel-imagenes-fijo" style="
+    display:none; position:fixed; right:0; top:60px;
+    width:270px; height:calc(100vh - 60px);
+    background:#1e2126; border-left:2px solid #444;
+    overflow-y:auto; z-index:1050; padding:8px;">
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        <small style="color:#aaa;"><i class="bi bi-images me-1"></i><strong>Exámenes / Imágenes</strong></small>
+        <span id="contador-imgs" class="badge bg-success">0</span>
+    </div>
+    <div id="lista-previews"></div>
 </div>
 
 <!-- Lightbox propio (sin Bootstrap Modal para evitar conflictos con input file) -->
@@ -1327,13 +1322,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- LÓGICA 5: PREVIEW DE IMÁGENES ---
-    const inputArchivos   = document.getElementById('id_imagenes_campo');
-    const placeholder     = document.getElementById('placeholder-imgs');
-    const gridPreviews    = document.getElementById('grid-previews');
-    const listaPreviews   = document.getElementById('lista-previews');
-    const contador        = document.getElementById('contador-imgs');
-    const previewInline   = document.getElementById('preview-inline');
+    // --- LÓGICA 5: PREVIEW DE IMÁGENES EN PANEL FIJO DERECHO ---
+    const inputArchivos     = document.getElementById('id_imagenes_campo');
+    const panelFijo         = document.getElementById('panel-imagenes-fijo');
+    const listaPreviews     = document.getElementById('lista-previews');
+    const contador          = document.getElementById('contador-imgs');
+    const previewInline     = document.getElementById('preview-inline');
     const previewInlineGrid = document.getElementById('preview-inline-grid');
 
     if (inputArchivos) {
@@ -1343,48 +1337,41 @@ document.addEventListener('DOMContentLoaded', function() {
             previewInlineGrid.innerHTML = '';
 
             if (archivos.length === 0) {
-                placeholder.classList.remove('d-none');
-                gridPreviews.classList.add('d-none');
+                panelFijo.style.display = 'none';
                 previewInline.classList.add('d-none');
-                contador.textContent = '0';
-                contador.className = 'badge bg-secondary ms-1';
                 return;
             }
 
-            placeholder.classList.add('d-none');
-            gridPreviews.classList.remove('d-none');
+            panelFijo.style.display = 'block';
             previewInline.classList.remove('d-none');
             contador.textContent = archivos.length;
-            contador.className = 'badge bg-success ms-1';
 
             archivos.forEach((archivo, idx) => {
                 if (archivo.type.startsWith('image/')) {
                     const objectUrl = URL.createObjectURL(archivo);
 
-                    // Imagen a tamaño completo en panel derecho
+                    // Imagen a ancho completo en panel fijo derecho
                     const bloque = document.createElement('div');
-                    bloque.className = 'mb-3';
+                    bloque.style.cssText = 'margin-bottom:12px;';
                     bloque.innerHTML = `
-                        <p class="small text-muted mb-1 text-truncate" title="${archivo.name}">
-                            <i class="bi bi-image me-1"></i>${idx+1}. ${archivo.name}
+                        <p style="color:#aaa; font-size:11px; margin-bottom:4px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
+                            ${idx+1}. ${archivo.name}
                         </p>
-                        <img src="${objectUrl}"
-                             style="width:100%; border-radius:6px; border:1px solid #dee2e6;"
-                             alt="${archivo.name}">`;
+                        <img src="${objectUrl}" style="width:100%; border-radius:5px;" alt="${archivo.name}">`;
                     listaPreviews.appendChild(bloque);
 
                     // Thumbnail pequeño debajo del input
                     const thumb = document.createElement('img');
                     thumb.src = objectUrl;
-                    thumb.style.cssText = 'height:60px; width:60px; object-fit:cover; border-radius:4px; border:1px solid #dee2e6;';
+                    thumb.style.cssText = 'height:60px; width:60px; object-fit:cover; border-radius:4px; border:2px solid #0d6efd; cursor:pointer;';
                     thumb.title = archivo.name;
                     previewInlineGrid.appendChild(thumb);
                 } else {
                     const bloque = document.createElement('div');
-                    bloque.className = 'mb-2 border rounded p-2 text-center bg-light';
+                    bloque.style.cssText = 'background:#2d3139; border-radius:5px; padding:8px; margin-bottom:8px; text-align:center;';
                     bloque.innerHTML = `
-                        <i class="bi bi-file-earmark-text fs-4 text-secondary"></i>
-                        <p style="font-size:11px;" class="mb-0 text-truncate">${archivo.name}</p>`;
+                        <i class="bi bi-file-earmark-text" style="color:#aaa; font-size:1.5rem;"></i>
+                        <p style="color:#aaa; font-size:10px; margin:4px 0 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${archivo.name}</p>`;
                     listaPreviews.appendChild(bloque);
                 }
             });
