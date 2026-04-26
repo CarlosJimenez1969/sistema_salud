@@ -18,8 +18,8 @@
 {% endif %}
 <div class="container-fluid mb-5 px-0">
     <div class="row g-0">
-        <div class="col-md-2 ps-0">
-            <div class="card shadow-sm sticky-top" style="top: 20px; margin-left:0;">
+        <div class="col-md-2 ps-0" style="position:sticky; top:0; height:100vh; align-self:flex-start;">
+            <div class="card shadow-sm h-100" style="border-radius:0; margin-left:0;">
                 <div class="card-header bg-dark text-white py-2 text-center">
                     <small>Paciente</small>
                 </div>
@@ -37,7 +37,7 @@
             </div>
         </div>
 
-        <div class="col-md-10">
+        <div class="col-md-10" id="columna-formulario" style="padding-right:0;">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <span class="h5 mb-0">
@@ -1330,6 +1330,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewInline     = document.getElementById('preview-inline');
     const previewInlineGrid = document.getElementById('preview-inline-grid');
 
+    const columnaForm = document.getElementById('columna-formulario');
+
+    function ajustarMargen(visible) {
+        if (columnaForm) {
+            columnaForm.style.paddingRight = visible ? '280px' : '0';
+        }
+    }
+
     if (inputArchivos) {
         inputArchivos.addEventListener('change', function() {
             const archivos = Array.from(this.files);
@@ -1339,10 +1347,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (archivos.length === 0) {
                 panelFijo.style.display = 'none';
                 previewInline.classList.add('d-none');
+                ajustarMargen(false);
                 return;
             }
 
             panelFijo.style.display = 'block';
+            ajustarMargen(true);
             previewInline.classList.remove('d-none');
             contador.textContent = archivos.length;
 
