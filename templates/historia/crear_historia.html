@@ -1341,9 +1341,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    let todosLosArchivos = []; // acumulador global
+
     if (inputArchivos) {
         inputArchivos.addEventListener('change', function() {
-            const archivos = Array.from(this.files);
+            // Agregar nuevos archivos al acumulador (evitar duplicados por nombre)
+            Array.from(this.files).forEach(nuevoArchivo => {
+                const yaExiste = todosLosArchivos.some(f => f.name === nuevoArchivo.name && f.size === nuevoArchivo.size);
+                if (!yaExiste) todosLosArchivos.push(nuevoArchivo);
+            });
+
+            // Crear un DataTransfer para sincronizar el input con todos los archivos
+            const dt = new DataTransfer();
+            todosLosArchivos.forEach(f => dt.items.add(f));
+            this.files = dt.files;
+
+            const archivos = todosLosArchivos;
             listaPreviews.innerHTML = '';
             previewInlineGrid.innerHTML = '';
 
