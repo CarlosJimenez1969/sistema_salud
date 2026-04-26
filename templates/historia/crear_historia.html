@@ -1210,12 +1210,10 @@
                 <div class="card-body p-2" id="panel-previews">
                     <div id="placeholder-imgs" class="text-center text-muted py-4">
                         <i class="bi bi-cloud-upload fs-1 opacity-25"></i>
-                        <p class="small mt-2">Seleccione imágenes en el formulario para previsualizarlas aquí</p>
+                        <p class="small mt-2">Suba imágenes y aparecerán aquí para consultarlas mientras trabaja</p>
                     </div>
                     <div id="grid-previews" class="d-none">
-                        <div id="lista-previews" class="row g-1"></div>
-                        <hr class="my-2">
-                        <small class="text-muted">Clic en una imagen para verla ampliada</small>
+                        <div id="lista-previews"></div>
                     </div>
                 </div>
             </div>
@@ -1338,17 +1336,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewInline   = document.getElementById('preview-inline');
     const previewInlineGrid = document.getElementById('preview-inline-grid');
 
-    function crearThumb(objectUrl, nombre, altura) {
-        const img = document.createElement('img');
-        img.src = objectUrl;
-        img.style.cssText = `height:${altura}px; width:${altura}px; object-fit:cover; cursor:zoom-in; border-radius:6px; border:2px solid #dee2e6;`;
-        img.title = 'Clic para ampliar: ' + nombre;
-        img.addEventListener('click', function() {
-            window.open(objectUrl, '_blank');
-        });
-        return img;
-    }
-
     if (inputArchivos) {
         inputArchivos.addEventListener('change', function() {
             const archivos = Array.from(this.files);
@@ -1370,27 +1357,35 @@ document.addEventListener('DOMContentLoaded', function() {
             contador.textContent = archivos.length;
             contador.className = 'badge bg-success ms-1';
 
-            archivos.forEach((archivo) => {
+            archivos.forEach((archivo, idx) => {
                 if (archivo.type.startsWith('image/')) {
                     const objectUrl = URL.createObjectURL(archivo);
 
-                    // Thumb en panel derecho (80px)
-                    const col = document.createElement('div');
-                    col.className = 'col-6 mb-1';
-                    col.appendChild(crearThumb(objectUrl, archivo.name, 80));
-                    listaPreviews.appendChild(col);
+                    // Imagen a tamaño completo en panel derecho
+                    const bloque = document.createElement('div');
+                    bloque.className = 'mb-3';
+                    bloque.innerHTML = `
+                        <p class="small text-muted mb-1 text-truncate" title="${archivo.name}">
+                            <i class="bi bi-image me-1"></i>${idx+1}. ${archivo.name}
+                        </p>
+                        <img src="${objectUrl}"
+                             style="width:100%; border-radius:6px; border:1px solid #dee2e6;"
+                             alt="${archivo.name}">`;
+                    listaPreviews.appendChild(bloque);
 
-                    // Thumb inline debajo del input (100px, más visible)
-                    previewInlineGrid.appendChild(crearThumb(objectUrl, archivo.name, 100));
+                    // Thumbnail pequeño debajo del input
+                    const thumb = document.createElement('img');
+                    thumb.src = objectUrl;
+                    thumb.style.cssText = 'height:60px; width:60px; object-fit:cover; border-radius:4px; border:1px solid #dee2e6;';
+                    thumb.title = archivo.name;
+                    previewInlineGrid.appendChild(thumb);
                 } else {
-                    const col = document.createElement('div');
-                    col.className = 'col-6 mb-1';
-                    col.innerHTML = `
-                        <div class="border rounded p-2 text-center bg-light" style="height:80px;">
-                            <i class="bi bi-file-earmark-text fs-3 text-secondary"></i>
-                            <p style="font-size:9px;" class="mb-0 text-truncate">${archivo.name}</p>
-                        </div>`;
-                    listaPreviews.appendChild(col);
+                    const bloque = document.createElement('div');
+                    bloque.className = 'mb-2 border rounded p-2 text-center bg-light';
+                    bloque.innerHTML = `
+                        <i class="bi bi-file-earmark-text fs-4 text-secondary"></i>
+                        <p style="font-size:11px;" class="mb-0 text-truncate">${archivo.name}</p>`;
+                    listaPreviews.appendChild(bloque);
                 }
             });
         });
