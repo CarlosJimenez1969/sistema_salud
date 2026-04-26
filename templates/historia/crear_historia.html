@@ -37,7 +37,7 @@
             </div>
         </div>
 
-        <div class="col-md-9">
+        <div class="col-md-6">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <span class="h5 mb-0">
@@ -1194,6 +1194,43 @@
                 </div>
             </div>
         </div>
+
+        <!-- Panel derecho: Vista previa de imágenes -->
+        <div class="col-md-3">
+            <div class="card shadow-sm sticky-top" style="top: 20px; max-height: 90vh; overflow-y: auto;">
+                <div class="card-header bg-dark text-white py-2">
+                    <small><i class="bi bi-images me-1"></i> <strong>Imágenes / Exámenes</strong></small>
+                    <span id="contador-imgs" class="badge bg-secondary ms-1">0</span>
+                </div>
+                <div class="card-body p-2" id="panel-previews">
+                    <div id="placeholder-imgs" class="text-center text-muted py-4">
+                        <i class="bi bi-cloud-upload fs-1 opacity-25"></i>
+                        <p class="small mt-2">Seleccione imágenes en el formulario para previsualizarlas aquí</p>
+                    </div>
+                    <div id="grid-previews" class="d-none">
+                        <div id="lista-previews" class="row g-1"></div>
+                        <hr class="my-2">
+                        <small class="text-muted">Clic en una imagen para verla ampliada</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal lightbox para ver imagen ampliada -->
+<div class="modal fade" id="modalImagen" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark border-0">
+            <div class="modal-header border-0 py-2">
+                <small class="text-white" id="modal-img-nombre"></small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-1 text-center">
+                <img id="modal-img-src" src="" class="img-fluid rounded" style="max-height: 80vh;">
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1275,7 +1312,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- LÓGICA 4: SPINNER AL GUARDAR ---
     const form = document.getElementById('form_historia') || document.getElementById('formHistoria');
     const btnGuardar = document.getElementById('btnGuardar');
-    
+
     if (form && btnGuardar) {
         form.addEventListener('submit', function() {
             if (form.checkValidity()) {
@@ -1283,6 +1320,67 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('btnLoading').classList.remove('d-none');
                 btnGuardar.disabled = true;
             }
+        });
+    }
+
+    // --- LÓGICA 5: PREVIEW DE IMÁGENES EN PANEL DERECHO ---
+    const inputArchivos = document.getElementById('id_imagenes_campo');
+    const placeholder   = document.getElementById('placeholder-imgs');
+    const gridPreviews  = document.getElementById('grid-previews');
+    const listaPreviews = document.getElementById('lista-previews');
+    const contador      = document.getElementById('contador-imgs');
+    const modalImg      = document.getElementById('modal-img-src');
+    const modalNombre   = document.getElementById('modal-img-nombre');
+
+    if (inputArchivos) {
+        inputArchivos.addEventListener('change', function() {
+            const archivos = Array.from(this.files);
+            listaPreviews.innerHTML = '';
+
+            if (archivos.length === 0) {
+                placeholder.classList.remove('d-none');
+                gridPreviews.classList.add('d-none');
+                contador.textContent = '0';
+                contador.className = 'badge bg-secondary ms-1';
+                return;
+            }
+
+            placeholder.classList.add('d-none');
+            gridPreviews.classList.remove('d-none');
+            contador.textContent = archivos.length;
+            contador.className = 'badge bg-success ms-1';
+
+            archivos.forEach((archivo, idx) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const col = document.createElement('div');
+                    col.className = 'col-6';
+
+                    const esImagen = archivo.type.startsWith('image/');
+                    if (esImagen) {
+                        col.innerHTML = `
+                            <div class="position-relative" style="cursor:pointer;"
+                                 onclick="verImagen('${e.target.result}', '${archivo.name}')">
+                                <img src="${e.target.result}"
+                                     class="img-thumbnail w-100"
+                                     style="height:80px; object-fit:cover;"
+                                     title="${archivo.name}">
+                                <span class="position-absolute bottom-0 start-0 w-100 text-center"
+                                      style="font-size:9px; background:rgba(0,0,0,0.5); color:white; padding:1px;">
+                                    ${archivo.name.length > 15 ? archivo.name.substring(0,13)+'...' : archivo.name}
+                                </span>
+                            </div>`;
+                    } else {
+                        col.innerHTML = `
+                            <div class="border rounded p-2 text-center bg-light" style="height:80px;">
+                                <i class="bi bi-file-earmark-text fs-3 text-secondary"></i>
+                                <p style="font-size:9px;" class="mb-0 text-truncate">${archivo.name}</p>
+                            </div>`;
+                    }
+                    listaPreviews.appendChild(col);
+                };
+                reader.readAsDataURL(archivo);
+            });
         });
     }
 });
@@ -1448,5 +1546,13 @@ document.getElementById('campo-cintura')?.addEventListener('input', calcularICC)
 document.getElementById('campo-cadera')?.addEventListener('input', calcularICC);
 
 }); // fin DOMContentLoaded
+</script>
+
+<script>
+function verImagen(src, nombre) {
+    document.getElementById('modal-img-src').src = src;
+    document.getElementById('modal-img-nombre').textContent = nombre;
+    new bootstrap.Modal(document.getElementById('modalImagen')).show();
+}
 </script>
 {% endblock %}
