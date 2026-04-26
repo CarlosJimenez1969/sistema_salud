@@ -1219,18 +1219,19 @@
     </div>
 </div>
 
-<!-- Modal lightbox para ver imagen ampliada -->
-<div class="modal fade" id="modalImagen" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content bg-dark border-0">
-            <div class="modal-header border-0 py-2">
-                <small class="text-white" id="modal-img-nombre"></small>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-1 text-center">
-                <img id="modal-img-src" src="" class="img-fluid rounded" style="max-height: 80vh;">
-            </div>
-        </div>
+<!-- Lightbox propio (sin Bootstrap Modal para evitar conflictos con input file) -->
+<div id="lightbox-overlay" onclick="cerrarLightbox()"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.88); z-index:99999; cursor:zoom-out;">
+    <span onclick="cerrarLightbox()"
+          style="position:absolute; top:15px; right:25px; font-size:2rem;
+                 color:white; cursor:pointer; line-height:1;">&times;</span>
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+                max-width:92%; text-align:center;" onclick="event.stopPropagation()">
+        <img id="lightbox-img" src=""
+             style="max-width:100%; max-height:82vh; border-radius:8px; box-shadow:0 0 30px rgba(0,0,0,0.8);">
+        <p id="lightbox-nombre"
+           style="color:#ccc; margin-top:10px; font-size:0.85rem;"></p>
     </div>
 </div>
 
@@ -1324,20 +1325,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- LÓGICA 5: PREVIEW DE IMÁGENES EN PANEL DERECHO ---
-    const inputArchivos = document.getElementById('id_imagenes_campo');
-    const placeholder   = document.getElementById('placeholder-imgs');
-    const gridPreviews  = document.getElementById('grid-previews');
-    const listaPreviews = document.getElementById('lista-previews');
-    const contador      = document.getElementById('contador-imgs');
-    const modalImg      = document.getElementById('modal-img-src');
-    const modalNombre   = document.getElementById('modal-img-nombre');
+    const inputArchivos  = document.getElementById('id_imagenes_campo');
+    const placeholder    = document.getElementById('placeholder-imgs');
+    const gridPreviews   = document.getElementById('grid-previews');
+    const listaPreviews  = document.getElementById('lista-previews');
+    const contador       = document.getElementById('contador-imgs');
+    let   archivosGuardados = [];
 
     if (inputArchivos) {
         inputArchivos.addEventListener('change', function() {
-            const archivos = Array.from(this.files);
+            archivosGuardados = Array.from(this.files);
             listaPreviews.innerHTML = '';
 
-            if (archivos.length === 0) {
+            if (archivosGuardados.length === 0) {
                 placeholder.classList.remove('d-none');
                 gridPreviews.classList.add('d-none');
                 contador.textContent = '0';
@@ -1347,47 +1347,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
             placeholder.classList.add('d-none');
             gridPreviews.classList.remove('d-none');
-            contador.textContent = archivos.length;
+            contador.textContent = archivosGuardados.length;
             contador.className = 'badge bg-success ms-1';
 
-            archivos.forEach((archivo, idx) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const col = document.createElement('div');
-                    col.className = 'col-6';
+            archivosGuardados.forEach((archivo, idx) => {
+                const col = document.createElement('div');
+                col.className = 'col-6 mb-1';
 
-                    const esImagen = archivo.type.startsWith('image/');
-                    if (esImagen) {
-                        const div = document.createElement('div');
-                        div.className = 'position-relative preview-thumb';
-                        div.style.cursor = 'pointer';
-                        div.dataset.src    = e.target.result;
-                        div.dataset.nombre = archivo.name;
-                        div.innerHTML = `
-                            <img src="${e.target.result}"
-                                 class="img-thumbnail w-100"
-                                 style="height:80px; object-fit:cover;"
-                                 title="${archivo.name}">
-                            <span class="position-absolute bottom-0 start-0 w-100 text-center"
-                                  style="font-size:9px; background:rgba(0,0,0,0.5); color:white; padding:1px;">
-                                ${archivo.name.length > 15 ? archivo.name.substring(0,13)+'...' : archivo.name}
-                            </span>`;
-                        div.addEventListener('click', function(ev) {
-                            ev.preventDefault();
-                            ev.stopPropagation();
-                            verImagen(this.dataset.src, this.dataset.nombre);
-                        });
-                        col.appendChild(div);
-                    } else {
-                        col.innerHTML = `
-                            <div class="border rounded p-2 text-center bg-light" style="height:80px;">
-                                <i class="bi bi-file-earmark-text fs-3 text-secondary"></i>
-                                <p style="font-size:9px;" class="mb-0 text-truncate">${archivo.name}</p>
-                            </div>`;
-                    }
-                    listaPreviews.appendChild(col);
-                };
-                reader.readAsDataURL(archivo);
+                if (archivo.type.startsWith('image/')) {
+                    const objectUrl = URL.createObjectURL(archivo);
+                    const img = document.createElement('img');
+                    img.src = objectUrl;
+                    img.className = 'img-thumbnail w-100';
+                    img.style.cssText = 'height:80px; object-fit:cover; cursor:zoom-in;';
+                    img.title = archivo.name;
+                    img.addEventListener('click', function(ev) {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        abrirLightbox(objectUrl, archivo.name);
+                    });
+                    col.appendChild(img);
+                } else {
+                    col.innerHTML = `
+                        <div class="border rounded p-2 text-center bg-light" style="height:80px;">
+                            <i class="bi bi-file-earmark-text fs-3 text-secondary"></i>
+                            <p style="font-size:9px;" class="mb-0 text-truncate">${archivo.name}</p>
+                        </div>`;
+                }
+                listaPreviews.appendChild(col);
             });
         });
     }
@@ -1557,10 +1544,19 @@ document.getElementById('campo-cadera')?.addEventListener('input', calcularICC);
 </script>
 
 <script>
-function verImagen(src, nombre) {
-    document.getElementById('modal-img-src').src = src;
-    document.getElementById('modal-img-nombre').textContent = nombre;
-    new bootstrap.Modal(document.getElementById('modalImagen')).show();
+function abrirLightbox(src, nombre) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox-nombre').textContent = nombre;
+    document.getElementById('lightbox-overlay').style.display = 'block';
+    document.body.style.overflow = 'hidden';
 }
+function cerrarLightbox() {
+    document.getElementById('lightbox-overlay').style.display = 'none';
+    document.getElementById('lightbox-img').src = '';
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') cerrarLightbox();
+});
 </script>
 {% endblock %}
