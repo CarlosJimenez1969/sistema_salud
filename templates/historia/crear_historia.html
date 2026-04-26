@@ -1376,30 +1376,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (archivo.type.startsWith('image/')) {
                     const objectUrl = URL.createObjectURL(archivo);
 
-                    // Imagen a ancho completo en panel fijo derecho
-                    const bloqueId = `img-panel-${idx}`;
-                    const bloque = document.createElement('div');
-                    bloque.id = bloqueId;
-                    bloque.style.cssText = 'margin-bottom:12px;';
-                    bloque.innerHTML = `
-                        <p style="color:#aaa; font-size:11px; margin-bottom:4px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
-                            ${idx+1}. ${archivo.name}
-                        </p>
-                        <img src="${objectUrl}" style="width:100%; border-radius:5px;" alt="${archivo.name}">`;
-                    listaPreviews.appendChild(bloque);
-
-                    // Thumbnail pequeño debajo del input — clic abre panel derecho
+                    // Thumbnail pequeño debajo del input — clic muestra solo esa imagen en panel
                     const thumb = document.createElement('img');
                     thumb.src = objectUrl;
                     thumb.style.cssText = 'height:60px; width:60px; object-fit:cover; border-radius:4px; border:2px solid #0d6efd; cursor:pointer;';
                     thumb.title = 'Clic para ver en panel derecho';
                     thumb.addEventListener('click', function() {
-                        panelFijo.style.display = 'block';
-                        ajustarMargen(true);
-                        const destino = document.getElementById(bloqueId);
-                        if (destino) destino.scrollIntoView({ behavior: 'smooth' });
+                        mostrarEnPanel(objectUrl, archivo.name, idx + 1);
                     });
                     previewInlineGrid.appendChild(thumb);
+
+                    // Mostrar la última imagen automáticamente en el panel
+                    if (idx === archivos.length - 1) {
+                        mostrarEnPanel(objectUrl, archivo.name, idx + 1);
+                    }
                 } else {
                     const bloque = document.createElement('div');
                     bloque.style.cssText = 'background:#2d3139; border-radius:5px; padding:8px; margin-bottom:8px; text-align:center;';
@@ -1577,6 +1567,18 @@ document.getElementById('campo-cadera')?.addEventListener('input', calcularICC);
 </script>
 
 <script>
+function mostrarEnPanel(src, nombre, num) {
+    const panel = document.getElementById('panel-imagenes-fijo');
+    const lista = document.getElementById('lista-previews');
+    lista.innerHTML = `
+        <p style="color:#aaa; font-size:11px; margin-bottom:6px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
+            ${num}. ${nombre}
+        </p>
+        <img src="${src}" style="width:100%; border-radius:5px;" alt="${nombre}">`;
+    panel.style.display = 'block';
+    const col = document.getElementById('columna-formulario');
+    if (col) col.style.paddingRight = '280px';
+}
 function cerrarPanelImagenes() {
     document.getElementById('panel-imagenes-fijo').style.display = 'none';
     const col = document.getElementById('columna-formulario');
