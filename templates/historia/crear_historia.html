@@ -1206,13 +1206,16 @@
 
 <!-- Panel fijo de imágenes (siempre visible en la derecha) -->
 <div id="panel-imagenes-fijo" style="
-    display:none; position:fixed; right:0; top:60px;
-    width:270px; height:calc(100vh - 60px);
+    display:none; position:fixed; right:0; top:56px;
+    width:270px; height:calc(100vh - 56px);
     background:#1e2126; border-left:2px solid #444;
-    overflow-y:auto; z-index:1050; padding:8px;">
+    overflow-y:auto; z-index:1020; padding:8px;">
     <div class="d-flex justify-content-between align-items-center mb-2 px-1">
         <small style="color:#aaa;"><i class="bi bi-images me-1"></i><strong>Exámenes / Imágenes</strong></small>
-        <span id="contador-imgs" class="badge bg-success">0</span>
+        <div class="d-flex align-items-center gap-2">
+            <span id="contador-imgs" class="badge bg-success">0</span>
+            <button onclick="cerrarPanelImagenes()" style="background:none; border:none; color:#aaa; font-size:1.2rem; line-height:1; cursor:pointer;" title="Cerrar panel">&times;</button>
+        </div>
     </div>
     <div id="lista-previews"></div>
 </div>
@@ -1560,6 +1563,11 @@ document.getElementById('campo-cadera')?.addEventListener('input', calcularICC);
 </script>
 
 <script>
+function cerrarPanelImagenes() {
+    document.getElementById('panel-imagenes-fijo').style.display = 'none';
+    const col = document.getElementById('columna-formulario');
+    if (col) col.style.paddingRight = '0';
+}
 function abrirLightbox(src, nombre) {
     document.getElementById('lightbox-img').src = src;
     document.getElementById('lightbox-nombre').textContent = nombre;
