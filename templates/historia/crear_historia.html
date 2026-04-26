@@ -1574,7 +1574,8 @@ function mostrarEnPanel(src, nombre, num) {
         <p style="color:#aaa; font-size:11px; margin-bottom:6px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
             ${num}. ${nombre}
         </p>
-        <img src="${src}" style="width:100%; border-radius:5px;" alt="${nombre}">`;
+        <img src="${src}" style="width:100%; border-radius:5px; cursor:zoom-in;" title="Clic para pantalla completa"
+             onclick="abrirLightbox('${src}', '${nombre}')" alt="${nombre}">`;
     panel.style.display = 'block';
     const col = document.getElementById('columna-formulario');
     if (col) col.style.paddingRight = '280px';
