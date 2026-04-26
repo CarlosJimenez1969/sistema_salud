@@ -1119,6 +1119,11 @@
                                         <strong>Puede seleccionar varios archivos a la vez.</strong>
                                     </p>
                                     <input type="file" name="imagenes_campo" id="id_imagenes_campo" multiple class="form-control border-secondary">
+                                    <!-- Previsualizaciones inline debajo del input -->
+                                    <div id="preview-inline" class="mt-2 d-none">
+                                        <small class="text-muted"><i class="bi bi-eye me-1"></i>Clic en una imagen para verla ampliada:</small>
+                                        <div id="preview-inline-grid" class="d-flex flex-wrap gap-2 mt-1"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1324,22 +1329,36 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- LÓGICA 5: PREVIEW DE IMÁGENES EN PANEL DERECHO ---
-    const inputArchivos  = document.getElementById('id_imagenes_campo');
-    const placeholder    = document.getElementById('placeholder-imgs');
-    const gridPreviews   = document.getElementById('grid-previews');
-    const listaPreviews  = document.getElementById('lista-previews');
-    const contador       = document.getElementById('contador-imgs');
-    let   archivosGuardados = [];
+    // --- LÓGICA 5: PREVIEW DE IMÁGENES ---
+    const inputArchivos   = document.getElementById('id_imagenes_campo');
+    const placeholder     = document.getElementById('placeholder-imgs');
+    const gridPreviews    = document.getElementById('grid-previews');
+    const listaPreviews   = document.getElementById('lista-previews');
+    const contador        = document.getElementById('contador-imgs');
+    const previewInline   = document.getElementById('preview-inline');
+    const previewInlineGrid = document.getElementById('preview-inline-grid');
+
+    function crearThumb(objectUrl, nombre, altura) {
+        const img = document.createElement('img');
+        img.src = objectUrl;
+        img.style.cssText = `height:${altura}px; width:${altura}px; object-fit:cover; cursor:zoom-in; border-radius:6px; border:2px solid #dee2e6;`;
+        img.title = 'Clic para ampliar: ' + nombre;
+        img.addEventListener('click', function() {
+            window.open(objectUrl, '_blank');
+        });
+        return img;
+    }
 
     if (inputArchivos) {
         inputArchivos.addEventListener('change', function() {
-            archivosGuardados = Array.from(this.files);
+            const archivos = Array.from(this.files);
             listaPreviews.innerHTML = '';
+            previewInlineGrid.innerHTML = '';
 
-            if (archivosGuardados.length === 0) {
+            if (archivos.length === 0) {
                 placeholder.classList.remove('d-none');
                 gridPreviews.classList.add('d-none');
+                previewInline.classList.add('d-none');
                 contador.textContent = '0';
                 contador.className = 'badge bg-secondary ms-1';
                 return;
@@ -1347,34 +1366,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
             placeholder.classList.add('d-none');
             gridPreviews.classList.remove('d-none');
-            contador.textContent = archivosGuardados.length;
+            previewInline.classList.remove('d-none');
+            contador.textContent = archivos.length;
             contador.className = 'badge bg-success ms-1';
 
-            archivosGuardados.forEach((archivo, idx) => {
-                const col = document.createElement('div');
-                col.className = 'col-6 mb-1';
-
+            archivos.forEach((archivo) => {
                 if (archivo.type.startsWith('image/')) {
                     const objectUrl = URL.createObjectURL(archivo);
-                    const img = document.createElement('img');
-                    img.src = objectUrl;
-                    img.className = 'img-thumbnail w-100';
-                    img.style.cssText = 'height:80px; object-fit:cover; cursor:zoom-in;';
-                    img.title = archivo.name;
-                    img.addEventListener('click', function(ev) {
-                        ev.preventDefault();
-                        ev.stopPropagation();
-                        abrirLightbox(objectUrl, archivo.name);
-                    });
-                    col.appendChild(img);
+
+                    // Thumb en panel derecho (80px)
+                    const col = document.createElement('div');
+                    col.className = 'col-6 mb-1';
+                    col.appendChild(crearThumb(objectUrl, archivo.name, 80));
+                    listaPreviews.appendChild(col);
+
+                    // Thumb inline debajo del input (100px, más visible)
+                    previewInlineGrid.appendChild(crearThumb(objectUrl, archivo.name, 100));
                 } else {
+                    const col = document.createElement('div');
+                    col.className = 'col-6 mb-1';
                     col.innerHTML = `
                         <div class="border rounded p-2 text-center bg-light" style="height:80px;">
                             <i class="bi bi-file-earmark-text fs-3 text-secondary"></i>
                             <p style="font-size:9px;" class="mb-0 text-truncate">${archivo.name}</p>
                         </div>`;
+                    listaPreviews.appendChild(col);
                 }
-                listaPreviews.appendChild(col);
             });
         });
     }
