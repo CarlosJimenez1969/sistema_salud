@@ -18,19 +18,37 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.conf import settings
 
-# 1. Pantalla para buscar médicos por especialidad
+# 1. Pantalla para buscar médicos por especialidad y ubicación
 def buscar_medico(request):
-    especialidades = Especialidad.objects.all()
-    medicos = None
-    
-    # Si el usuario seleccionó una especialidad
+    especialidades = Especialidad.objects.all().order_by('nombre')
+
     especialidad_id = request.GET.get('especialidad')
-    if especialidad_id:
-        medicos = Medico.objects.filter(especialidad_id=especialidad_id)
-    
+    pais            = request.GET.get('pais', '').strip()
+    ciudad          = request.GET.get('ciudad', '').strip()
+    sector          = request.GET.get('sector', '').strip()
+
+    medicos = None
+    busqueda_activa = any([especialidad_id, pais, ciudad, sector])
+
+    if busqueda_activa:
+        medicos = Medico.objects.select_related('usuario', 'especialidad').all()
+        if especialidad_id:
+            medicos = medicos.filter(especialidad_id=especialidad_id)
+        if pais:
+            medicos = medicos.filter(pais__icontains=pais)
+        if ciudad:
+            medicos = medicos.filter(ciudad__icontains=ciudad)
+        if sector:
+            medicos = medicos.filter(sector=sector)
+
+    sectores = [('NORTE','Norte'), ('CENTRO','Centro'), ('SUR','Sur'), ('VALLES','Valles'), ('OTRO','Otro')]
+
     return render(request, 'buscar_medico.html', {
         'especialidades': especialidades,
-        'medicos': medicos
+        'medicos': medicos,
+        'sectores': sectores,
+        'busqueda_activa': busqueda_activa,
+        'filtros': {'especialidad_id': especialidad_id, 'pais': pais, 'ciudad': ciudad, 'sector': sector},
     })
 
 # 2. Pantalla Gráfica de Turnos (La Lógica Maestra)

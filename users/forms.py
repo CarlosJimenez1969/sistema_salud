@@ -25,27 +25,41 @@ class RegistroInicialMedicoForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-select'}),
         empty_label="Seleccione su especialidad"
     )
+    pais = forms.CharField(
+        label="País", initial="Ecuador",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Ecuador'})
+    )
+    ciudad = forms.CharField(
+        label="Ciudad",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Quito'})
+    )
+    sector = forms.ChoiceField(
+        label="Sector",
+        choices=[('', '-- Seleccionar --'), ('NORTE', 'Norte'), ('CENTRO', 'Centro'), ('SUR', 'Sur'), ('VALLES', 'Valles'), ('OTRO', 'Otro')],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=False
+    )
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'cedula','especialidad']
+        fields = ['username', 'first_name', 'last_name', 'email', 'cedula', 'especialidad', 'pais', 'ciudad', 'sector']
 
     def save(self, commit=True):
         with transaction.atomic():
             user = super().save(commit=False)
-            # Solo asignar MEDICO si el rol está vacío o es el default
             if not user.role or user.role == user.base_role:
                 user.role = 'MEDICO'
-            
             user.pago_realizado = False
             user.set_unusable_password()
-            
             if commit:
                 user.save()
                 from medico.models import Medico
                 Medico.objects.create(
                     usuario=user,
-                    especialidad=self.cleaned_data['especialidad']
+                    especialidad=self.cleaned_data['especialidad'],
+                    pais=self.cleaned_data.get('pais', 'Ecuador'),
+                    ciudad=self.cleaned_data.get('ciudad', ''),
+                    sector=self.cleaned_data.get('sector', ''),
                 )
         return user
     

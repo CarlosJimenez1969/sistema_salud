@@ -75,6 +75,31 @@
                             {% endif %}
                         </div>
 
+                        <h5 class="text-success border-bottom pb-2 mb-3 mt-4">3. Ubicación del Consultorio</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">País</label>
+                                {{ form.pais }}
+                                {% if form.pais.errors %}
+                                    <div class="text-danger small">{{ form.pais.errors|striptags }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Ciudad</label>
+                                {{ form.ciudad }}
+                                {% if form.ciudad.errors %}
+                                    <div class="text-danger small">{{ form.ciudad.errors|striptags }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Sector</label>
+                            {{ form.sector }}
+                            {% if form.sector.errors %}
+                                <div class="text-danger small">{{ form.sector.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
                         <div class="alert alert-info small mt-4">
                             <i class="bi bi-shield-lock me-1"></i>
                             Tus datos se guardarán temporalmente. Serás redirigido a PayPal para activar tu suscripción profesional de 50.00 USD.

@@ -29,6 +29,19 @@ class Medico(models.Model):
     # Costo de la cita (útil para el pago posterior)
     precio_consulta = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     
+    # Ubicación del consultorio
+    pais = models.CharField(max_length=100, blank=True, default='Ecuador')
+    ciudad = models.CharField(max_length=100, blank=True)
+    SECTORES = [
+        ('', '-- Seleccionar --'),
+        ('NORTE', 'Norte'),
+        ('CENTRO', 'Centro'),
+        ('SUR', 'Sur'),
+        ('VALLES', 'Valles'),
+        ('OTRO', 'Otro'),
+    ]
+    sector = models.CharField(max_length=10, choices=SECTORES, blank=True)
+
     # Horario de atención (Simplificado para empezar)
     hora_inicio = models.TimeField(null=True, blank=True)
     hora_fin = models.TimeField(null=True, blank=True)
