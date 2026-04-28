@@ -94,7 +94,7 @@ def registro_paciente(request):
             user = form.save()
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             messages.success(request, f'¡Bienvenido/a {user.first_name}! Tu cuenta fue creada exitosamente.')
-            return redirect('buscar_medico')
+            return redirect('home')
     else:
         form = RegistroPacienteForm()
 
