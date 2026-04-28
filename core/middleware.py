@@ -2,6 +2,17 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth import logout
 
+
+class ReferrerPolicyMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        response['Referrer-Policy'] = 'unsafe-url'
+        return response
+
+
 class SeguridadSesionMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
