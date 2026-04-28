@@ -5,7 +5,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 # Importamos las vistas
-from users.views import home, registro_medico, pasarela_pago, pago_exitoso, crear_orden_paypal, registro_exitoso, panel_admin
+from users.views import home, registro_medico, pasarela_pago, pago_exitoso, registro_exitoso, panel_admin
 from medico.views import configurar_horario, ciudades_por_pais
 from paciente.views import listar_pacientes, crear_paciente, editar_paciente, registro_paciente
 from historia.views import crear_historia, historial_medico, imprimir_receta, registrar_triaje  # <--- IMPORTANTE: Importar historial_medico
@@ -74,7 +74,7 @@ urlpatterns = [
     path('probar-email/', views.probar_email, name='probar_email'),
     path('pago-exitoso/', pago_exitoso, name='pago_exitoso'),
     path('registro-exitoso/', registro_exitoso, name='registro_exitoso'),
-    path('crear-orden-paypal/', crear_orden_paypal, name='crear_orden_paypal'),
+
     path('confirmar-pago/', users_views.confirmar_pago, name='confirmar_pago'),
     path('pasarela-pago/', users_views.pasarela_pago, name='pasarela_pago'),
 ]
