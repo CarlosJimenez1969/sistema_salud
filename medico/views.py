@@ -2,8 +2,9 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.http import JsonResponse
 from functools import wraps
-from .models import Medico
+from .models import Medico, Pais, Ciudad
 
 def medico_required(view_func):
     @wraps(view_func)
@@ -40,3 +41,9 @@ def configurar_horario(request):
             return redirect('home')
 
     return render(request, 'configurar_horario.html', {'medico': medico})
+
+
+def ciudades_por_pais(request):
+    pais_id = request.GET.get('pais_id')
+    ciudades = Ciudad.objects.filter(pais_id=pais_id).values('id', 'nombre') if pais_id else []
+    return JsonResponse(list(ciudades), safe=False)

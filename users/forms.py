@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.shortcuts import redirect, render
-from medico.models import Medico, Especialidad
+from medico.models import Medico, Especialidad, Pais, Ciudad
 from django.contrib.auth.decorators import login_required
 
 from django.contrib.auth.models import Group
@@ -25,13 +25,17 @@ class RegistroInicialMedicoForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-select'}),
         empty_label="Seleccione su especialidad"
     )
-    pais = forms.CharField(
-        label="País", initial="Ecuador",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Ecuador'})
+    pais = forms.ModelChoiceField(
+        queryset=Pais.objects.all(),
+        label="País",
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_pais_medico'}),
+        empty_label="-- Seleccione país --",
     )
-    ciudad = forms.CharField(
+    ciudad = forms.ModelChoiceField(
+        queryset=Ciudad.objects.none(),
         label="Ciudad",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Quito'})
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_ciudad_medico'}),
+        empty_label="-- Seleccione ciudad --",
     )
     sector = forms.ChoiceField(
         label="Sector",
@@ -44,6 +48,16 @@ class RegistroInicialMedicoForm(forms.ModelForm):
         model = User
         fields = ['username', 'first_name', 'last_name', 'email', 'cedula', 'especialidad', 'pais', 'ciudad', 'sector']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Si viene un POST con pais seleccionado, cargamos las ciudades de ese país
+        if 'pais' in self.data:
+            try:
+                pais_id = int(self.data.get('pais'))
+                self.fields['ciudad'].queryset = Ciudad.objects.filter(pais_id=pais_id)
+            except (ValueError, TypeError):
+                pass
+
     def save(self, commit=True):
         with transaction.atomic():
             user = super().save(commit=False)
@@ -53,12 +67,13 @@ class RegistroInicialMedicoForm(forms.ModelForm):
             user.set_unusable_password()
             if commit:
                 user.save()
-                from medico.models import Medico
+                pais_obj   = self.cleaned_data.get('pais')
+                ciudad_obj = self.cleaned_data.get('ciudad')
                 Medico.objects.create(
                     usuario=user,
                     especialidad=self.cleaned_data['especialidad'],
-                    pais=self.cleaned_data.get('pais', 'Ecuador'),
-                    ciudad=self.cleaned_data.get('ciudad', ''),
+                    pais=pais_obj.nombre if pais_obj else '',
+                    ciudad=ciudad_obj.nombre if ciudad_obj else '',
                     sector=self.cleaned_data.get('sector', ''),
                 )
         return user

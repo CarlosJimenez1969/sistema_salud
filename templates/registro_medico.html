@@ -117,4 +117,25 @@
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('id_pais_medico').addEventListener('change', function () {
+    const paisId = this.value;
+    const selectCiudad = document.getElementById('id_ciudad_medico');
+    selectCiudad.innerHTML = '<option value="">-- Seleccione ciudad --</option>';
+
+    if (!paisId) return;
+
+    fetch(`/api/ciudades/?pais_id=${paisId}`)
+        .then(r => r.json())
+        .then(data => {
+            data.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nombre;
+                selectCiudad.appendChild(opt);
+            });
+        });
+});
+</script>
 {% endblock %}

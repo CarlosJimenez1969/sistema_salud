@@ -1,7 +1,30 @@
 from django.db import models
-from django.conf import settings # Para conectar con nuestro usuario
+from django.conf import settings
 
-# Modelo para las Especialidades (Cardiología, Pediatría, etc.)
+
+class Pais(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name_plural = "Países"
+        ordering = ['nombre']
+
+
+class Ciudad(models.Model):
+    nombre = models.CharField(max_length=100)
+    pais   = models.ForeignKey(Pais, on_delete=models.CASCADE, related_name='ciudades')
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        ordering = ['nombre']
+        unique_together = ('nombre', 'pais')
+
+
 class Especialidad(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.TextField(blank=True)

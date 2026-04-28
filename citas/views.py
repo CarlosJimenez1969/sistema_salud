@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from datetime import datetime, timedelta, date, time
 from .models import Cita
-from medico.models import Medico, Especialidad
+from medico.models import Medico, Especialidad, Pais, Ciudad
 from paciente.models import Paciente
 from django.utils import timezone
 from .forms import CitaForm
@@ -21,23 +21,27 @@ from django.conf import settings
 # 1. Pantalla para buscar médicos por especialidad y ubicación
 def buscar_medico(request):
     especialidades = Especialidad.objects.all().order_by('nombre')
+    paises         = Pais.objects.all()
 
     especialidad_id = request.GET.get('especialidad')
-    pais            = request.GET.get('pais', '').strip()
-    ciudad          = request.GET.get('ciudad', '').strip()
+    pais_id         = request.GET.get('pais', '').strip()
+    ciudad_id       = request.GET.get('ciudad', '').strip()
     sector          = request.GET.get('sector', '').strip()
 
     medicos = None
-    busqueda_activa = any([especialidad_id, pais, ciudad, sector])
+    busqueda_activa = any([especialidad_id, pais_id, ciudad_id, sector])
+
+    # Ciudades del país seleccionado (para repoblar el combo en el GET)
+    ciudades_filtro = Ciudad.objects.filter(pais_id=pais_id) if pais_id else Ciudad.objects.none()
 
     if busqueda_activa:
         medicos = Medico.objects.select_related('usuario', 'especialidad').all()
         if especialidad_id:
             medicos = medicos.filter(especialidad_id=especialidad_id)
-        if pais:
-            medicos = medicos.filter(pais__icontains=pais)
-        if ciudad:
-            medicos = medicos.filter(ciudad__icontains=ciudad)
+        if pais_id:
+            medicos = medicos.filter(pais__icontains=Pais.objects.get(id=pais_id).nombre) if Pais.objects.filter(id=pais_id).exists() else medicos
+        if ciudad_id:
+            medicos = medicos.filter(ciudad__icontains=Ciudad.objects.get(id=ciudad_id).nombre) if Ciudad.objects.filter(id=ciudad_id).exists() else medicos
         if sector:
             medicos = medicos.filter(sector=sector)
 
@@ -45,10 +49,12 @@ def buscar_medico(request):
 
     return render(request, 'buscar_medico.html', {
         'especialidades': especialidades,
+        'paises': paises,
+        'ciudades_filtro': ciudades_filtro,
         'medicos': medicos,
         'sectores': sectores,
         'busqueda_activa': busqueda_activa,
-        'filtros': {'especialidad_id': especialidad_id, 'pais': pais, 'ciudad': ciudad, 'sector': sector},
+        'filtros': {'especialidad_id': especialidad_id, 'pais_id': pais_id, 'ciudad_id': ciudad_id, 'sector': sector},
     })
 
 # 2. Pantalla Gráfica de Turnos (La Lógica Maestra)
