@@ -7,7 +7,7 @@ from django.conf.urls.static import static
 # Importamos las vistas
 from users.views import home, registro_medico, pasarela_pago, pago_exitoso, crear_orden_paypal, registro_exitoso, panel_admin
 from medico.views import configurar_horario
-from paciente.views import listar_pacientes, crear_paciente, editar_paciente
+from paciente.views import listar_pacientes, crear_paciente, editar_paciente, registro_paciente
 from historia.views import crear_historia, historial_medico, imprimir_receta, registrar_triaje  # <--- IMPORTANTE: Importar historial_medico
 from citas.views import buscar_medico, reservar_cita, ver_agenda
 
@@ -34,6 +34,9 @@ urlpatterns = [
     # Registro secretaria
     path('crear-secretaria/', views.crear_secretaria, name='crear_secretaria'),
     path('eliminar-secretaria/<int:secretaria_id>/', views.eliminar_secretaria, name='eliminar_secretaria'),
+
+    # Registro ciudadano / paciente
+    path('registro-paciente/', registro_paciente, name='registro_paciente'),
 
     # Pacientes
     path('pacientes/', listar_pacientes, name='listar_pacientes'),

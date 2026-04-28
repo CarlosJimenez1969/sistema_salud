@@ -63,7 +63,12 @@
                 </div>
 
                 <div class="card-footer bg-light text-center py-3">
-                    <small class="text-muted">¿No tienes cuenta? <a href="{% url 'registro_medico' %}" class="text-decoration-none fw-bold">Regístrate aquí</a></small>
+                    <small class="text-muted d-block mb-1">
+                        ¿Eres paciente? <a href="{% url 'registro_paciente' %}" class="text-decoration-none fw-bold text-primary">Crear cuenta de paciente</a>
+                    </small>
+                    <small class="text-muted">
+                        ¿Eres médico? <a href="{% url 'registro_medico' %}" class="text-decoration-none fw-bold text-success">Registro profesional</a>
+                    </small>
                 </div>
             </div>
         </div>

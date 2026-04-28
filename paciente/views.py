@@ -1,8 +1,10 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login
+from django.contrib import messages
 
 from .models import Paciente
-from .forms import PacienteForm
+from .forms import PacienteForm, RegistroPacienteForm
 from historia.models import HistoriaClinica
 from users.decorators import medico_required
 from django.db.models import Q
@@ -80,3 +82,20 @@ def resumen_paciente_rapido(request, paciente_id):
         'paciente': paciente,
         'h': ultima_historia
     })
+
+
+def registro_paciente(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = RegistroPacienteForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, f'¡Bienvenido/a {user.first_name}! Tu cuenta fue creada exitosamente.')
+            return redirect('buscar_medico')
+    else:
+        form = RegistroPacienteForm()
+
+    return render(request, 'registro_paciente.html', {'form': form})

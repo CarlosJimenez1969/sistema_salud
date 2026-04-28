@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.password_validation import validate_password
 from users.models import User
 from .models import Paciente
 
@@ -68,3 +69,67 @@ class PacienteForm(forms.ModelForm):
         if commit:
             paciente.save()
         return paciente
+
+
+W = {'class': 'form-control'}
+
+class RegistroPacienteForm(forms.Form):
+    first_name  = forms.CharField(label="Nombres",    widget=forms.TextInput(attrs={**W, 'placeholder': 'Tus nombres'}))
+    last_name   = forms.CharField(label="Apellidos",  widget=forms.TextInput(attrs={**W, 'placeholder': 'Tus apellidos'}))
+    cedula      = forms.CharField(label="Cédula / Pasaporte", widget=forms.TextInput(attrs={**W, 'placeholder': 'Número de identificación'}))
+    email       = forms.EmailField(label="Correo Electrónico", widget=forms.EmailInput(attrs={**W, 'placeholder': 'correo@ejemplo.com'}))
+    telefono    = forms.CharField(label="Teléfono", required=False, widget=forms.TextInput(attrs={**W, 'placeholder': 'Ej: 0991234567'}))
+    fecha_nacimiento = forms.DateField(label="Fecha de Nacimiento", widget=forms.DateInput(attrs={**W, 'type': 'date'}))
+    sexo = forms.ChoiceField(
+        label="Sexo",
+        choices=[('', '— Seleccione —'), ('M', 'Masculino'), ('F', 'Femenino')],
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    password1 = forms.CharField(label="Contraseña",         widget=forms.PasswordInput(attrs={**W, 'placeholder': 'Mínimo 8 caracteres'}))
+    password2 = forms.CharField(label="Confirmar contraseña", widget=forms.PasswordInput(attrs={**W, 'placeholder': 'Repite la contraseña'}))
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("Este correo ya está registrado.")
+        return email
+
+    def clean_cedula(self):
+        cedula = self.cleaned_data['cedula']
+        if User.objects.filter(cedula=cedula).exists():
+            raise forms.ValidationError("Esta cédula ya está registrada.")
+        return cedula
+
+    def clean_password1(self):
+        pwd = self.cleaned_data.get('password1')
+        if pwd:
+            validate_password(pwd)
+        return pwd
+
+    def clean(self):
+        cleaned = super().clean()
+        p1 = cleaned.get('password1')
+        p2 = cleaned.get('password2')
+        if p1 and p2 and p1 != p2:
+            self.add_error('password2', "Las contraseñas no coinciden.")
+        return cleaned
+
+    def save(self):
+        d = self.cleaned_data
+        user = User.objects.create_user(
+            username=d['email'],
+            email=d['email'],
+            password=d['password1'],
+            first_name=d['first_name'],
+            last_name=d['last_name'],
+            cedula=d['cedula'],
+            role=User.Role.PACIENTE,
+        )
+        from .models import Paciente
+        Paciente.objects.create(
+            usuario=user,
+            fecha_nacimiento=d['fecha_nacimiento'],
+            sexo=d['sexo'],
+            telefono=d.get('telefono', ''),
+        )
+        return user
