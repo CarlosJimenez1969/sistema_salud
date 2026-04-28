@@ -177,6 +177,10 @@ PAYPAL_CLIENT_ID     = config('PAYPAL_CLIENT_ID',     default='')
 PAYPAL_CLIENT_SECRET = config('PAYPAL_CLIENT_SECRET', default='')
 PAYPAL_MODE          = config('PAYPAL_MODE',          default='sandbox')
 
+# ── PayPhone ────────────────────────────────────────────────────────────────────
+PAYPHONE_TOKEN    = config('PAYPHONE_TOKEN',    default='')
+PAYPHONE_STORE_ID = config('PAYPHONE_STORE_ID', default='')
+
 # ── Facturación Electrónica SRI Ecuador ───────────────────────────────────────
 SRI_RUC                   = config('SRI_RUC',                   default='')
 SRI_RAZON_SOCIAL          = config('SRI_RAZON_SOCIAL',          default='')

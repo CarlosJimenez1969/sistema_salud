@@ -158,70 +158,42 @@ def pasarela_pago(request):
     if not datos:
         return redirect('registro_medico')
 
-    context = {
-        'paypal_client_id': settings.PAYPAL_CLIENT_ID,
-        'paypal_mode': settings.PAYPAL_MODE,
-        'monto': '50.00',
-        'nombre_medico': datos.get('first_name'),
+    import uuid
+    client_transaction_id = str(uuid.uuid4())
+    request.session['payphone_client_tx'] = client_transaction_id
+    request.session.modified = True
+
+    base_url = f"{request.scheme}://{request.get_host()}"
+
+    payload = {
+        "amount": 5000,               # centavos: $50.00
+        "amountWithTax": 0,
+        "amountWithoutTax": 5000,
+        "tax": 0,
+        "currency": "USD",
+        "storeId": settings.PAYPHONE_STORE_ID,
+        "reference": f"Suscripcion-{datos.get('username', 'medico')}",
+        "clientTransactionId": client_transaction_id,
+        "responseUrl": f"{base_url}/confirmar-pago/",
+        "cancellationUrl": f"{base_url}/registro-medico/",
     }
-    return render(request, 'pasarela_pago.html', context)
-
-
-# ─── Helpers PayPal ────────────────────────────────────────────────────────────
-
-def _paypal_base_url():
-    if settings.PAYPAL_MODE == 'live':
-        return 'https://api-m.paypal.com'
-    return 'https://api-m.sandbox.paypal.com'
-
-def _paypal_access_token():
-    """Obtiene un Bearer token usando las credenciales del servidor."""
-    url = f'{_paypal_base_url()}/v1/oauth2/token'
-    resp = http_requests.post(
-        url,
-        auth=(settings.PAYPAL_CLIENT_ID, settings.PAYPAL_CLIENT_SECRET),
-        data={'grant_type': 'client_credentials'},
-        timeout=10,
-    )
-    resp.raise_for_status()
-    return resp.json()['access_token']
-
-
-# ─── Vista AJAX: el servidor crea la orden en PayPal ──────────────────────────
-
-@require_POST
-def crear_orden_paypal(request):
-    """
-    El frontend llama a esta vista para que el SERVIDOR cree la orden en PayPal.
-    Devuelve el orderID generado por PayPal.
-    Sin sesión válida no se crea nada.
-    """
-    from django.http import JsonResponse
-
-    if not request.session.get('datos_registro_pendiente'):
-        return JsonResponse({'error': 'Sesión de registro no encontrada.'}, status=400)
 
     try:
-        token = _paypal_access_token()
-        url = f'{_paypal_base_url()}/v2/checkout/orders'
-        payload = {
-            'intent': 'CAPTURE',
-            'purchase_units': [{
-                'amount': {'currency_code': 'USD', 'value': '50.00'},
-                'description': 'Registro de suscripción - VertexSalud',
-            }],
-        }
         resp = http_requests.post(
-            url,
+            "https://pay.payphonetodoesposible.com/api/button/Prepare",
             json=payload,
-            headers={'Authorization': f'Bearer {token}'},
+            headers={"Authorization": f"Bearer {settings.PAYPHONE_TOKEN}"},
             timeout=15,
         )
         resp.raise_for_status()
-        order = resp.json()
-        return JsonResponse({'id': order['id']})
+        data = resp.json()
+        payment_url = data.get("payWithCard") or data.get("payWithPayPhone")
+        if not payment_url:
+            raise ValueError(f"No se recibió URL de pago: {data}")
+        return redirect(payment_url)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        messages.error(request, f"Error al iniciar el pago: {e}")
+        return redirect('registro_medico')
 
 # --- VISTA 1: CREA EL USUARIO Y SALTA A LA CONTRASEÑA ---
 @login_required
@@ -426,61 +398,49 @@ def proceso_pago_medico(request):
     }
     return render(request, 'pago_registro_medico.html', context)
 
-@require_POST
 @transaction.atomic
 def confirmar_pago(request):
     """
-    El frontend llama a esta vista (POST + JSON) con el orderID aprobado por PayPal.
-    El servidor captura el pago en PayPal y SOLO si es exitoso crea el User y el Medico.
+    PayPhone redirige aquí con ?transactionId=...&clientTransactionId=...
+    Verificamos el pago contra la API de PayPhone y, si es exitoso, creamos el médico.
     """
-    from django.http import JsonResponse
     from medico.models import Medico, Especialidad
 
-    User = get_user_model()
+    transaction_id        = request.GET.get('transactionId') or request.POST.get('transactionId')
+    client_transaction_id = request.GET.get('clientTransactionId') or request.POST.get('clientTransactionId')
 
-    # 1. Leer datos de sesión — si no hay sesión no hacemos nada
-    datos = request.session.get('datos_registro_pendiente')
-    if not datos:
-        return JsonResponse({'error': 'Sesión de registro expirada. Vuelva a registrarse.'}, status=400)
+    if not transaction_id or not client_transaction_id:
+        messages.error(request, "No se recibieron los datos de confirmación del pago.")
+        return redirect('registro_medico')
 
-    # 2. Leer el orderID enviado por el frontend
-    import json
+    # 1. Verificar el pago con PayPhone
     try:
-        body = json.loads(request.body)
-        order_id = body.get('orderID')
-    except (json.JSONDecodeError, AttributeError):
-        order_id = None
-
-    if not order_id:
-        return JsonResponse({'error': 'No se recibió el ID de la orden de pago.'}, status=400)
-
-    # 3. Capturar el pago en PayPal (SERVER-SIDE) — esto verifica que el dinero fue cobrado
-    try:
-        token = _paypal_access_token()
-        capture_url = f'{_paypal_base_url()}/v2/checkout/orders/{order_id}/capture'
         resp = http_requests.post(
-            capture_url,
-            headers={
-                'Authorization': f'Bearer {token}',
-                'Content-Type': 'application/json',
-            },
+            "https://pay.payphonetodoesposible.com/api/button/V2/Confirm",
+            json={"id": int(transaction_id), "clientTransactionId": client_transaction_id},
+            headers={"Authorization": f"Bearer {settings.PAYPHONE_TOKEN}"},
             timeout=20,
         )
         resp.raise_for_status()
-        capture_data = resp.json()
+        data = resp.json()
     except Exception as e:
-        return JsonResponse({'error': f'No se pudo verificar el pago con PayPal: {e}'}, status=502)
+        messages.error(request, f"No se pudo verificar el pago: {e}")
+        return redirect('registro_medico')
 
-    # 4. Confirmar que el estado de la captura es COMPLETED
-    capture_status = capture_data.get('status')
-    if capture_status != 'COMPLETED':
-        return JsonResponse(
-            {'error': f'El pago no fue completado (estado: {capture_status}).'},
-            status=400
-        )
+    status_code = data.get("transactionStatus") or data.get("statusCode") or ""
+    if str(status_code) not in ("3", "approved", "Approved"):
+        messages.error(request, f"El pago no fue aprobado (estado: {status_code}). Intente nuevamente.")
+        return redirect('registro_medico')
 
-    # 5. Pago verificado — ahora sí creamos el usuario y el perfil médico
+    # 2. Recuperar datos de sesión
+    datos = request.session.get('datos_registro_pendiente')
+    if not datos:
+        messages.error(request, "Sesión expirada. Por favor regístrese nuevamente.")
+        return redirect('registro_medico')
+
+    # 3. Crear usuario y médico
     try:
+        User = get_user_model()
         user = User.objects.create_user(
             username=datos.get('username'),
             email=datos.get('email'),
@@ -496,19 +456,17 @@ def confirmar_pago(request):
         user.save()
 
         especialidad_id = datos.get('especialidad')
-        especialidad_obj = Especialidad.objects.get(id=especialidad_id) if especialidad_id else None
+        especialidad_obj = Especialidad.objects.filter(id=especialidad_id).first() if especialidad_id else None
 
         medico_obj = Medico.objects.create(
             usuario=user,
             especialidad=especialidad_obj,
-            registro_senescyt=datos.get('registro_senescyt', ''),
-            telefono_consultorio=datos.get('telefono_consultorio', ''),
-            direccion_consultorio=datos.get('direccion_consultorio', ''),
+            pais=datos.get('pais', ''),
+            ciudad=datos.get('ciudad', ''),
+            sector=datos.get('sector', ''),
         )
 
-        # 6 y 7. Enviar correo y generar factura en segundo plano para no bloquear la respuesta
         import threading
-
         def tareas_segundo_plano(u, m):
             try:
                 enviar_correo_activacion(request, u)
@@ -523,17 +481,16 @@ def confirmar_pago(request):
 
         threading.Thread(target=tareas_segundo_plano, args=(user, medico_obj), daemon=True).start()
 
-        # 8. Guardar email para mostrarlo en la página de éxito, luego limpiar sesión
         email_registrado = datos.get('email', '')
-        logout(request)
+        request.session.pop('datos_registro_pendiente', None)
+        request.session.pop('payphone_client_tx', None)
         request.session['registro_email'] = email_registrado
 
-        return JsonResponse({'redirect': '/registro-exitoso/'})
+        return redirect('registro_exitoso')
 
     except Exception as e:
-        # Si falla la creación del usuario después de cobrar, retornamos el error
-        # pero el pago ya fue capturado — el admin debe revisarlo
-        return JsonResponse({'error': f'Pago cobrado pero error al crear la cuenta: {e}'}, status=500)
+        messages.error(request, f"Pago recibido pero error al crear la cuenta: {e}")
+        return redirect('registro_medico')
 
 
 @login_required
