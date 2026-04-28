@@ -3,7 +3,7 @@
 {% block content %}
 <div class="text-center mt-5">
     <div class="welcome-section mb-4">
-        <h1 class="fw-bold text-white">Bienvenido, Dr. {{ request.user.get_full_name }}</h1>
+        <h1 class="fw-bold text-white">Bienvenido, {% if request.user.role == 'MEDICO' %}Dr. {% endif %}{{ request.user.get_full_name }}</h1>
         
         {% if request.user.role == 'MEDICO' %}
             <div class="d-inline-flex align-items-center bg-info bg-opacity-10 border border-info border-opacity-25 px-3 py-1 rounded-pill">
