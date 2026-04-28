@@ -193,11 +193,14 @@ def pasarela_pago(request):
             headers={"Authorization": f"Bearer {settings.PAYPHONE_TOKEN}"},
             timeout=15,
         )
+        print(f"DEBUG PAYPHONE status: {resp.status_code}")
+        print(f"DEBUG PAYPHONE response: {resp.text}")
         resp.raise_for_status()
         data = resp.json()
         payment_url = data.get("payWithCard") or data.get("payWithPayPhone")
         if not payment_url:
             raise ValueError(f"No se recibió URL de pago: {data}")
+        print(f"DEBUG PAYPHONE url: {payment_url}")
         return redirect(payment_url)
     except Exception as e:
         messages.error(request, f"Error al iniciar el pago: {e}")
