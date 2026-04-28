@@ -128,15 +128,23 @@ def registro_medico(request):
             # Extraemos los datos limpios (copia profunda para evitar problemas de referencia)
             datos = form.cleaned_data.copy()
             
-            # Convertimos el objeto Especialidad a su ID
+            # Convertir objetos modelo a valores serializables para la sesión
             if datos.get('especialidad'):
-                # Si es un objeto de modelo, extraemos el ID
                 try:
-                    datos['especialidad'] = datos['especialidad'].id 
+                    datos['especialidad'] = datos['especialidad'].id
                 except AttributeError:
-                    # Si ya es un ID (porque falló antes), lo dejamos así
                     pass
-            
+            if datos.get('pais'):
+                try:
+                    datos['pais'] = datos['pais'].nombre
+                except AttributeError:
+                    pass
+            if datos.get('ciudad'):
+                try:
+                    datos['ciudad'] = datos['ciudad'].nombre
+                except AttributeError:
+                    pass
+
             # Guardamos en la sesión
             request.session['datos_registro_pendiente'] = datos
             # IMPORTANTE: Forzamos el guardado de la sesión
