@@ -79,6 +79,7 @@ class RegistroPacienteForm(forms.Form):
     cedula      = forms.CharField(label="Cédula / Pasaporte", widget=forms.TextInput(attrs={**W, 'placeholder': 'Número de identificación'}))
     email       = forms.EmailField(label="Correo Electrónico", widget=forms.EmailInput(attrs={**W, 'placeholder': 'correo@ejemplo.com'}))
     telefono    = forms.CharField(label="Teléfono", required=False, widget=forms.TextInput(attrs={**W, 'placeholder': 'Ej: 0991234567'}))
+    direccion   = forms.CharField(label="Dirección", required=False, widget=forms.TextInput(attrs={**W, 'placeholder': 'Ej: Av. Amazonas y Colón, Edificio 1'}))
     fecha_nacimiento = forms.DateField(label="Fecha de Nacimiento", widget=forms.DateInput(attrs={**W, 'type': 'date'}))
     sexo = forms.ChoiceField(
         label="Sexo",
@@ -131,5 +132,6 @@ class RegistroPacienteForm(forms.Form):
             fecha_nacimiento=d['fecha_nacimiento'],
             sexo=d['sexo'],
             telefono=d.get('telefono', ''),
+            direccion=d.get('direccion', ''),
         )
         return user
