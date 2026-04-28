@@ -197,7 +197,7 @@ def pasarela_pago(request):
         print(f"DEBUG PAYPHONE response: {resp.text}")
         resp.raise_for_status()
         data = resp.json()
-        payment_url = data.get("payWithCard") or data.get("payWithPayPhone")
+        payment_url = data.get("payWithPayPhone") or data.get("payWithCard")
         if not payment_url:
             raise ValueError(f"No se recibió URL de pago: {data}")
         print(f"DEBUG PAYPHONE url: {payment_url}")
