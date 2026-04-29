@@ -438,7 +438,7 @@ def confirmar_pago(request):
     try:
         resp = http_requests.post(
             "https://pay.payphonetodoesposible.com/api/button/V2/Confirm",
-            json={"id": int(transaction_id), "clientTransactionId": client_transaction_id},
+            json={"id": int(transaction_id), "clientTxId": client_transaction_id},
             headers={"Authorization": f"Bearer {settings.PAYPHONE_TOKEN}"},
             timeout=20,
         )
