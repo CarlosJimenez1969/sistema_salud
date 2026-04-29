@@ -491,20 +491,26 @@ def confirmar_pago(request):
             sector=datos.get('sector', ''),
         )
 
+        # Enviar correo SÍNCRONO para asegurar que llegue (los threads en gunicorn fallan silenciosamente)
+        try:
+            print(f"[EMAIL] Enviando correo de activación a {user.email}...")
+            enviar_correo_activacion(request, user)
+            print(f"[EMAIL] Correo enviado exitosamente a {user.email}")
+        except Exception as e:
+            import traceback
+            print(f"[EMAIL ERROR] {e}")
+            print(traceback.format_exc())
+
+        # Facturación en thread (no es crítico para el usuario)
         import threading
-        def tareas_segundo_plano(u, m):
-            try:
-                enviar_correo_activacion(request, u)
-            except Exception as e:
-                print(f"[EMAIL ERROR] {e}")
+        def generar_factura(m):
             try:
                 from facturacion.services.sri import SriService
                 from decimal import Decimal
                 SriService().crear_factura_pago(m, Decimal('50.00'))
             except Exception as e:
                 print(f"[FACTURACIÓN] {e}")
-
-        threading.Thread(target=tareas_segundo_plano, args=(user, medico_obj), daemon=True).start()
+        threading.Thread(target=generar_factura, args=(medico_obj,), daemon=True).start()
 
         email_registrado = datos.get('email', '')
         reg.delete()
