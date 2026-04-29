@@ -724,31 +724,81 @@ https://srienlinea.sri.gob.ec/comprobantes-electronicos-ws/
 Gracias por su confianza.
 VertexSalud - Sistema de Gestión Médica
 """
+        # Generar adjuntos (XML firmado + RIDE PDF)
+        adjuntos = []
+
+        if factura.xml_firmado:
+            try:
+                from lxml import etree as _etree
+                _root = _etree.fromstring(factura.xml_firmado.encode('utf-8'))
+                xml_legible = _etree.tostring(_root, pretty_print=True, xml_declaration=True, encoding='UTF-8')
+            except Exception:
+                xml_legible = factura.xml_firmado.encode('utf-8')
+            adjuntos.append({
+                'filename': f"factura_{factura.numero_secuencial.replace('-', '')}.xml",
+                'content': xml_legible,
+            })
+
+        try:
+            from io import BytesIO
+            from xhtml2pdf import pisa
+            from django.template.loader import render_to_string
+            contexto_ride = {
+                'factura': factura,
+                'emisor_ruc': getattr(cfg, 'SRI_RUC', ''),
+                'emisor_razon_social': getattr(cfg, 'SRI_RAZON_SOCIAL', ''),
+                'emisor_nombre_comercial': getattr(cfg, 'SRI_NOMBRE_COMERCIAL', ''),
+                'emisor_direccion': getattr(cfg, 'SRI_DIRECCION_MATRIZ', ''),
+                'emisor_obligado': getattr(cfg, 'SRI_OBLIGADO_CONTABILIDAD', 'NO'),
+                'ambiente': getattr(cfg, 'SRI_AMBIENTE', '1'),
+            }
+            html_ride = render_to_string('facturacion/ride_pdf.html', contexto_ride)
+            buffer = BytesIO()
+            pisa.CreatePDF(html_ride, dest=buffer)
+            adjuntos.append({
+                'filename': f"RIDE_{factura.numero_secuencial.replace('-', '')}.pdf",
+                'content': buffer.getvalue(),
+            })
+        except Exception as e:
+            print(f"[FACTURACIÓN PDF] No se pudo generar RIDE: {e}")
+
         # Resend HTTP API (Render bloquea SMTP)
         if cfg.RESEND_API_KEY:
             import requests as http_requests
+            import base64
             html = cuerpo.replace('\n', '<br>')
+            payload = {
+                "from": cfg.RESEND_FROM,
+                "to": [factura.receptor_email],
+                "subject": asunto,
+                "html": html,
+            }
+            if adjuntos:
+                payload["attachments"] = [
+                    {
+                        "filename": a['filename'],
+                        "content": base64.b64encode(a['content']).decode('ascii'),
+                    } for a in adjuntos
+                ]
             resp = http_requests.post(
                 "https://api.resend.com/emails",
                 headers={
                     "Authorization": f"Bearer {cfg.RESEND_API_KEY}",
                     "Content-Type": "application/json",
                 },
-                json={
-                    "from": cfg.RESEND_FROM,
-                    "to": [factura.receptor_email],
-                    "subject": asunto,
-                    "html": html,
-                },
-                timeout=15,
+                json=payload,
+                timeout=20,
             )
             print(f"[FACTURACIÓN EMAIL] Resend status={resp.status_code} body={resp.text[:200]}")
             resp.raise_for_status()
         else:
-            send_mail(
+            from django.core.mail import EmailMessage
+            email = EmailMessage(
                 subject=asunto,
-                message=cuerpo,
+                body=cuerpo,
                 from_email=cfg.DEFAULT_FROM_EMAIL,
-                recipient_list=[factura.receptor_email],
-                fail_silently=False,
+                to=[factura.receptor_email],
             )
+            for a in adjuntos:
+                email.attach(a['filename'], a['content'])
+            email.send(fail_silently=False)
