@@ -527,7 +527,7 @@ def confirmar_pago(request):
                 ctx = ssl._create_unverified_context()
                 connection = get_connection(
                     backend=settings.EMAIL_BACKEND,
-                    use_tls=settings.EMAIL_USE_TLS,
+                    use_ssl=True,
                     ssl_context=ctx,
                     timeout=15,
                 )
