@@ -183,6 +183,10 @@ PAYPAL_MODE          = config('PAYPAL_MODE',          default='sandbox')
 PAYPHONE_TOKEN    = config('PAYPHONE_TOKEN',    default='')
 PAYPHONE_STORE_ID = config('PAYPHONE_STORE_ID', default='')
 
+# ── Resend (HTTP API para correos) ──────────────────────────────────────────────
+RESEND_API_KEY    = config('RESEND_API_KEY', default='')
+RESEND_FROM       = config('RESEND_FROM',    default='VertexSalud <onboarding@resend.dev>')
+
 # ── Facturación Electrónica SRI Ecuador ───────────────────────────────────────
 SRI_RUC                   = config('SRI_RUC',                   default='')
 SRI_RAZON_SOCIAL          = config('SRI_RAZON_SOCIAL',          default='')

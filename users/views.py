@@ -496,50 +496,48 @@ def confirmar_pago(request):
         scheme = request.scheme
 
         def tareas_segundo_plano(u, m, host, scheme):
-            # Forzar resolución IPv4 (Render no tiene ruta IPv6 a smtp.gmail.com)
-            import socket
-            _orig_getaddrinfo = socket.getaddrinfo
-            def _ipv4_only(*args, **kwargs):
-                resp = _orig_getaddrinfo(*args, **kwargs)
-                ipv4 = [r for r in resp if r[0] == socket.AF_INET]
-                return ipv4 if ipv4 else resp
-            socket.getaddrinfo = _ipv4_only
-
             try:
                 print(f"[EMAIL] Enviando correo de activación a {u.email}...")
                 from django.contrib.auth.tokens import default_token_generator
                 from django.utils.http import urlsafe_base64_encode
                 from django.utils.encoding import force_bytes
-                from django.core.mail import get_connection, send_mail
-                import ssl
 
                 token = default_token_generator.make_token(u)
                 uid   = urlsafe_base64_encode(force_bytes(u.pk))
                 link  = f"{scheme}://{host}/reset/{uid}/{token}/"
                 asunto = "Bienvenida a VertexSalud - Activa tu cuenta de Médico"
-                mensaje = (
-                    f"Hola {u.first_name},\n\n"
-                    f"Se ha creado tu perfil de médico en el sistema.\n"
-                    f"Para activar tu cuenta y configurar tu contraseña, haz clic en el siguiente enlace:\n\n"
-                    f"{link}\n\n"
-                    f"Si no solicitaste esta cuenta, por favor ignora este mensaje."
+                html_body = (
+                    f"<p>Hola <b>{u.first_name}</b>,</p>"
+                    f"<p>Se ha creado tu perfil de médico en el sistema.</p>"
+                    f"<p>Para activar tu cuenta y configurar tu contraseña, haz clic en el siguiente enlace:</p>"
+                    f'<p><a href="{link}">{link}</a></p>'
+                    f"<p>Si no solicitaste esta cuenta, por favor ignora este mensaje.</p>"
                 )
-                ctx = ssl._create_unverified_context()
-                connection = get_connection(
-                    backend=settings.EMAIL_BACKEND,
-                    use_ssl=True,
-                    ssl_context=ctx,
+
+                if not settings.RESEND_API_KEY:
+                    raise RuntimeError("RESEND_API_KEY no configurado")
+
+                resp = http_requests.post(
+                    "https://api.resend.com/emails",
+                    headers={
+                        "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "from": settings.RESEND_FROM,
+                        "to": [u.email],
+                        "subject": asunto,
+                        "html": html_body,
+                    },
                     timeout=15,
                 )
-                send_mail(asunto, mensaje, settings.EMAIL_HOST_USER, [u.email],
-                          connection=connection, fail_silently=False)
+                print(f"[EMAIL] Resend status={resp.status_code} body={resp.text[:200]}")
+                resp.raise_for_status()
                 print(f"[EMAIL] Correo enviado exitosamente a {u.email}")
             except Exception as e:
                 import traceback
                 print(f"[EMAIL ERROR] {e}")
                 print(traceback.format_exc())
-            finally:
-                socket.getaddrinfo = _orig_getaddrinfo
 
             try:
                 from facturacion.services.sri import SriService
