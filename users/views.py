@@ -420,7 +420,7 @@ def confirmar_pago(request):
     print(f"DEBUG CONFIRMAR GET params: {dict(request.GET)}")
     print(f"DEBUG CONFIRMAR POST params: {dict(request.POST)}")
 
-    transaction_id        = request.GET.get('transactionId') or request.POST.get('transactionId')
+    transaction_id        = request.GET.get('id') or request.GET.get('transactionId') or request.POST.get('transactionId')
     client_transaction_id = request.GET.get('clientTransactionId') or request.POST.get('clientTransactionId')
 
     print(f"DEBUG transactionId={transaction_id} clientTransactionId={client_transaction_id}")
