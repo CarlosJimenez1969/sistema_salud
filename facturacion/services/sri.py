@@ -724,10 +724,31 @@ https://srienlinea.sri.gob.ec/comprobantes-electronicos-ws/
 Gracias por su confianza.
 VertexSalud - Sistema de Gestión Médica
 """
-        send_mail(
-            subject=asunto,
-            message=cuerpo,
-            from_email=cfg.DEFAULT_FROM_EMAIL,
-            recipient_list=[factura.receptor_email],
-            fail_silently=False,
-        )
+        # Resend HTTP API (Render bloquea SMTP)
+        if cfg.RESEND_API_KEY:
+            import requests as http_requests
+            html = cuerpo.replace('\n', '<br>')
+            resp = http_requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {cfg.RESEND_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": cfg.RESEND_FROM,
+                    "to": [factura.receptor_email],
+                    "subject": asunto,
+                    "html": html,
+                },
+                timeout=15,
+            )
+            print(f"[FACTURACIÓN EMAIL] Resend status={resp.status_code} body={resp.text[:200]}")
+            resp.raise_for_status()
+        else:
+            send_mail(
+                subject=asunto,
+                message=cuerpo,
+                from_email=cfg.DEFAULT_FROM_EMAIL,
+                recipient_list=[factura.receptor_email],
+                fail_silently=False,
+            )
