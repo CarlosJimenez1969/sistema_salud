@@ -491,26 +491,54 @@ def confirmar_pago(request):
             sector=datos.get('sector', ''),
         )
 
-        # Enviar correo SÍNCRONO para asegurar que llegue (los threads en gunicorn fallan silenciosamente)
-        try:
-            print(f"[EMAIL] Enviando correo de activación a {user.email}...")
-            enviar_correo_activacion(request, user)
-            print(f"[EMAIL] Correo enviado exitosamente a {user.email}")
-        except Exception as e:
-            import traceback
-            print(f"[EMAIL ERROR] {e}")
-            print(traceback.format_exc())
-
-        # Facturación en thread (no es crítico para el usuario)
         import threading
-        def generar_factura(m):
+        host = request.get_host()
+        scheme = request.scheme
+
+        def tareas_segundo_plano(u, m, host, scheme):
+            try:
+                print(f"[EMAIL] Enviando correo de activación a {u.email}...")
+                # Construimos un request "fake" para enviar el correo sin depender del request original
+                from django.contrib.auth.tokens import default_token_generator
+                from django.utils.http import urlsafe_base64_encode
+                from django.utils.encoding import force_bytes
+                from django.core.mail import get_connection, send_mail
+                import ssl
+
+                token = default_token_generator.make_token(u)
+                uid   = urlsafe_base64_encode(force_bytes(u.pk))
+                link  = f"{scheme}://{host}/reset/{uid}/{token}/"
+                asunto = "Bienvenida a VertexSalud - Activa tu cuenta de Médico"
+                mensaje = (
+                    f"Hola {u.first_name},\n\n"
+                    f"Se ha creado tu perfil de médico en el sistema.\n"
+                    f"Para activar tu cuenta y configurar tu contraseña, haz clic en el siguiente enlace:\n\n"
+                    f"{link}\n\n"
+                    f"Si no solicitaste esta cuenta, por favor ignora este mensaje."
+                )
+                ctx = ssl._create_unverified_context()
+                connection = get_connection(
+                    backend=settings.EMAIL_BACKEND,
+                    use_tls=settings.EMAIL_USE_TLS,
+                    ssl_context=ctx,
+                    timeout=15,
+                )
+                send_mail(asunto, mensaje, settings.EMAIL_HOST_USER, [u.email],
+                          connection=connection, fail_silently=False)
+                print(f"[EMAIL] Correo enviado exitosamente a {u.email}")
+            except Exception as e:
+                import traceback
+                print(f"[EMAIL ERROR] {e}")
+                print(traceback.format_exc())
+
             try:
                 from facturacion.services.sri import SriService
                 from decimal import Decimal
                 SriService().crear_factura_pago(m, Decimal('50.00'))
             except Exception as e:
                 print(f"[FACTURACIÓN] {e}")
-        threading.Thread(target=generar_factura, args=(medico_obj,), daemon=True).start()
+
+        threading.Thread(target=tareas_segundo_plano, args=(user, medico_obj, host, scheme), daemon=True).start()
 
         email_registrado = datos.get('email', '')
         reg.delete()

@@ -341,7 +341,8 @@ def enviar_correo_activacion(request, user):
         connection = get_connection(
             backend=settings.EMAIL_BACKEND,
             use_tls=settings.EMAIL_USE_TLS,
-            ssl_context=context
+            ssl_context=context,
+            timeout=15,
         )
 
         send_mail(
