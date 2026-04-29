@@ -1,5 +1,19 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+import json
+
+
+class RegistroPendiente(models.Model):
+    client_transaction_id = models.CharField(max_length=100, unique=True)
+    datos_json            = models.TextField()
+    creado                = models.DateTimeField(auto_now_add=True)
+
+    def get_datos(self):
+        return json.loads(self.datos_json)
+
+    def set_datos(self, datos):
+        self.datos_json = json.dumps(datos)
+
 
 class User(AbstractUser):
     class Role(models.TextChoices):

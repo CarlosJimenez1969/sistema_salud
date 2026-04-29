@@ -145,12 +145,16 @@ def registro_medico(request):
                 except AttributeError:
                     pass
 
-            # Guardamos en la sesión
-            request.session['datos_registro_pendiente'] = datos
-            # IMPORTANTE: Forzamos el guardado de la sesión
+            import uuid, json
+            from users.models import RegistroPendiente
+            client_tx_id = str(uuid.uuid4())
+            reg = RegistroPendiente(client_transaction_id=client_tx_id)
+            reg.set_datos(datos)
+            reg.save()
+            request.session['payphone_client_tx'] = client_tx_id
             request.session.modified = True
-            
-            print("DEBUG: Datos guardados en sesión, redirigiendo a pasarela...")
+
+            print("DEBUG: Datos guardados en BD, redirigiendo a pasarela...")
             return redirect('pasarela_pago')
         else:
             # Si el formulario no es válido, imprimimos los errores en la terminal
@@ -162,14 +166,15 @@ def registro_medico(request):
 from django.urls import reverse
 
 def pasarela_pago(request):
-    datos = request.session.get('datos_registro_pendiente')
-    if not datos:
+    from users.models import RegistroPendiente
+    client_transaction_id = request.session.get('payphone_client_tx')
+    if not client_transaction_id:
         return redirect('registro_medico')
-
-    import uuid
-    client_transaction_id = str(uuid.uuid4())
-    request.session['payphone_client_tx'] = client_transaction_id
-    request.session.modified = True
+    try:
+        reg = RegistroPendiente.objects.get(client_transaction_id=client_transaction_id)
+        datos = reg.get_datos()
+    except RegistroPendiente.DoesNotExist:
+        return redirect('registro_medico')
 
     base_url = f"{request.scheme}://{request.get_host()}"
 
@@ -449,10 +454,13 @@ def confirmar_pago(request):
         messages.error(request, f"El pago no fue aprobado (estado: {status_code}). Intente nuevamente.")
         return redirect('registro_medico')
 
-    # 2. Recuperar datos de sesión
-    datos = request.session.get('datos_registro_pendiente')
-    if not datos:
-        messages.error(request, "Sesión expirada. Por favor regístrese nuevamente.")
+    # 2. Recuperar datos desde BD
+    from users.models import RegistroPendiente
+    try:
+        reg = RegistroPendiente.objects.get(client_transaction_id=client_transaction_id)
+        datos = reg.get_datos()
+    except RegistroPendiente.DoesNotExist:
+        messages.error(request, "Registro no encontrado. Por favor regístrese nuevamente.")
         return redirect('registro_medico')
 
     # 3. Crear usuario y médico
@@ -499,7 +507,7 @@ def confirmar_pago(request):
         threading.Thread(target=tareas_segundo_plano, args=(user, medico_obj), daemon=True).start()
 
         email_registrado = datos.get('email', '')
-        request.session.pop('datos_registro_pendiente', None)
+        reg.delete()
         request.session.pop('payphone_client_tx', None)
         request.session['registro_email'] = email_registrado
 
