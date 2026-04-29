@@ -496,9 +496,17 @@ def confirmar_pago(request):
         scheme = request.scheme
 
         def tareas_segundo_plano(u, m, host, scheme):
+            # Forzar resolución IPv4 (Render no tiene ruta IPv6 a smtp.gmail.com)
+            import socket
+            _orig_getaddrinfo = socket.getaddrinfo
+            def _ipv4_only(*args, **kwargs):
+                resp = _orig_getaddrinfo(*args, **kwargs)
+                ipv4 = [r for r in resp if r[0] == socket.AF_INET]
+                return ipv4 if ipv4 else resp
+            socket.getaddrinfo = _ipv4_only
+
             try:
                 print(f"[EMAIL] Enviando correo de activación a {u.email}...")
-                # Construimos un request "fake" para enviar el correo sin depender del request original
                 from django.contrib.auth.tokens import default_token_generator
                 from django.utils.http import urlsafe_base64_encode
                 from django.utils.encoding import force_bytes
@@ -530,6 +538,8 @@ def confirmar_pago(request):
                 import traceback
                 print(f"[EMAIL ERROR] {e}")
                 print(traceback.format_exc())
+            finally:
+                socket.getaddrinfo = _orig_getaddrinfo
 
             try:
                 from facturacion.services.sri import SriService
