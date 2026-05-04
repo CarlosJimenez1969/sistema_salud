@@ -48,20 +48,42 @@ def enviar_receta_email(historia):
         f"Sistema SaludDigital"
     )
     
-    email = EmailMessage(
-        subject,
-        message,
-        settings.EMAIL_HOST_USER,
-        [paciente_user.email],
-    )
-    
-    # 5. Adjuntar el PDF generado
     pdf_value = pdf_result.getvalue()
-    # Limpiamos el nombre del archivo de espacios
     filename = f"Receta_{paciente_user.last_name}_{historia.id}.pdf".replace(" ", "_")
-    email.attach(filename, pdf_value, 'application/pdf')
 
-    # 6. Enviar
+    # Enviar vía Resend HTTP API (Render bloquea SMTP)
+    if getattr(settings, 'RESEND_API_KEY', ''):
+        import requests as http_requests
+        import base64
+        try:
+            html_body = message.replace('\n', '<br>')
+            resp = http_requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": settings.RESEND_FROM,
+                    "to": [paciente_user.email],
+                    "subject": subject,
+                    "html": html_body,
+                    "attachments": [{
+                        "filename": filename,
+                        "content": base64.b64encode(pdf_value).decode('ascii'),
+                    }],
+                },
+                timeout=20,
+            )
+            print(f"[RECETA EMAIL] Resend status={resp.status_code} body={resp.text[:200]}")
+            resp.raise_for_status()
+            return True, "Correo enviado con éxito."
+        except Exception as e:
+            return False, f"Error al enviar el correo: {str(e)}"
+
+    # Fallback SMTP
+    email = EmailMessage(subject, message, settings.EMAIL_HOST_USER, [paciente_user.email])
+    email.attach(filename, pdf_value, 'application/pdf')
     try:
         email.send()
         return True, "Correo enviado con éxito."
