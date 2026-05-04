@@ -441,19 +441,8 @@ def imprimir_receta(request, historia_id):
     # 1. Buscamos la historia clínica específica
     historia = get_object_or_404(HistoriaClinica, id=historia_id)
     
-    # --- LÓGICA DE RESCATE PARA SIGNOS DE ALARMA ---
-    # Si el campo está vacío o es solo espacios, usamos el texto por defecto
-    texto_alarma = ""
-    signos_alarma_final = historia.signos_alarma if historia.signos_alarma and historia.signos_alarma.strip() else texto_alarma
-
-    # 2. Definimos qué plantilla HTML usaremos para el diseño
     template_path = 'historia/receta_pdf.html'
-    
-    # Pasamos la historia (h) y los signos de alarma procesados
-    context = {
-        'h': historia,
-        'signos_alarma_print': signos_alarma_final
-    }
+    context = {'h': historia}
     
     # 3. Preparamos la respuesta (tipo PDF)
     response = HttpResponse(content_type='application/pdf')

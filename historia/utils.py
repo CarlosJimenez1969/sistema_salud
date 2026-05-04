@@ -21,17 +21,8 @@ def enviar_receta_email(historia):
     if not paciente_user.email:
         return False, "El paciente no tiene un correo electrónico registrado."
 
-    # 1. LÓGICA DE RESCATE (Igual que en la vista de impresión)
-    texto_seguridad = "Fiebre persistente, dificultad para respirar, dolor abdominal intenso o pérdida del conocimiento."
-    # Usamos strip() para limpiar espacios en blanco accidentales
-    signos_alarma = historia.signos_alarma.strip() if historia.signos_alarma else texto_seguridad
-
-    # 2. Generar el contenido HTML para el PDF
-    template_path = 'historia/receta_pdf.html' 
-    context = {
-        'h': historia,
-        'signos_alarma_print': signos_alarma  # <-- IMPORTANTE: Pasamos la variable corregida
-    }
+    template_path = 'historia/receta_pdf.html'
+    context = {'h': historia}
     html = render_to_string(template_path, context)
     
     # 3. Crear el PDF en memoria (BytesIO)
