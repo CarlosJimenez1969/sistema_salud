@@ -438,28 +438,30 @@ def historial_medico(request, paciente_id):
 
 @login_required
 def imprimir_receta(request, historia_id):
-    # 1. Buscamos la historia clínica específica
     historia = get_object_or_404(HistoriaClinica, id=historia_id)
-    
-    template_path = 'historia/receta_pdf.html'
-    context = {'h': historia}
-    
-    # 3. Preparamos la respuesta (tipo PDF)
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'inline; filename="receta_{historia.id}.pdf"'
 
-    # 4. Renderizamos (Magia: HTML -> PDF)
-    template = get_template(template_path)
-    html = template.render(context)
-    
-    pisa_status = pisa.CreatePDF(
-       html, dest=response
-    )
-    
-    # 5. Si hay error, mostramos el HTML feo para depurar
+    # Si ya existe el PDF guardado en Cloudinary, lo redirigimos directamente
+    if historia.receta_pdf:
+        return redirect(historia.receta_pdf.url)
+
+    # Generar PDF la primera vez
+    from io import BytesIO
+    from django.core.files.base import ContentFile
+    template = get_template('historia/receta_pdf.html')
+    html = template.render({'h': historia})
+    buffer = BytesIO()
+    pisa_status = pisa.CreatePDF(html, dest=buffer)
     if pisa_status.err:
-       return HttpResponse('Error al generar PDF <pre>' + html + '</pre>')
-    
+        return HttpResponse('Error al generar PDF <pre>' + html + '</pre>')
+
+    # Guardar el PDF en Cloudinary
+    pdf_bytes = buffer.getvalue()
+    filename = f"receta_{historia.id}.pdf"
+    historia.receta_pdf.save(filename, ContentFile(pdf_bytes), save=True)
+
+    # Devolver el PDF al navegador
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
     return response
 
 @login_required

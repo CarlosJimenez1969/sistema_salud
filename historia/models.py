@@ -52,12 +52,15 @@ class HistoriaClinica(models.Model):
 
     proxima_cita_control = models.DateTimeField(null=True, blank=True)
     signos_alarma = models.TextField(
-        null=True, 
+        null=True,
         blank=True,
-        #help_text="Instrucciones de emergencia para el paciente" 
+        #help_text="Instrucciones de emergencia para el paciente"
         default=""
     )
-    
+
+    # PDF de la receta generado y guardado en Cloudinary la primera vez que se imprime
+    receta_pdf = models.FileField(upload_to='recetas/', null=True, blank=True)
+
     def __str__(self):
         return f"Historia {self.id} - {self.paciente} ({self.fecha_atencion.date()})"
 

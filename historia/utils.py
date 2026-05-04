@@ -21,13 +21,26 @@ def enviar_receta_email(historia):
     if not paciente_user.email:
         return False, "El paciente no tiene un correo electrónico registrado."
 
-    template_path = 'historia/receta_pdf.html'
-    context = {'h': historia}
-    html = render_to_string(template_path, context)
-    
-    # 3. Crear el PDF en memoria (BytesIO)
+    # Si ya hay un PDF guardado, lo reutilizamos; sino lo generamos y guardamos
     pdf_result = BytesIO()
-    pisa.pisaDocument(BytesIO(html.encode("UTF-8")), pdf_result)
+    if historia.receta_pdf:
+        try:
+            historia.receta_pdf.open('rb')
+            pdf_result.write(historia.receta_pdf.read())
+            historia.receta_pdf.close()
+        except Exception:
+            pdf_result = BytesIO()
+
+    if pdf_result.getbuffer().nbytes == 0:
+        from django.core.files.base import ContentFile
+        html = render_to_string('historia/receta_pdf.html', {'h': historia})
+        pisa.pisaDocument(BytesIO(html.encode("UTF-8")), pdf_result)
+        # Guardar en Cloudinary para reuso futuro
+        historia.receta_pdf.save(
+            f"receta_{historia.id}.pdf",
+            ContentFile(pdf_result.getvalue()),
+            save=True,
+        )
     
     # 4. Configurar el correo
     subject = f"Receta Médica - SaludDigital - {historia.fecha_atencion.strftime('%d/%m/%Y')}"
