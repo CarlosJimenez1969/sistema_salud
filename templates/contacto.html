@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0"><i class="bi bi-envelope-paper-heart"></i> Contacto y Sugerencias</h3>
+                    <p class="mb-0 small">Tu opinión nos ayuda a mejorar VertexSalud</p>
+                </div>
+
+                <div class="card-body p-4">
+                    <p class="text-muted small">
+                        Si tienes una <strong>consulta</strong>, <strong>sugerencia</strong> o necesitas <strong>soporte</strong>,
+                        escríbenos. Te responderemos al correo que indiques.
+                    </p>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Tu Nombre <span class="text-danger">*</span></label>
+                                <input type="text" name="nombre" class="form-control" required
+                                       value="{{ datos.nombre|default:request.user.get_full_name }}"
+                                       placeholder="Cómo te llamas">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Tu Correo <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" required
+                                       value="{{ datos.email|default:request.user.email }}"
+                                       placeholder="correo@ejemplo.com">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Tipo de mensaje</label>
+                                <select name="tipo" class="form-select">
+                                    <option value="CONTACTO" {% if datos.tipo == 'CONTACTO' %}selected{% endif %}>Consulta / Soporte</option>
+                                    <option value="SUGERENCIA" {% if datos.tipo == 'SUGERENCIA' %}selected{% endif %}>Sugerencia</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label fw-bold">Asunto</label>
+                                <input type="text" name="asunto" class="form-control"
+                                       value="{{ datos.asunto|default:'' }}"
+                                       placeholder="Ej: Consulta sobre facturación">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mensaje <span class="text-danger">*</span></label>
+                            <textarea name="mensaje" class="form-control" rows="6" required
+                                      placeholder="Cuéntanos en detalle...">{{ datos.mensaje|default:'' }}</textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-send"></i> Enviar mensaje
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="my-4">
+                    <p class="text-center text-muted small mb-0">
+                        <i class="bi bi-envelope"></i> También puedes escribirnos directo a
+                        <a href="mailto:contacto@vertexjd.com">contacto@vertexjd.com</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

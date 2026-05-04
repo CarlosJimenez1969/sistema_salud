@@ -611,3 +611,56 @@ def panel_admin(request):
         'ultimas_facturas':   ultimas_facturas,
         'hoy':                hoy,
     })
+
+
+def contacto(request):
+    """Formulario de contacto / sugerencias. Envía a contacto@vertexjd.com vía Resend."""
+    if request.method == 'POST':
+        nombre  = request.POST.get('nombre', '').strip()
+        email   = request.POST.get('email', '').strip()
+        asunto  = request.POST.get('asunto', '').strip()
+        mensaje = request.POST.get('mensaje', '').strip()
+        tipo    = request.POST.get('tipo', 'CONTACTO')
+
+        if not (nombre and email and mensaje):
+            messages.error(request, "Por favor completa todos los campos requeridos.")
+            return render(request, 'contacto.html', {
+                'datos': {'nombre': nombre, 'email': email, 'asunto': asunto, 'mensaje': mensaje, 'tipo': tipo}
+            })
+
+        try:
+            etiqueta = "SUGERENCIA" if tipo == 'SUGERENCIA' else "CONTACTO"
+            asunto_email = f"[{etiqueta}] {asunto or 'Mensaje desde VertexSalud'}"
+            html = (
+                f"<p><strong>Tipo:</strong> {etiqueta}</p>"
+                f"<p><strong>Nombre:</strong> {nombre}</p>"
+                f"<p><strong>Correo:</strong> {email}</p>"
+                f"<p><strong>Asunto:</strong> {asunto or '(sin asunto)'}</p>"
+                f"<hr><p><strong>Mensaje:</strong></p>"
+                f"<p>{mensaje.replace(chr(10), '<br>')}</p>"
+            )
+
+            resp = http_requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": settings.RESEND_FROM,
+                    "to": ["contacto@vertexjd.com"],
+                    "reply_to": email,
+                    "subject": asunto_email,
+                    "html": html,
+                },
+                timeout=15,
+            )
+            print(f"[CONTACTO] Resend status={resp.status_code} body={resp.text[:200]}")
+            resp.raise_for_status()
+            messages.success(request, "¡Mensaje enviado! Te responderemos pronto a tu correo.")
+            return redirect('contacto')
+        except Exception as e:
+            print(f"[CONTACTO ERROR] {e}")
+            messages.error(request, "No se pudo enviar el mensaje. Intenta nuevamente.")
+
+    return render(request, 'contacto.html', {})
