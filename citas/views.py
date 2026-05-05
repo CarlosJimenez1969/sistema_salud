@@ -176,7 +176,7 @@ def reservar_cita(request, medico_id):
 
     # Solo mostrar pacientes (rol PACIENTE) que ya tienen relación con este médico
     if es_administrativo:
-        base_qs = Paciente.objects.filter(usuario__role='PACIENTE')
+        base_qs = Paciente.objects.exclude(usuario__role__in=['MEDICO', 'SECRETARIA', 'ADMIN'])
         if es_veterinario:
             lista_pacientes = (
                 base_qs.filter(Q(citas__medico=medico) | Q(mascotas__isnull=False))

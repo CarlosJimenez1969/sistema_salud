@@ -64,7 +64,7 @@ def home(request):
             medico = request.user.perfil_medico
             es_vet = medico.especialidad and 'veterin' in medico.especialidad.nombre.lower()
             from django.db.models import Q
-            base_qs = Paciente.objects.filter(usuario__role='PACIENTE')
+            base_qs = Paciente.objects.exclude(usuario__role__in=['MEDICO', 'SECRETARIA', 'ADMIN'])
             if es_vet:
                 total_pacientes = base_qs.filter(
                     Q(citas__medico=medico) | Q(mascotas__isnull=False)
