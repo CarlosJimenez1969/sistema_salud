@@ -265,10 +265,21 @@ def ver_agenda(request):
             
         return redirect(f'/citas/agenda/?fecha={fecha_agenda}')
 
+    es_veterinario = (
+        medico.especialidad and 'veterin' in medico.especialidad.nombre.lower()
+    )
+
+    # Cargar mascota relacionada para evitar N+1
+    if es_veterinario:
+        citas = citas.select_related('paciente__usuario', 'mascota')
+    else:
+        citas = citas.select_related('paciente__usuario')
+
     return render(request, 'ver_agenda.html', {
         'citas': citas,
         'fecha_agenda': fecha_agenda,
-        'hoy': date.today()
+        'hoy': date.today(),
+        'es_veterinario': es_veterinario,
     })
 
 @login_required

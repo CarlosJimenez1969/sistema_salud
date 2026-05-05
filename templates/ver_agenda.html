@@ -73,8 +73,14 @@
                         <tr>
                             <td class="align-middle fs-5"><strong>{{ cita.hora|time:"H:i" }}</strong></td>
                             <td class="align-middle">
-                                {{ cita.paciente.usuario.last_name }} {{ cita.paciente.usuario.first_name }}<br>
-                                <small class="text-muted">{{ cita.paciente.usuario.cedula }}</small>
+                                {% if es_veterinario and cita.mascota %}
+                                    <i class="bi bi-heart-pulse text-success"></i> <strong>{{ cita.mascota.nombre }}</strong>
+                                    <br><small class="text-muted">{{ cita.mascota.get_especie_display }}{% if cita.mascota.raza %} — {{ cita.mascota.raza }}{% endif %}</small>
+                                    <br><small class="text-muted">Dueño: {{ cita.paciente.usuario.get_full_name }}</small>
+                                {% else %}
+                                    {{ cita.paciente.usuario.last_name }} {{ cita.paciente.usuario.first_name }}<br>
+                                    <small class="text-muted">{{ cita.paciente.usuario.cedula }}</small>
+                                {% endif %}
                             </td>
                             <td class="align-middle">{{ cita.motivo|default:"Sin especificar" }}</td>
                             <td class="align-middle text-center">
@@ -104,14 +110,16 @@
                             <td class="text-end align-middle">
                                 {% if cita.estado == 'P' or cita.estado == 'PENDIENTE' or cita.estado == 'E' or cita.estado == 'EN_ESPERA' %}
                                     <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                        {% if not cita.triaje %}
-                                        <a href="{% url 'registrar_triaje' cita.id %}" class="btn btn-warning btn-sm rounded-pill px-3 shadow-sm">
-                                            <i class="bi bi-thermometer-half me-1"></i> Triaje
-                                        </a>
-                                        {% else %}
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
-                                            <i class="bi bi-check2"></i> Triaje ✓
-                                        </span>
+                                        {% if not es_veterinario %}
+                                            {% if not cita.triaje %}
+                                            <a href="{% url 'registrar_triaje' cita.id %}" class="btn btn-warning btn-sm rounded-pill px-3 shadow-sm">
+                                                <i class="bi bi-thermometer-half me-1"></i> Triaje
+                                            </a>
+                                            {% else %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                                                <i class="bi bi-check2"></i> Triaje ✓
+                                            </span>
+                                            {% endif %}
                                         {% endif %}
                                         <a href="{% url 'crear_historia' cita.paciente.id %}" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
                                             <i class="bi bi-clipboard-pulse me-1"></i> Atender
@@ -159,8 +167,14 @@
                         <span class="badge bg-danger rounded-pill"><i class="bi bi-x-circle"></i> Cancelada</span>
                     {% endif %}
                 </div>
-                <div class="fw-bold">{{ cita.paciente.usuario.last_name }} {{ cita.paciente.usuario.first_name }}</div>
-                <small class="text-muted">{{ cita.paciente.usuario.cedula }}</small><br>
+                {% if es_veterinario and cita.mascota %}
+                    <div class="fw-bold"><i class="bi bi-heart-pulse text-success"></i> {{ cita.mascota.nombre }}</div>
+                    <small class="text-muted">{{ cita.mascota.get_especie_display }}{% if cita.mascota.raza %} — {{ cita.mascota.raza }}{% endif %}</small><br>
+                    <small class="text-muted">Dueño: {{ cita.paciente.usuario.get_full_name }}</small><br>
+                {% else %}
+                    <div class="fw-bold">{{ cita.paciente.usuario.last_name }} {{ cita.paciente.usuario.first_name }}</div>
+                    <small class="text-muted">{{ cita.paciente.usuario.cedula }}</small><br>
+                {% endif %}
                 <small class="text-secondary">{{ cita.motivo|default:"Sin especificar" }}</small>
 
                 <div class="d-flex flex-wrap gap-2 mt-2">
@@ -168,14 +182,16 @@
                         <i class="bi bi-file-earmark-medical"></i> Ficha
                     </a>
                     {% if cita.estado == 'P' or cita.estado == 'PENDIENTE' or cita.estado == 'E' or cita.estado == 'EN_ESPERA' %}
-                        {% if not cita.triaje %}
-                        <a href="{% url 'registrar_triaje' cita.id %}" class="btn btn-warning btn-sm rounded-pill">
-                            <i class="bi bi-thermometer-half"></i> Triaje
-                        </a>
-                        {% else %}
-                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
-                            <i class="bi bi-check2"></i> Triaje ✓
-                        </span>
+                        {% if not es_veterinario %}
+                            {% if not cita.triaje %}
+                            <a href="{% url 'registrar_triaje' cita.id %}" class="btn btn-warning btn-sm rounded-pill">
+                                <i class="bi bi-thermometer-half"></i> Triaje
+                            </a>
+                            {% else %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                                <i class="bi bi-check2"></i> Triaje ✓
+                            </span>
+                            {% endif %}
                         {% endif %}
                         <a href="{% url 'crear_historia' cita.paciente.id %}" class="btn btn-primary btn-sm rounded-pill">
                             <i class="bi bi-clipboard-pulse"></i> Atender
