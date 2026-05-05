@@ -16,7 +16,11 @@ def listar_pacientes(request):
     es_vet = _es_veterinario(request)
 
     # Solo pacientes con rol PACIENTE (excluye usuarios médicos/secretarias/admins)
-    base_qs = Paciente.objects.exclude(usuario__role__in=['MEDICO', 'SECRETARIA', 'ADMIN'])
+    # Excluir pacientes cuyos usuarios sean médicos o secretarias
+    base_qs = Paciente.objects.filter(
+        usuario__perfil_medico__isnull=True,
+        usuario__perfil_secretaria__isnull=True,
+    )
 
     if request.user.role == 'ADMIN':
         pacientes = base_qs.select_related('usuario').order_by('-id')

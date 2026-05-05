@@ -60,11 +60,7 @@
                                 Este paciente no tiene mascotas registradas.
                                 <a href="{% url 'crear_paciente_veterinario' %}" class="alert-link">Registrar mascota</a>
                             </div>
-                            {% elif es_administrativo %}
-                            <div class="alert alert-info py-2 small border-0">
-                                Selecciona primero un paciente para ver sus mascotas.
-                            </div>
-                            {% else %}
+                            {% elif not es_administrativo %}
                             <div class="alert alert-warning py-2 small border-0">
                                 Para reservar una cita veterinaria primero debes
                                 <a href="{% url 'crear_mascota' %}" class="alert-link">registrar tu mascota</a>.
