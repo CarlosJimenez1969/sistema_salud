@@ -5,7 +5,7 @@ from django.contrib import messages
 from datetime import datetime, timedelta, date, time
 from .models import Cita
 from medico.models import Medico, Especialidad, Pais, Ciudad
-from paciente.models import Paciente
+from paciente.models import Paciente, Mascota
 from django.utils import timezone
 from .forms import CitaForm
 from django.db.models import Q
@@ -148,16 +148,18 @@ def reservar_cita(request, medico_id):
 
         if not hora_post:
             messages.error(request, "Debe seleccionar una hora.")
-        elif es_veterinario and not mascota_id:
+        elif es_veterinario and es_administrativo and not mascota_id:
+            messages.error(request, "Debe seleccionar la mascota para la cita veterinaria.")
+        elif es_veterinario and not es_administrativo and not mascota_id:
             messages.error(request, "Debe seleccionar la mascota para la cita veterinaria.")
         else:
             try:
-                paciente = get_object_or_404(Paciente, id=p_id) if es_administrativo else request.user.perfil_paciente
-
                 mascota = None
                 if es_veterinario and mascota_id:
-                    from paciente.models import Mascota
-                    mascota = get_object_or_404(Mascota, id=mascota_id, propietario=paciente, activo=True)
+                    mascota = get_object_or_404(Mascota, id=mascota_id, activo=True)
+                    paciente = mascota.propietario  # El dueño es el paciente
+                else:
+                    paciente = get_object_or_404(Paciente, id=p_id) if es_administrativo else request.user.perfil_paciente
 
                 Cita.objects.create(
                     medico=medico,
@@ -174,22 +176,17 @@ def reservar_cita(request, medico_id):
                 print(f"[RESERVAR_CITA ERROR] {e}")
                 messages.error(request, "No se pudo agendar la cita. Verifica los datos e intenta nuevamente.")
 
+    # Para veterinarios el "paciente" en el combo es la MASCOTA
+    lista_mascotas = Mascota.objects.none()
     if es_administrativo:
         if es_veterinario:
-            # Para veterinarios: cualquier paciente con mascotas registradas O con citas previas
-            # No filtramos por perfil médico/secretaria (un usuario podría ser ambos)
-            from paciente.models import Mascota
-            ids_con_mascotas = list(Mascota.objects.values_list('propietario_id', flat=True).distinct())
-            ids_con_citas    = list(Paciente.objects.filter(citas__medico=medico).values_list('id', flat=True).distinct())
-            ids_finales      = set(ids_con_mascotas) | set(ids_con_citas)
-            lista_pacientes = (
-                Paciente.objects.filter(id__in=ids_finales)
-                .select_related('usuario')
-                .prefetch_related('mascotas')
-                .order_by('usuario__last_name')
+            lista_mascotas = (
+                Mascota.objects.filter(activo=True)
+                .select_related('propietario__usuario')
+                .order_by('nombre')
             )
+            lista_pacientes = Paciente.objects.none()
         else:
-            # Para médicos no veterinarios: excluir usuarios que sean médicos/secretarias
             base_qs = Paciente.objects.filter(
                 usuario__perfil_medico__isnull=True,
                 usuario__perfil_secretaria__isnull=True,
@@ -221,6 +218,7 @@ def reservar_cita(request, medico_id):
         'horarios': horarios,
         'fecha_seleccionada': fecha_seleccionada,
         'lista_pacientes': lista_pacientes,
+        'lista_mascotas': lista_mascotas,
         'es_veterinario': es_veterinario,
         'mis_mascotas': mis_mascotas,
         'es_administrativo': es_administrativo,

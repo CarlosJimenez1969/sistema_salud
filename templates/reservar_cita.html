@@ -24,26 +24,45 @@
                         <input type="hidden" name="fecha_cita" value="{{ fecha_seleccionada|date:'Y-m-d' }}">
 
                         {% if es_administrativo %}
-                        <div class="mb-3">
-                            <label class="form-label fw-bold text-secondary small">
-                                {% if es_veterinario %}1. BUSCAR DUEÑO{% else %}1. BUSCAR PACIENTE{% endif %}
-                            </label>
-                            <select name="paciente_id" id="paciente_select" class="form-select" required>
-                                <option value="">-- Buscar por Nombre --</option>
-                                {% for p in lista_pacientes %}
-                                    <option value="{{ p.id }}" {% if p.id|stringformat:"s" == paciente_seleccionado_id %}selected{% endif %}>
-                                        {{ p.usuario.get_full_name|upper }}{% if es_veterinario %}{% for m in p.mascotas.all %} 🐾 {{ m.nombre }}{% endfor %}{% endif %}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                            {% if es_veterinario %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-secondary small">
+                                    <i class="bi bi-heart-pulse"></i> 1. BUSCAR MASCOTA
+                                </label>
+                                <select name="mascota_id" id="paciente_select" class="form-select" required>
+                                    <option value="">-- Buscar mascota por nombre --</option>
+                                    {% for m in lista_mascotas %}
+                                        <option value="{{ m.id }}">
+                                            {{ m.nombre }} ({{ m.get_especie_display }}{% if m.raza %} — {{ m.raza }}{% endif %}) — Dueño: {{ m.propietario.usuario.get_full_name }}
+                                        </option>
+                                    {% empty %}
+                                        <option disabled>(No hay mascotas registradas)</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    ¿No está la mascota? <a href="{% url 'crear_paciente_veterinario' %}">Registrar nueva</a>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-secondary small">1. BUSCAR PACIENTE</label>
+                                <select name="paciente_id" id="paciente_select" class="form-select" required>
+                                    <option value="">-- Buscar por Nombre --</option>
+                                    {% for p in lista_pacientes %}
+                                        <option value="{{ p.id }}" {% if p.id|stringformat:"s" == paciente_seleccionado_id %}selected{% endif %}>
+                                            {{ p.usuario.get_full_name|upper }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
                         {% endif %}
 
-                        {% if es_veterinario %}
+                        {% if es_veterinario and not es_administrativo %}
                             {% if mis_mascotas %}
                             <div class="mb-3">
                                 <label class="form-label fw-bold text-secondary small">
-                                    <i class="bi bi-heart-pulse"></i> SELECCIONA LA MASCOTA
+                                    <i class="bi bi-heart-pulse"></i> SELECCIONA TU MASCOTA
                                 </label>
                                 <select name="mascota_id" class="form-select" required>
                                     <option value="">-- Selecciona la mascota --</option>
@@ -51,18 +70,11 @@
                                     <option value="{{ m.id }}">{{ m.nombre }} ({{ m.get_especie_display }}{% if m.raza %} — {{ m.raza }}{% endif %})</option>
                                     {% endfor %}
                                 </select>
-                                {% if not es_administrativo %}
                                 <div class="form-text">
                                     ¿No está tu mascota? <a href="{% url 'crear_mascota' %}">Regístrala aquí</a>
                                 </div>
-                                {% endif %}
                             </div>
-                            {% elif es_administrativo and paciente_seleccionado_id %}
-                            <div class="alert alert-warning py-2 small border-0">
-                                Este paciente no tiene mascotas registradas.
-                                <a href="{% url 'crear_paciente_veterinario' %}" class="alert-link">Registrar mascota</a>
-                            </div>
-                            {% elif not es_administrativo %}
+                            {% else %}
                             <div class="alert alert-warning py-2 small border-0">
                                 Para reservar una cita veterinaria primero debes
                                 <a href="{% url 'crear_mascota' %}" class="alert-link">registrar tu mascota</a>.
