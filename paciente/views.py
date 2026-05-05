@@ -13,29 +13,42 @@ from django.db.models import Q
 def listar_pacientes(request):
     from citas.models import Cita
 
+    es_vet = _es_veterinario(request)
+
     # ADMIN ve todos los pacientes; MEDICO y SECRETARIA solo los suyos
     if request.user.role == 'ADMIN':
         pacientes = Paciente.objects.all().select_related('usuario').order_by('-id')
     elif request.user.role == 'SECRETARIA':
         medico = request.user.perfil_secretaria.medico
-        pacientes = Paciente.objects.filter(
-            citas__medico=medico
-        ).select_related('usuario').distinct().order_by('-id')
+        if es_vet:
+            # Veterinarios ven todos los pacientes con mascotas registradas O con citas
+            pacientes = Paciente.objects.filter(
+                Q(citas__medico=medico) | Q(mascotas__isnull=False)
+            ).select_related('usuario').distinct().order_by('-id')
+        else:
+            pacientes = Paciente.objects.filter(
+                citas__medico=medico
+            ).select_related('usuario').distinct().order_by('-id')
     else:
         medico = request.user.perfil_medico
-        pacientes = Paciente.objects.filter(
-            citas__medico=medico
-        ).select_related('usuario').distinct().order_by('-id')
+        if es_vet:
+            pacientes = Paciente.objects.filter(
+                Q(citas__medico=medico) | Q(mascotas__isnull=False)
+            ).select_related('usuario').distinct().order_by('-id')
+        else:
+            pacientes = Paciente.objects.filter(
+                citas__medico=medico
+            ).select_related('usuario').distinct().order_by('-id')
 
     query = request.GET.get('q')
     if query:
         pacientes = pacientes.filter(
             Q(usuario__first_name__icontains=query) |
             Q(usuario__last_name__icontains=query) |
-            Q(usuario__cedula__icontains=query)
+            Q(usuario__cedula__icontains=query) |
+            Q(mascotas__nombre__icontains=query)
         ).distinct()
 
-    es_vet = _es_veterinario(request)
     if es_vet:
         # Para veterinarios, mostrar también las mascotas
         pacientes = pacientes.prefetch_related('mascotas')
