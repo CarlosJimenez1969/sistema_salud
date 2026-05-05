@@ -35,22 +35,121 @@ def listar_pacientes(request):
             Q(usuario__cedula__icontains=query)
         ).distinct()
 
+    es_vet = _es_veterinario(request)
+    if es_vet:
+        # Para veterinarios, mostrar también las mascotas
+        pacientes = pacientes.prefetch_related('mascotas')
+
     return render(request, 'listar_pacientes.html', {
         'pacientes': pacientes,
-        'query': query
+        'query': query,
+        'es_veterinario': es_vet
     })
+
+def _es_veterinario(request):
+    """Detecta si el usuario logueado es veterinario o secretaria de un veterinario."""
+    role = getattr(request.user, 'role', '')
+    medico = None
+    if role == 'MEDICO' and hasattr(request.user, 'perfil_medico'):
+        medico = request.user.perfil_medico
+    elif role == 'SECRETARIA' and hasattr(request.user, 'perfil_secretaria'):
+        medico = request.user.perfil_secretaria.medico
+    if not medico or not medico.especialidad:
+        return False
+    return 'veterin' in medico.especialidad.nombre.lower()
+
 
 @login_required
 def crear_paciente(request):
+    # Si es veterinario, redirigir al formulario de registro de mascota+dueño
+    if _es_veterinario(request):
+        return redirect('crear_paciente_veterinario')
+
     if request.method == 'POST':
         form = PacienteForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('listar_pacientes') # Al guardar, vuelve a la lista
+            return redirect('listar_pacientes')
     else:
         form = PacienteForm()
-    
+
     return render(request, 'crear_paciente.html', {'form': form})
+
+
+@login_required
+def crear_paciente_veterinario(request):
+    """Registro veterinario: dueño humano + mascota en un solo formulario."""
+    if not _es_veterinario(request):
+        messages.error(request, "Solo veterinarios pueden registrar mascotas como pacientes.")
+        return redirect('listar_pacientes')
+
+    from users.models import User
+    if request.method == 'POST':
+        # Datos del dueño
+        dueno_first    = request.POST.get('dueno_first_name', '').strip()
+        dueno_last     = request.POST.get('dueno_last_name', '').strip()
+        dueno_cedula   = request.POST.get('dueno_cedula', '').strip()
+        dueno_email    = request.POST.get('dueno_email', '').strip()
+        dueno_telefono = request.POST.get('dueno_telefono', '').strip()
+        dueno_direccion= request.POST.get('dueno_direccion', '').strip()
+
+        # Datos de la mascota
+        m_nombre   = request.POST.get('mascota_nombre', '').strip()
+        m_especie  = request.POST.get('mascota_especie', '')
+        m_raza     = request.POST.get('mascota_raza', '').strip()
+        m_sexo     = request.POST.get('mascota_sexo', '')
+        m_color    = request.POST.get('mascota_color', '').strip()
+        m_fn       = request.POST.get('mascota_fecha_nacimiento') or None
+        m_peso     = request.POST.get('mascota_peso') or None
+        m_chip     = request.POST.get('mascota_chip', '').strip()
+        m_alergias = request.POST.get('mascota_alergias', '').strip()
+        m_enf      = request.POST.get('mascota_enf', '').strip()
+        m_ester    = bool(request.POST.get('mascota_esterilizado'))
+
+        if not all([dueno_first, dueno_last, dueno_cedula, dueno_email, m_nombre, m_especie]):
+            messages.error(request, "Faltan datos obligatorios del dueño o de la mascota.")
+            return render(request, 'crear_paciente_veterinario.html', {
+                'datos': request.POST, 'especies': Mascota.ESPECIES,
+            })
+
+        # ¿Existe ya el dueño?
+        usuario = User.objects.filter(cedula=dueno_cedula).first() or User.objects.filter(email=dueno_email).first()
+        if usuario:
+            paciente, _ = Paciente.objects.get_or_create(usuario=usuario, defaults={
+                'telefono': dueno_telefono, 'direccion': dueno_direccion,
+            })
+        else:
+            usuario = User.objects.create_user(
+                username=dueno_email,
+                email=dueno_email,
+                password=dueno_cedula,
+                first_name=dueno_first,
+                last_name=dueno_last,
+                cedula=dueno_cedula,
+                role=User.Role.PACIENTE,
+            )
+            paciente = Paciente.objects.create(
+                usuario=usuario, telefono=dueno_telefono, direccion=dueno_direccion,
+            )
+
+        mascota = Mascota(
+            propietario=paciente,
+            nombre=m_nombre, especie=m_especie, raza=m_raza,
+            sexo=m_sexo, color=m_color, fecha_nacimiento=m_fn,
+            peso=m_peso or None, chip_id=m_chip,
+            alergias=m_alergias, enfermedades_cronicas=m_enf,
+            esterilizado=m_ester,
+        )
+        if 'mascota_foto' in request.FILES:
+            mascota.foto = request.FILES['mascota_foto']
+        mascota.save()
+
+        messages.success(request, f"Mascota '{mascota.nombre}' registrada para {paciente}.")
+        return redirect('listar_pacientes')
+
+    return render(request, 'crear_paciente_veterinario.html', {
+        'especies': Mascota.ESPECIES,
+    })
 
 @login_required
 def editar_paciente(request, id):

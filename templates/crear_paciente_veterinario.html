@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-success text-white text-center py-3">
+                    <h3 class="mb-0"><i class="bi bi-heart-pulse"></i> Registrar Mascota / Paciente Veterinario</h3>
+                    <p class="mb-0 small">Datos del dueño y de la mascota a atender</p>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+
+                        <h5 class="text-success border-bottom pb-2 mb-3"><i class="bi bi-person"></i> Datos del Dueño</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Nombres <span class="text-danger">*</span></label>
+                                <input type="text" name="dueno_first_name" class="form-control" required
+                                       value="{{ datos.dueno_first_name|default:'' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Apellidos <span class="text-danger">*</span></label>
+                                <input type="text" name="dueno_last_name" class="form-control" required
+                                       value="{{ datos.dueno_last_name|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Cédula <span class="text-danger">*</span></label>
+                                <input type="text" name="dueno_cedula" class="form-control" required
+                                       value="{{ datos.dueno_cedula|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Correo <span class="text-danger">*</span></label>
+                                <input type="email" name="dueno_email" class="form-control" required
+                                       value="{{ datos.dueno_email|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" name="dueno_telefono" class="form-control"
+                                       value="{{ datos.dueno_telefono|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" name="dueno_direccion" class="form-control"
+                                   value="{{ datos.dueno_direccion|default:'' }}">
+                        </div>
+
+                        <h5 class="text-success border-bottom pb-2 mb-3 mt-4"><i class="bi bi-heart-pulse"></i> Datos de la Mascota</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Nombre de la mascota <span class="text-danger">*</span></label>
+                                <input type="text" name="mascota_nombre" class="form-control" required
+                                       value="{{ datos.mascota_nombre|default:'' }}" placeholder="Ej: Rocky, Luna">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Especie <span class="text-danger">*</span></label>
+                                <select name="mascota_especie" class="form-select" required>
+                                    <option value="">— Seleccione —</option>
+                                    {% for val, label in especies %}
+                                    <option value="{{ val }}" {% if datos.mascota_especie == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Raza</label>
+                                <input type="text" name="mascota_raza" class="form-control"
+                                       value="{{ datos.mascota_raza|default:'' }}" placeholder="Ej: Labrador, Persa">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Sexo</label>
+                                <select name="mascota_sexo" class="form-select">
+                                    <option value="">— Seleccione —</option>
+                                    <option value="M" {% if datos.mascota_sexo == 'M' %}selected{% endif %}>Macho</option>
+                                    <option value="H" {% if datos.mascota_sexo == 'H' %}selected{% endif %}>Hembra</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Color</label>
+                                <input type="text" name="mascota_color" class="form-control"
+                                       value="{{ datos.mascota_color|default:'' }}" placeholder="Ej: Negro, atigrado">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Fecha de nacimiento</label>
+                                <input type="date" name="mascota_fecha_nacimiento" class="form-control"
+                                       value="{{ datos.mascota_fecha_nacimiento|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Peso (Kg)</label>
+                                <input type="number" step="0.01" name="mascota_peso" class="form-control"
+                                       value="{{ datos.mascota_peso|default:'' }}" placeholder="Ej: 12.5">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">ID Microchip</label>
+                                <input type="text" name="mascota_chip" class="form-control"
+                                       value="{{ datos.mascota_chip|default:'' }}" placeholder="Si tiene chip">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Foto</label>
+                            <input type="file" name="mascota_foto" accept="image/*" class="form-control">
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="mascota_esterilizado" class="form-check-input" id="ester"
+                                   {% if datos.mascota_esterilizado %}checked{% endif %}>
+                            <label for="ester" class="form-check-label fw-bold">Esterilizado/a</label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Alergias</label>
+                            <textarea name="mascota_alergias" class="form-control" rows="2"
+                                      placeholder="Ej: Pollo, ciertos antibióticos">{{ datos.mascota_alergias|default:'' }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Enfermedades crónicas</label>
+                            <textarea name="mascota_enf" class="form-control" rows="2"
+                                      placeholder="Ej: Diabetes, displasia de cadera">{{ datos.mascota_enf|default:'' }}</textarea>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <a href="{% url 'listar_pacientes' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-success flex-grow-1">
+                                <i class="bi bi-check-circle"></i> Registrar Mascota y Dueño
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

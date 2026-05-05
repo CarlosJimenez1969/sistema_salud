@@ -10,6 +10,7 @@ from medico.views import configurar_horario, ciudades_por_pais
 from paciente.views import (
     listar_pacientes, crear_paciente, editar_paciente, registro_paciente,
     listar_mascotas, crear_mascota, editar_mascota, eliminar_mascota,
+    crear_paciente_veterinario,
 )
 from historia.views import crear_historia, historial_medico, imprimir_receta, registrar_triaje  # <--- IMPORTANTE: Importar historial_medico
 from citas.views import buscar_medico, reservar_cita, ver_agenda
@@ -50,6 +51,7 @@ urlpatterns = [
     # Pacientes
     path('pacientes/', listar_pacientes, name='listar_pacientes'),
     path('pacientes/nuevo/', crear_paciente, name='crear_paciente'),
+    path('pacientes/nuevo/veterinario/', crear_paciente_veterinario, name='crear_paciente_veterinario'),
     path('pacientes/editar/<int:id>/', editar_paciente, name='editar_paciente'),
 
     # Historias Clínicas
