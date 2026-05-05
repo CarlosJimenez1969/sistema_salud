@@ -68,7 +68,7 @@
                             <div class="nav-link d-flex align-items-center">
                                 <div class="text-end me-2 d-none d-md-block">
                                     <span class="d-block text-white fw-bold lh-1">{{ user.get_full_name|default:user.username }}</span>
-                                    {% if user.role == 'MEDICO' and user.perfil_medico.especialidad %}
+                                    {% if user.role == 'MEDICO' and user.perfil_medico and user.perfil_medico.especialidad %}
                                         <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">
                                             <i class="bi bi-clipboard2-pulse-fill me-1"></i>{{ user.perfil_medico.especialidad.nombre }}
                                         </span>

@@ -428,9 +428,31 @@ def ver_historia(request, historia_id):
 @login_required
 def historial_medico(request, paciente_id):
     paciente = get_object_or_404(Paciente, id=paciente_id)
-    # Traemos todas las historias de este paciente, ordenadas de la más reciente a la más antigua
+    role = getattr(request.user, 'role', '')
+
+    # ADMIN ve todo; MEDICO/SECRETARIA solo si tienen relación con el paciente; PACIENTE solo lo suyo
+    from citas.models import Cita
+    if role == 'ADMIN':
+        pass
+    elif role == 'MEDICO' and hasattr(request.user, 'perfil_medico'):
+        if not Cita.objects.filter(medico=request.user.perfil_medico, paciente=paciente).exists():
+            messages.error(request, "No tiene permiso para ver este historial.")
+            return redirect('home')
+    elif role == 'SECRETARIA' and hasattr(request.user, 'perfil_secretaria'):
+        medico = request.user.perfil_secretaria.medico
+        if not Cita.objects.filter(medico=medico, paciente=paciente).exists():
+            messages.error(request, "No tiene permiso para ver este historial.")
+            return redirect('dashboard_secretaria')
+    elif role == 'PACIENTE' and hasattr(request.user, 'perfil_paciente'):
+        if request.user.perfil_paciente.id != paciente.id:
+            messages.error(request, "No tiene permiso para ver este historial.")
+            return redirect('home')
+    else:
+        messages.error(request, "Acceso denegado.")
+        return redirect('home')
+
     historias = HistoriaClinica.objects.filter(paciente=paciente).order_by('-fecha_atencion')
-    
+
     return render(request, 'historial_medico.html', {
         'paciente': paciente,
         'historias': historias
@@ -508,7 +530,17 @@ def obtener_ultimos_signos(request, paciente_id):
 @login_required
 def registrar_triaje(request, cita_id):
     from .models import Triaje
-    cita = get_object_or_404(Cita, id=cita_id)
+    role = getattr(request.user, 'role', '')
+    if role not in ('ADMIN', 'MEDICO', 'SECRETARIA'):
+        messages.error(request, "Acceso denegado.")
+        return redirect('home')
+
+    if role == 'SECRETARIA' and hasattr(request.user, 'perfil_secretaria'):
+        cita = get_object_or_404(Cita, id=cita_id, medico=request.user.perfil_secretaria.medico)
+    elif role == 'MEDICO' and hasattr(request.user, 'perfil_medico'):
+        cita = get_object_or_404(Cita, id=cita_id, medico=request.user.perfil_medico)
+    else:
+        cita = get_object_or_404(Cita, id=cita_id)
     paciente = cita.paciente
 
     # Buscar triaje existente para esta cita (si ya fue registrado)

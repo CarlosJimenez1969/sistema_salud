@@ -71,11 +71,26 @@ def editar_paciente(request, id):
     return render(request, 'crear_paciente.html', {'form': form, 'titulo': 'Editar Paciente'})
 
 @login_required
-#@medico_required
 def resumen_paciente_rapido(request, paciente_id):
     paciente = get_object_or_404(Paciente, id=paciente_id)
-    
-    # Obtenemos la última consulta realizada
+    role = getattr(request.user, 'role', '')
+
+    # Validar acceso: admin ve todo, médico/secretaria solo si tienen relación
+    from citas.models import Cita
+    if role == 'ADMIN':
+        pass
+    elif role == 'MEDICO' and hasattr(request.user, 'perfil_medico'):
+        if not Cita.objects.filter(medico=request.user.perfil_medico, paciente=paciente).exists():
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied
+    elif role == 'SECRETARIA' and hasattr(request.user, 'perfil_secretaria'):
+        if not Cita.objects.filter(medico=request.user.perfil_secretaria.medico, paciente=paciente).exists():
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied
+    else:
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied
+
     ultima_historia = HistoriaClinica.objects.filter(paciente=paciente).order_by('-fecha_atencion').first()
     
     return render(request, 'paciente/resumen_modal.html', {
@@ -93,8 +108,8 @@ def registro_paciente(request):
         if form.is_valid():
             user = form.save()
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            messages.success(request, f'¡Bienvenido/a {user.first_name}! Tu cuenta fue creada exitosamente.')
-            return redirect('home')
+            messages.success(request, f'¡Bienvenido/a {user.first_name}! Tu cuenta fue creada. Ahora puedes buscar un médico y reservar tu cita.')
+            return redirect('buscar_medico')
     else:
         form = RegistroPacienteForm()
 

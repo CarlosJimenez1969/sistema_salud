@@ -154,7 +154,6 @@ def registro_medico(request):
             request.session['payphone_client_tx'] = client_tx_id
             request.session.modified = True
 
-            print("DEBUG: Datos guardados en BD, redirigiendo a pasarela...")
             return redirect('pasarela_pago')
         else:
             # Si el formulario no es válido, imprimimos los errores en la terminal
@@ -329,9 +328,25 @@ def eliminar_secretaria(request, secretaria_id):
     messages.success(request, f"Acceso de {nombre} eliminado correctamente.")
     return redirect('crear_secretaria')
 
+@login_required
 def asignar_password(request, user_id):
+    # Solo ADMIN o el médico que creó al usuario puede asignar contraseñas
+    role = getattr(request.user, 'role', '')
+    if role not in ('ADMIN', 'MEDICO'):
+        messages.error(request, "No tiene permisos para realizar esta acción.")
+        return redirect('home')
+
     user = get_object_or_404(User, id=user_id)
-    
+
+    # Si es médico, solo puede asignar contraseña a sus propias secretarias
+    if role == 'MEDICO' and user.role == 'SECRETARIA':
+        if not Secretaria.objects.filter(usuario=user, medico__usuario=request.user).exists():
+            messages.error(request, "No tiene permisos sobre este usuario.")
+            return redirect('home')
+    elif role == 'MEDICO' and user.role != 'SECRETARIA':
+        messages.error(request, "No tiene permisos sobre este usuario.")
+        return redirect('home')
+
     if request.method == 'POST':
         form = SetPasswordForm(user, request.POST)
         if form.is_valid():
@@ -386,7 +401,11 @@ def redirect_by_role(request):
     else:
         return redirect('home')
     
+@login_required
 def probar_email(request):
+    if getattr(request.user, 'role', '') != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('home')
     try:
         asunto = 'Prueba de Conexión VertexSalud'
         mensaje = 'Si recibes esto, la configuración de Gmail en VertexSalud es correcta.'

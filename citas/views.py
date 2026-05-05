@@ -158,13 +158,25 @@ def reservar_cita(request, medico_id):
                 messages.success(request, f'Cita agendada con el Dr. {medico.usuario.last_name} para {paciente}')
                 return redirect('dashboard_secretaria' if es_secretaria else 'home')
             except Exception as e:
-                messages.error(request, f"Error: {e}")
+                print(f"[RESERVAR_CITA ERROR] {e}")
+                messages.error(request, "No se pudo agendar la cita. Verifica los datos e intenta nuevamente.")
+
+    # Solo mostrar pacientes que ya tienen relación con este médico (no toda la BD)
+    if es_administrativo:
+        lista_pacientes = (
+            Paciente.objects.filter(citas__medico=medico)
+            .select_related('usuario')
+            .distinct()
+            .order_by('usuario__last_name')
+        )
+    else:
+        lista_pacientes = Paciente.objects.none()
 
     return render(request, 'reservar_cita.html', {
         'medico': medico,
         'horarios': horarios,
         'fecha_seleccionada': fecha_seleccionada,
-        'lista_pacientes': Paciente.objects.all().order_by('usuario__last_name'),
+        'lista_pacientes': lista_pacientes,
         'es_administrativo': es_administrativo,
         'paciente_seleccionado_id': paciente_seleccionado_id,
         'dia_anterior': fecha_seleccionada - timedelta(days=1) if fecha_seleccionada > hoy else None,
@@ -257,12 +269,24 @@ def dashboard_secretaria(request):
     
     return render(request, 'dashboard_secretaria.html', context)
 
+def _cita_del_usuario(request, cita_id):
+    """Obtiene una Cita validando que pertenezca al médico/secretaria/admin del usuario logueado."""
+    role = getattr(request.user, 'role', '')
+    if role == 'ADMIN':
+        return get_object_or_404(Cita, id=cita_id)
+    if role == 'MEDICO' and hasattr(request.user, 'perfil_medico'):
+        return get_object_or_404(Cita, id=cita_id, medico=request.user.perfil_medico)
+    if role == 'SECRETARIA' and hasattr(request.user, 'perfil_secretaria'):
+        return get_object_or_404(Cita, id=cita_id, medico=request.user.perfil_secretaria.medico)
+    from django.core.exceptions import PermissionDenied
+    raise PermissionDenied
+
+
 @login_required
 def cambiar_estado_cita(request, cita_id, nuevo_estado):
     if request.method == 'POST':
-        cita = get_object_or_404(Cita, id=cita_id)
-        
-        # Validamos que el estado sea uno de los permitidos
+        cita = _cita_del_usuario(request, cita_id)
+
         estado_map = {'COMPLETADA': 'A', 'CANCELADA': 'C', 'A': 'A', 'C': 'C'}
         if nuevo_estado in estado_map:
             cita.estado = estado_map[nuevo_estado]
@@ -272,31 +296,33 @@ def cambiar_estado_cita(request, cita_id, nuevo_estado):
                 messages.success(request, f"Cita de {cita.paciente.usuario.first_name} marcada como ATENDIDA.")
             else:
                 messages.warning(request, f"Cita de {cita.paciente.usuario.first_name} ha sido CANCELADA.")
-    
-    # El redirect automático es clave: regresa al usuario a la página donde estaba
-    # (sea el dashboard de secretaria o el panel del médico)
-    return redirect(request.META.get('HTTP_REFERER', 'dashboard_secretaria'))
+
+    # Redirect seguro según rol (evita open redirect vía Referer)
+    role = getattr(request.user, 'role', '')
+    if role == 'SECRETARIA':
+        return redirect('dashboard_secretaria')
+    return redirect('home')
+
 
 @login_required
 def editar_cita(request, cita_id):
-    cita = get_object_or_404(Cita, id=cita_id)
-    
+    cita = _cita_del_usuario(request, cita_id)
+
     if request.method == 'POST':
         form = CitaForm(request.POST, instance=cita)
         if form.is_valid():
             form.save()
-            # Mensaje de éxito para el usuario
             return redirect('dashboard_secretaria')
     else:
-        # Aquí cargamos los datos actuales de la cita en el formulario
         form = CitaForm(instance=cita)
-    
+
     return render(request, 'citas/editar_cita.html', {'form': form, 'cita': cita})
+
 
 @login_required
 def eliminar_cita(request, cita_id):
     if request.method == 'POST':
-        cita = get_object_or_404(Cita, id=cita_id)
+        cita = _cita_del_usuario(request, cita_id)
         nombre_paciente = cita.paciente.usuario.get_full_name()
         cita.delete()
         messages.error(request, f"La cita de {nombre_paciente} ha sido eliminada permanentemente.")
@@ -360,10 +386,5 @@ def enviar_correo_activacion(request, user):
     
 @login_required
 def detalle_cita(request, cita_id):
-    # Aseguramos que la secretaria solo vea citas de su médico vinculado
-    if request.user.role == 'SECRETARIA':
-        cita = get_object_or_404(Cita, id=cita_id, medico=request.user.perfil_secretaria.medico)
-    else:
-        cita = get_object_or_404(Cita, id=cita_id)
-        
+    cita = _cita_del_usuario(request, cita_id)
     return render(request, 'detalle_cita_modal.html', {'cita': cita})

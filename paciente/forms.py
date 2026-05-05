@@ -96,7 +96,9 @@ class RegistroPacienteForm(forms.Form):
         return email
 
     def clean_cedula(self):
-        cedula = self.cleaned_data['cedula']
+        cedula = self.cleaned_data['cedula'].strip()
+        if not cedula.isdigit() or not (8 <= len(cedula) <= 13):
+            raise forms.ValidationError("La cédula/pasaporte debe contener entre 8 y 13 dígitos numéricos.")
         if User.objects.filter(cedula=cedula).exists():
             raise forms.ValidationError("Esta cédula ya está registrada.")
         return cedula

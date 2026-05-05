@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python manage.py check)",
+      "Bash(python manage.py showmigrations)",
+      "Bash(python manage.py makemigrations --check)",
+      "Bash(python manage.py makemigrations citas)",
+      "Bash(python manage.py check --deploy)",
+      "Bash(python manage.py makemigrations facturacion)",
+      "Bash(python manage.py migrate facturacion)",
+      "Bash(python manage.py showmigrations --list)"
+    ]
+  }
+}
