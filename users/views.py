@@ -61,8 +61,17 @@ def home(request):
     # --- LOGICA PARA MÉDICOS / ADMINS ---
     if request.user.role == 'MEDICO':
         try:
-            total_pacientes = Paciente.objects.filter(citas__medico=request.user.perfil_medico).distinct().count()
-        except:
+            medico = request.user.perfil_medico
+            es_vet = medico.especialidad and 'veterin' in medico.especialidad.nombre.lower()
+            from django.db.models import Q
+            if es_vet:
+                # Vets cuentan pacientes con citas O con mascotas registradas
+                total_pacientes = Paciente.objects.filter(
+                    Q(citas__medico=medico) | Q(mascotas__isnull=False)
+                ).distinct().count()
+            else:
+                total_pacientes = Paciente.objects.filter(citas__medico=medico).distinct().count()
+        except AttributeError:
             total_pacientes = 0
     else:
         total_pacientes = Paciente.objects.count()

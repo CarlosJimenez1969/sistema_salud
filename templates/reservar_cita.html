@@ -37,26 +37,39 @@
                         </div>
                         {% endif %}
 
-                        {% if es_veterinario and mis_mascotas %}
-                        <div class="mb-3">
-                            <label class="form-label fw-bold text-secondary small">
-                                <i class="bi bi-heart-pulse"></i> SELECCIONA TU MASCOTA
-                            </label>
-                            <select name="mascota_id" class="form-select" required>
-                                <option value="">-- Selecciona la mascota --</option>
-                                {% for m in mis_mascotas %}
-                                <option value="{{ m.id }}">{{ m.nombre }} ({{ m.get_especie_display }}{% if m.raza %} — {{ m.raza }}{% endif %})</option>
-                                {% endfor %}
-                            </select>
-                            <div class="form-text">
-                                ¿No está tu mascota? <a href="{% url 'crear_mascota' %}">Regístrala aquí</a>
+                        {% if es_veterinario %}
+                            {% if mis_mascotas %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-secondary small">
+                                    <i class="bi bi-heart-pulse"></i> SELECCIONA LA MASCOTA
+                                </label>
+                                <select name="mascota_id" class="form-select" required>
+                                    <option value="">-- Selecciona la mascota --</option>
+                                    {% for m in mis_mascotas %}
+                                    <option value="{{ m.id }}">{{ m.nombre }} ({{ m.get_especie_display }}{% if m.raza %} — {{ m.raza }}{% endif %})</option>
+                                    {% endfor %}
+                                </select>
+                                {% if not es_administrativo %}
+                                <div class="form-text">
+                                    ¿No está tu mascota? <a href="{% url 'crear_mascota' %}">Regístrala aquí</a>
+                                </div>
+                                {% endif %}
                             </div>
-                        </div>
-                        {% elif es_veterinario and not es_administrativo %}
-                        <div class="alert alert-warning py-2 small border-0">
-                            Para reservar una cita veterinaria primero debes
-                            <a href="{% url 'crear_mascota' %}" class="alert-link">registrar tu mascota</a>.
-                        </div>
+                            {% elif es_administrativo and paciente_seleccionado_id %}
+                            <div class="alert alert-warning py-2 small border-0">
+                                Este paciente no tiene mascotas registradas.
+                                <a href="{% url 'crear_paciente_veterinario' %}" class="alert-link">Registrar mascota</a>
+                            </div>
+                            {% elif es_administrativo %}
+                            <div class="alert alert-info py-2 small border-0">
+                                Selecciona primero un paciente para ver sus mascotas.
+                            </div>
+                            {% else %}
+                            <div class="alert alert-warning py-2 small border-0">
+                                Para reservar una cita veterinaria primero debes
+                                <a href="{% url 'crear_mascota' %}" class="alert-link">registrar tu mascota</a>.
+                            </div>
+                            {% endif %}
                         {% endif %}
 
                         <div class="alert alert-info py-2 small border-0 shadow-sm mt-3">

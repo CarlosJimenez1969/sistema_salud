@@ -176,19 +176,37 @@ def reservar_cita(request, medico_id):
 
     # Solo mostrar pacientes que ya tienen relación con este médico (no toda la BD)
     if es_administrativo:
-        lista_pacientes = (
-            Paciente.objects.filter(citas__medico=medico)
-            .select_related('usuario')
-            .distinct()
-            .order_by('usuario__last_name')
-        )
+        if es_veterinario:
+            # Vets: pacientes con citas O con mascotas registradas
+            lista_pacientes = (
+                Paciente.objects.filter(Q(citas__medico=medico) | Q(mascotas__isnull=False))
+                .select_related('usuario')
+                .prefetch_related('mascotas')
+                .distinct()
+                .order_by('usuario__last_name')
+            )
+        else:
+            lista_pacientes = (
+                Paciente.objects.filter(citas__medico=medico)
+                .select_related('usuario')
+                .distinct()
+                .order_by('usuario__last_name')
+            )
     else:
         lista_pacientes = Paciente.objects.none()
 
     # Lista de mascotas del paciente actual (si es veterinario)
     mis_mascotas = []
-    if es_veterinario and not es_administrativo and hasattr(request.user, 'perfil_paciente'):
-        mis_mascotas = request.user.perfil_paciente.mascotas.filter(activo=True)
+    if es_veterinario:
+        if not es_administrativo and hasattr(request.user, 'perfil_paciente'):
+            mis_mascotas = request.user.perfil_paciente.mascotas.filter(activo=True)
+        elif es_administrativo and paciente_seleccionado_id:
+            # Si la secretaria/médico seleccionó un paciente, mostrar sus mascotas
+            try:
+                p = Paciente.objects.get(id=paciente_seleccionado_id)
+                mis_mascotas = p.mascotas.filter(activo=True)
+            except Paciente.DoesNotExist:
+                pass
 
     return render(request, 'reservar_cita.html', {
         'medico': medico,
