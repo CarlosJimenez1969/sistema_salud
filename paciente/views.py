@@ -15,28 +15,29 @@ def listar_pacientes(request):
 
     es_vet = _es_veterinario(request)
 
-    # ADMIN ve todos los pacientes; MEDICO y SECRETARIA solo los suyos
+    # Solo pacientes con rol PACIENTE (excluye usuarios médicos/secretarias/admins)
+    base_qs = Paciente.objects.filter(usuario__role='PACIENTE')
+
     if request.user.role == 'ADMIN':
-        pacientes = Paciente.objects.all().select_related('usuario').order_by('-id')
+        pacientes = base_qs.select_related('usuario').order_by('-id')
     elif request.user.role == 'SECRETARIA':
         medico = request.user.perfil_secretaria.medico
         if es_vet:
-            # Veterinarios ven todos los pacientes con mascotas registradas O con citas
-            pacientes = Paciente.objects.filter(
+            pacientes = base_qs.filter(
                 Q(citas__medico=medico) | Q(mascotas__isnull=False)
             ).select_related('usuario').distinct().order_by('-id')
         else:
-            pacientes = Paciente.objects.filter(
+            pacientes = base_qs.filter(
                 citas__medico=medico
             ).select_related('usuario').distinct().order_by('-id')
     else:
         medico = request.user.perfil_medico
         if es_vet:
-            pacientes = Paciente.objects.filter(
+            pacientes = base_qs.filter(
                 Q(citas__medico=medico) | Q(mascotas__isnull=False)
             ).select_related('usuario').distinct().order_by('-id')
         else:
-            pacientes = Paciente.objects.filter(
+            pacientes = base_qs.filter(
                 citas__medico=medico
             ).select_related('usuario').distinct().order_by('-id')
 
@@ -127,6 +128,11 @@ def crear_paciente_veterinario(request):
 
         # ¿Existe ya el dueño?
         usuario = User.objects.filter(cedula=dueno_cedula).first() or User.objects.filter(email=dueno_email).first()
+        if usuario and usuario.role != 'PACIENTE':
+            messages.error(request, "La cédula/correo ya pertenece a un usuario del sistema (médico/secretaria/admin). Use otros datos para el dueño.")
+            return render(request, 'crear_paciente_veterinario.html', {
+                'datos': request.POST, 'especies': Mascota.ESPECIES,
+            })
         if usuario:
             paciente, _ = Paciente.objects.get_or_create(usuario=usuario, defaults={
                 'telefono': dueno_telefono, 'direccion': dueno_direccion,
