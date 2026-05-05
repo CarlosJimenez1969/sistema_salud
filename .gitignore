@@ -41,6 +41,9 @@ backup/
 *.swp
 *.swo
 
+# Claude Code (configuración local del agente)
+.claude/
+
 # Windows
 Thumbs.db
 Desktop.ini
