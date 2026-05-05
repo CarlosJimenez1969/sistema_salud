@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from medico.models import Medico
-from paciente.models import Paciente
+from paciente.models import Paciente, Mascota
 
 class Cita(models.Model):
     ESTADOS = [
@@ -13,6 +13,8 @@ class Cita(models.Model):
 
     medico = models.ForeignKey(Medico, on_delete=models.CASCADE, related_name='citas')
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='citas')
+    # Solo se usa para citas veterinarias (el paciente es el dueño)
+    mascota = models.ForeignKey(Mascota, on_delete=models.PROTECT, null=True, blank=True, related_name='citas')
 
     fecha = models.DateField()
     hora = models.TimeField()

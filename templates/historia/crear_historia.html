@@ -21,18 +21,42 @@
         <div class="col-md-2 ps-0" style="position:sticky; top:0; height:100vh; align-self:flex-start;">
             <div class="card shadow-sm h-100" style="border-radius:0; margin-left:0;">
                 <div class="card-header bg-dark text-white py-2 text-center">
-                    <small>Paciente</small>
+                    <small>{% if es_veterinario %}Mascota{% else %}Paciente{% endif %}</small>
                 </div>
                 <div class="card-body text-center p-2">
-                    <i class="bi bi-person-circle fs-2"></i>
-                    <p class="fw-bold mb-0 mt-1" style="font-size:0.8rem;">{{ paciente.usuario.last_name }} {{ paciente.usuario.first_name }}</p>
-                    <p class="text-muted mb-1" style="font-size:0.75rem;">{{ paciente.usuario.cedula }}</p>
-                    <hr class="my-1">
-                    <p class="mb-0" style="font-size:0.75rem;"><strong>Sangre:</strong> {{ paciente.tipo_sangre }}</p>
-                    <p class="mb-1" style="font-size:0.75rem;"><strong>Edad:</strong> {{ paciente.fecha_nacimiento|timesince }}</p>
-                    <div class="alert alert-warning mt-2 p-1">
-                        <small style="font-size:0.7rem;"><strong>Alergias:</strong><br>{{ paciente.alergias|default:"Ninguna" }}</small>
-                    </div>
+                    {% if es_veterinario %}
+                        {% with mascota=paciente.mascotas.first %}
+                            {% if mascota.foto %}
+                                <img src="{{ mascota.foto.url }}" class="rounded-circle mb-1" style="width:60px;height:60px;object-fit:cover;">
+                            {% else %}
+                                <i class="bi bi-heart-pulse fs-2 text-success"></i>
+                            {% endif %}
+                            <p class="fw-bold mb-0 mt-1" style="font-size:0.85rem;">{{ mascota.nombre|default:"(sin mascota)" }}</p>
+                            {% if mascota %}
+                            <p class="text-muted mb-1" style="font-size:0.75rem;">{{ mascota.get_especie_display }}{% if mascota.raza %} — {{ mascota.raza }}{% endif %}</p>
+                            <hr class="my-1">
+                            <p class="mb-0" style="font-size:0.75rem;"><strong>Edad:</strong> {{ mascota.edad|default:"—" }}</p>
+                            <p class="mb-0" style="font-size:0.75rem;"><strong>Peso:</strong> {{ mascota.peso|default:"—" }} kg</p>
+                            <p class="mb-1" style="font-size:0.75rem;"><strong>Sexo:</strong> {{ mascota.get_sexo_display|default:"—" }}</p>
+                            <hr class="my-1">
+                            <p class="mb-0" style="font-size:0.7rem;text-align:left;"><strong>Dueño:</strong> {{ paciente.usuario.get_full_name }}</p>
+                            <p class="mb-0" style="font-size:0.7rem;text-align:left;"><strong>Tel:</strong> {{ paciente.telefono }}</p>
+                            <div class="alert alert-warning mt-2 p-1">
+                                <small style="font-size:0.7rem;"><strong>Alergias:</strong><br>{{ mascota.alergias|default:"Ninguna" }}</small>
+                            </div>
+                            {% endif %}
+                        {% endwith %}
+                    {% else %}
+                        <i class="bi bi-person-circle fs-2"></i>
+                        <p class="fw-bold mb-0 mt-1" style="font-size:0.8rem;">{{ paciente.usuario.last_name }} {{ paciente.usuario.first_name }}</p>
+                        <p class="text-muted mb-1" style="font-size:0.75rem;">{{ paciente.usuario.cedula }}</p>
+                        <hr class="my-1">
+                        <p class="mb-0" style="font-size:0.75rem;"><strong>Sangre:</strong> {{ paciente.tipo_sangre }}</p>
+                        <p class="mb-1" style="font-size:0.75rem;"><strong>Edad:</strong> {{ paciente.fecha_nacimiento|timesince }}</p>
+                        <div class="alert alert-warning mt-2 p-1">
+                            <small style="font-size:0.7rem;"><strong>Alergias:</strong><br>{{ paciente.alergias|default:"Ninguna" }}</small>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -1094,6 +1118,96 @@
                                     <div class="col-md-6">
                                         <label class="fw-bold text-dark">Medicación Administrada en Emergencia:</label>
                                         <textarea name="medicacion_urgente" class="form-control" rows="2" placeholder="Ej: Ketorolaco 30mg IV, Ondansetrón 4mg IV..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if es_veterinario %}
+                        <div class="card border-success mb-4 shadow-sm mt-4">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Veterinaria — Examen Clínico</h5>
+                            </div>
+                            <div class="card-body bg-light">
+                                <h6 class="text-primary border-bottom pb-1">1. Signos Vitales del Animal</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Temperatura (°C):</label>
+                                        <input type="number" step="0.1" name="vet_temperatura" class="form-control" placeholder="Ej: 38.5">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Frec. Cardiaca (lpm):</label>
+                                        <input type="number" name="vet_fc" class="form-control" placeholder="Ej: 120">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Frec. Respiratoria (rpm):</label>
+                                        <input type="number" name="vet_fr" class="form-control" placeholder="Ej: 30">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="fw-bold text-dark">Peso actual (Kg):</label>
+                                        <input type="number" step="0.01" name="vet_peso" class="form-control" placeholder="Ej: 12.5">
+                                    </div>
+                                </div>
+
+                                <h6 class="text-primary border-bottom pb-1 mt-3">2. Examen Físico</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Condición Corporal:</label>
+                                        <select name="vet_condicion" class="form-select">
+                                            <option value="">— Seleccione —</option>
+                                            <option value="1">1 - Caquexia</option>
+                                            <option value="2">2 - Bajo peso</option>
+                                            <option value="3">3 - Ideal</option>
+                                            <option value="4">4 - Sobrepeso</option>
+                                            <option value="5">5 - Obesidad</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Mucosas:</label>
+                                        <select name="vet_mucosas" class="form-select">
+                                            <option value="">— Seleccione —</option>
+                                            <option value="NORMAL">Rosadas (Normal)</option>
+                                            <option value="PALIDAS">Pálidas</option>
+                                            <option value="CIANOTICAS">Cianóticas</option>
+                                            <option value="ICTERICAS">Ictéricas</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="fw-bold text-dark">Hidratación:</label>
+                                        <select name="vet_hidratacion" class="form-select">
+                                            <option value="">— Seleccione —</option>
+                                            <option value="NORMAL">Normal</option>
+                                            <option value="LEVE">Leve (5%)</option>
+                                            <option value="MODERADA">Moderada (8%)</option>
+                                            <option value="SEVERA">Severa (>10%)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold text-dark">Observaciones del Examen Físico:</label>
+                                    <textarea name="vet_observaciones" class="form-control" rows="2" placeholder="Ej: Pelaje brillante, sin parásitos visibles, abdomen blando..."></textarea>
+                                </div>
+
+                                <h6 class="text-primary border-bottom pb-1 mt-3">3. Vacunación y Desparasitación</h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Vacunas aplicadas hoy:</label>
+                                        <textarea name="vet_vacunas" class="form-control" rows="2" placeholder="Ej: Polivalente DHPPiL, Rabia"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Próxima vacuna:</label>
+                                        <input type="date" name="vet_proxima_vacuna" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Desparasitación aplicada:</label>
+                                        <textarea name="vet_desparasitacion" class="form-control" rows="2" placeholder="Ej: Drontal Plus 1 comp / Bravecto 250mg"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold text-dark">Próxima desparasitación:</label>
+                                        <input type="date" name="vet_proxima_desp" class="form-control">
                                     </div>
                                 </div>
                             </div>

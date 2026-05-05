@@ -7,7 +7,10 @@ from django.conf.urls.static import static
 # Importamos las vistas
 from users.views import home, registro_medico, pasarela_pago, pago_exitoso, registro_exitoso, panel_admin, contacto
 from medico.views import configurar_horario, ciudades_por_pais
-from paciente.views import listar_pacientes, crear_paciente, editar_paciente, registro_paciente
+from paciente.views import (
+    listar_pacientes, crear_paciente, editar_paciente, registro_paciente,
+    listar_mascotas, crear_mascota, editar_mascota, eliminar_mascota,
+)
 from historia.views import crear_historia, historial_medico, imprimir_receta, registrar_triaje  # <--- IMPORTANTE: Importar historial_medico
 from citas.views import buscar_medico, reservar_cita, ver_agenda
 
@@ -37,6 +40,12 @@ urlpatterns = [
 
     # Registro ciudadano / paciente
     path('registro-paciente/', registro_paciente, name='registro_paciente'),
+
+    # Mascotas
+    path('mascotas/',                       listar_mascotas,  name='listar_mascotas'),
+    path('mascotas/nueva/',                 crear_mascota,    name='crear_mascota'),
+    path('mascotas/editar/<int:mascota_id>/', editar_mascota, name='editar_mascota'),
+    path('mascotas/eliminar/<int:mascota_id>/', eliminar_mascota, name='eliminar_mascota'),
 
     # Pacientes
     path('pacientes/', listar_pacientes, name='listar_pacientes'),

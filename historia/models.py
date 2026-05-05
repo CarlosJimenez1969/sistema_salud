@@ -61,8 +61,52 @@ class HistoriaClinica(models.Model):
     # PDF de la receta generado y guardado en Cloudinary la primera vez que se imprime
     receta_pdf = models.FileField(upload_to='recetas/', null=True, blank=True)
 
+    # Solo para citas veterinarias: el paciente es el dueño y la mascota es el "paciente real"
+    mascota = models.ForeignKey('paciente.Mascota', on_delete=models.PROTECT, null=True, blank=True, related_name='historias')
+
     def __str__(self):
         return f"Historia {self.id} - {self.paciente} ({self.fecha_atencion.date()})"
+
+
+class HistoriaVeterinaria(models.Model):
+    historia_clinica = models.OneToOneField(HistoriaClinica, on_delete=models.CASCADE, related_name='veterinaria')
+
+    # Signos vitales animales
+    temperatura      = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True, help_text="°C")
+    frecuencia_card  = models.IntegerField(null=True, blank=True, verbose_name="Frecuencia cardiaca (lpm)")
+    frecuencia_resp  = models.IntegerField(null=True, blank=True, verbose_name="Frecuencia respiratoria (rpm)")
+    peso_actual      = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Kg")
+    condicion_corporal = models.CharField(max_length=20, blank=True, choices=[
+        ('1', '1 - Caquexia'),
+        ('2', '2 - Bajo peso'),
+        ('3', '3 - Ideal'),
+        ('4', '4 - Sobrepeso'),
+        ('5', '5 - Obesidad'),
+    ])
+
+    # Vacunación y desparasitación
+    vacunas_aplicadas        = models.TextField(blank=True, verbose_name="Vacunas aplicadas hoy")
+    proxima_vacuna           = models.DateField(null=True, blank=True)
+    desparasitacion          = models.TextField(blank=True, verbose_name="Desparasitación aplicada")
+    proxima_desparasitacion  = models.DateField(null=True, blank=True)
+
+    # Examen clínico
+    mucosas        = models.CharField(max_length=50, blank=True, choices=[
+        ('NORMAL',     'Rosadas (Normal)'),
+        ('PALIDAS',    'Pálidas'),
+        ('CIANOTICAS', 'Cianóticas'),
+        ('ICTERICAS',  'Ictéricas'),
+    ])
+    hidratacion    = models.CharField(max_length=30, blank=True, choices=[
+        ('NORMAL',  'Normal'),
+        ('LEVE',    'Deshidratación leve (5%)'),
+        ('MODERADA','Moderada (8%)'),
+        ('SEVERA',  'Severa (>10%)'),
+    ])
+    observaciones_examen = models.TextField(blank=True, verbose_name="Observaciones del examen físico")
+
+    def __str__(self):
+        return f"Veterinaria - {self.historia_clinica.mascota or self.historia_clinica.paciente}"
 
 # Modelo para adjuntar múltiples imágenes a una historia
 class ImagenHistoria(models.Model):

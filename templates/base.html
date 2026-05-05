@@ -54,6 +54,17 @@
                                     <i class="bi bi-person-plus"></i> Registrar Personal
                                 </a>
                             </li>
+                        {% elif user.role == 'PACIENTE' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'buscar_medico' %}">
+                                    <i class="bi bi-search"></i> Buscar Médico
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'listar_mascotas' %}">
+                                    <i class="bi bi-heart-pulse"></i> Mis Mascotas
+                                </a>
+                            </li>
                         {% elif user.role == 'SECRETARIA' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'dashboard_secretaria' %}">

@@ -58,6 +58,7 @@ def crear_historia(request, paciente_id):
     es_neumolog = "neumo" in esp_nombre or "pulmon" in esp_nombre
     es_nefrologo = "nefro" in esp_nombre
     es_emergencias = "emergencia" in esp_nombre or "urgencia" in esp_nombre
+    es_veterinario = "veterin" in esp_nombre
 
     # Si no hay triaje de hoy, usar signos vitales de la última consulta
     if not triaje_previo:
@@ -77,6 +78,12 @@ def crear_historia(request, paciente_id):
             historia.paciente = paciente
             historia.medico = medico
             historia.fecha_atencion = timezone.now()
+            # Si es veterinario, vincular la mascota desde la cita
+            if es_veterinario:
+                from citas.models import Cita
+                cita_actual = Cita.objects.filter(medico=medico, paciente=paciente, mascota__isnull=False).order_by('-fecha', '-hora').first()
+                if cita_actual:
+                    historia.mascota = cita_actual.mascota
             historia.save()
 
             # 3. GUARDAR DATOS ESPECÍFICOS POR ESPECIALIDAD
@@ -312,6 +319,23 @@ def crear_historia(request, paciente_id):
                     medicacion_urgente=request.POST.get('medicacion_urgente'),
                     destino_paciente=request.POST.get('destino_paciente', 'ALTA'),
                 )
+            elif es_veterinario:
+                from .models import HistoriaVeterinaria
+                HistoriaVeterinaria.objects.create(
+                    historia_clinica=historia,
+                    temperatura=request.POST.get('vet_temperatura') or None,
+                    frecuencia_card=request.POST.get('vet_fc') or None,
+                    frecuencia_resp=request.POST.get('vet_fr') or None,
+                    peso_actual=request.POST.get('vet_peso') or None,
+                    condicion_corporal=request.POST.get('vet_condicion', ''),
+                    vacunas_aplicadas=request.POST.get('vet_vacunas', ''),
+                    proxima_vacuna=request.POST.get('vet_proxima_vacuna') or None,
+                    desparasitacion=request.POST.get('vet_desparasitacion', ''),
+                    proxima_desparasitacion=request.POST.get('vet_proxima_desp') or None,
+                    mucosas=request.POST.get('vet_mucosas', ''),
+                    hidratacion=request.POST.get('vet_hidratacion', ''),
+                    observaciones_examen=request.POST.get('vet_observaciones', ''),
+                )
 
             # 4. GUARDAR IMÁGENES
             for imagen_file in imagenes:
@@ -415,6 +439,7 @@ def crear_historia(request, paciente_id):
         'es_internista': es_internista, 'es_cirujano': es_cirujano,
         'es_urologo': es_urologo, 'es_neumolog': es_neumolog,
         'es_nefrologo': es_nefrologo, 'es_emergencias': es_emergencias,
+        'es_veterinario': es_veterinario,
     })
 
 # Vista extra para VER una historia pasada (Lectura)

@@ -137,25 +137,38 @@ def reservar_cita(request, medico_id):
         dt_aux = datetime.combine(date.today(), hora_actual) + timedelta(minutes=intervalo)
         hora_actual = dt_aux.time()
 
+    # ¿Es veterinario?
+    es_veterinario = medico.especialidad and medico.especialidad.nombre.lower() == 'veterinaria'
+
     # --- Lógica de POST ---
     if request.method == 'POST':
-        hora_post = request.POST.get('hora')
-        p_id = request.POST.get('paciente_id') or paciente_seleccionado_id
-        
+        hora_post   = request.POST.get('hora')
+        p_id        = request.POST.get('paciente_id') or paciente_seleccionado_id
+        mascota_id  = request.POST.get('mascota_id') or None
+
         if not hora_post:
             messages.error(request, "Debe seleccionar una hora.")
+        elif es_veterinario and not mascota_id:
+            messages.error(request, "Debe seleccionar la mascota para la cita veterinaria.")
         else:
             try:
                 paciente = get_object_or_404(Paciente, id=p_id) if es_administrativo else request.user.perfil_paciente
-                
+
+                mascota = None
+                if es_veterinario and mascota_id:
+                    from paciente.models import Mascota
+                    mascota = get_object_or_404(Mascota, id=mascota_id, propietario=paciente, activo=True)
+
                 Cita.objects.create(
                     medico=medico,
                     paciente=paciente,
+                    mascota=mascota,
                     fecha=fecha_seleccionada,
                     hora=hora_post,
                     estado='P'
                 )
-                messages.success(request, f'Cita agendada con el Dr. {medico.usuario.last_name} para {paciente}')
+                quien = mascota.nombre if mascota else paciente
+                messages.success(request, f'Cita agendada con el Dr. {medico.usuario.last_name} para {quien}')
                 return redirect('dashboard_secretaria' if es_secretaria else 'home')
             except Exception as e:
                 print(f"[RESERVAR_CITA ERROR] {e}")
@@ -172,11 +185,18 @@ def reservar_cita(request, medico_id):
     else:
         lista_pacientes = Paciente.objects.none()
 
+    # Lista de mascotas del paciente actual (si es veterinario)
+    mis_mascotas = []
+    if es_veterinario and not es_administrativo and hasattr(request.user, 'perfil_paciente'):
+        mis_mascotas = request.user.perfil_paciente.mascotas.filter(activo=True)
+
     return render(request, 'reservar_cita.html', {
         'medico': medico,
         'horarios': horarios,
         'fecha_seleccionada': fecha_seleccionada,
         'lista_pacientes': lista_pacientes,
+        'es_veterinario': es_veterinario,
+        'mis_mascotas': mis_mascotas,
         'es_administrativo': es_administrativo,
         'paciente_seleccionado_id': paciente_seleccionado_id,
         'dia_anterior': fecha_seleccionada - timedelta(days=1) if fecha_seleccionada > hoy else None,

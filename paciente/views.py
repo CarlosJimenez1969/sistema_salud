@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.contrib import messages
 
-from .models import Paciente
+from .models import Paciente, Mascota
 from .forms import PacienteForm, RegistroPacienteForm
 from historia.models import HistoriaClinica
 from users.decorators import medico_required
@@ -114,3 +114,110 @@ def registro_paciente(request):
         form = RegistroPacienteForm()
 
     return render(request, 'registro_paciente.html', {'form': form})
+
+
+# ─── CRUD de Mascotas ──────────────────────────────────────────────────────────
+
+def _paciente_del_usuario(request):
+    """Devuelve el Paciente del usuario logueado o None."""
+    if hasattr(request.user, 'perfil_paciente'):
+        return request.user.perfil_paciente
+    return None
+
+
+@login_required
+def listar_mascotas(request):
+    paciente = _paciente_del_usuario(request)
+    if not paciente:
+        messages.error(request, "Debes registrarte como paciente para gestionar mascotas.")
+        return redirect('home')
+    mascotas = paciente.mascotas.filter(activo=True).order_by('-creado')
+    return render(request, 'mascotas/listar.html', {'mascotas': mascotas})
+
+
+@login_required
+def crear_mascota(request):
+    paciente = _paciente_del_usuario(request)
+    if not paciente:
+        messages.error(request, "Debes registrarte como paciente para registrar mascotas.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        m = Mascota(propietario=paciente)
+        m.nombre           = request.POST.get('nombre', '').strip()
+        m.especie          = request.POST.get('especie', '')
+        m.raza             = request.POST.get('raza', '').strip()
+        m.sexo             = request.POST.get('sexo', '')
+        m.color            = request.POST.get('color', '').strip()
+        fn                 = request.POST.get('fecha_nacimiento', '')
+        m.fecha_nacimiento = fn or None
+        peso               = request.POST.get('peso', '').strip()
+        m.peso             = peso or None
+        m.esterilizado     = bool(request.POST.get('esterilizado'))
+        m.chip_id          = request.POST.get('chip_id', '').strip()
+        m.alergias         = request.POST.get('alergias', '').strip()
+        m.enfermedades_cronicas = request.POST.get('enfermedades_cronicas', '').strip()
+        m.notas            = request.POST.get('notas', '').strip()
+        if 'foto' in request.FILES:
+            m.foto = request.FILES['foto']
+
+        if not m.nombre or not m.especie:
+            messages.error(request, "Nombre y especie son obligatorios.")
+            return render(request, 'mascotas/crear.html', {'datos': request.POST, 'especies': Mascota.ESPECIES})
+
+        m.save()
+        messages.success(request, f"Mascota '{m.nombre}' registrada correctamente.")
+        return redirect('listar_mascotas')
+
+    return render(request, 'mascotas/crear.html', {'especies': Mascota.ESPECIES})
+
+
+@login_required
+def editar_mascota(request, mascota_id):
+    paciente = _paciente_del_usuario(request)
+    mascota = get_object_or_404(Mascota, id=mascota_id, propietario=paciente)
+
+    if request.method == 'POST':
+        mascota.nombre           = request.POST.get('nombre', '').strip()
+        mascota.especie          = request.POST.get('especie', '')
+        mascota.raza             = request.POST.get('raza', '').strip()
+        mascota.sexo             = request.POST.get('sexo', '')
+        mascota.color            = request.POST.get('color', '').strip()
+        fn                       = request.POST.get('fecha_nacimiento', '')
+        mascota.fecha_nacimiento = fn or None
+        peso                     = request.POST.get('peso', '').strip()
+        mascota.peso             = peso or None
+        mascota.esterilizado     = bool(request.POST.get('esterilizado'))
+        mascota.chip_id          = request.POST.get('chip_id', '').strip()
+        mascota.alergias         = request.POST.get('alergias', '').strip()
+        mascota.enfermedades_cronicas = request.POST.get('enfermedades_cronicas', '').strip()
+        mascota.notas            = request.POST.get('notas', '').strip()
+        if 'foto' in request.FILES:
+            mascota.foto = request.FILES['foto']
+        mascota.save()
+        messages.success(request, f"'{mascota.nombre}' actualizada correctamente.")
+        return redirect('listar_mascotas')
+
+    return render(request, 'mascotas/crear.html', {
+        'datos': {
+            'nombre': mascota.nombre, 'especie': mascota.especie, 'raza': mascota.raza,
+            'sexo': mascota.sexo, 'color': mascota.color,
+            'fecha_nacimiento': mascota.fecha_nacimiento, 'peso': mascota.peso,
+            'esterilizado': mascota.esterilizado, 'chip_id': mascota.chip_id,
+            'alergias': mascota.alergias, 'enfermedades_cronicas': mascota.enfermedades_cronicas,
+            'notas': mascota.notas,
+        },
+        'mascota': mascota,
+        'especies': Mascota.ESPECIES,
+    })
+
+
+@login_required
+def eliminar_mascota(request, mascota_id):
+    paciente = _paciente_del_usuario(request)
+    mascota = get_object_or_404(Mascota, id=mascota_id, propietario=paciente)
+    if request.method == 'POST':
+        mascota.activo = False
+        mascota.save()
+        messages.warning(request, f"'{mascota.nombre}' fue eliminada de tus mascotas.")
+    return redirect('listar_mascotas')
