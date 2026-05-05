@@ -302,6 +302,11 @@ def dashboard_secretaria(request):
         fecha=hoy
     ).select_related('paciente__usuario').prefetch_related('paciente__historias').order_by('hora')
 
+    es_veterinario = (
+        medico_vinculado.especialidad
+        and 'veterin' in medico_vinculado.especialidad.nombre.lower()
+    )
+
     context = {
         'medico': medico_vinculado,
         'secretaria': perfil_sec,
@@ -309,8 +314,9 @@ def dashboard_secretaria(request):
         'total_citas': citas_hoy.count(),
         'query': query,
         'resultado_busqueda': resultado_busqueda,
+        'es_veterinario': es_veterinario,
     }
-    
+
     return render(request, 'dashboard_secretaria.html', context)
 
 def _cita_del_usuario(request, cita_id):

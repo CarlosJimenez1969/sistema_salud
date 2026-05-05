@@ -566,6 +566,12 @@ def registrar_triaje(request, cita_id):
         cita = get_object_or_404(Cita, id=cita_id, medico=request.user.perfil_medico)
     else:
         cita = get_object_or_404(Cita, id=cita_id)
+
+    # Bloquear triaje para citas veterinarias
+    if cita.medico.especialidad and 'veterin' in cita.medico.especialidad.nombre.lower():
+        messages.info(request, "Las citas veterinarias no requieren triaje. El médico veterinario registrará los signos vitales en la consulta.")
+        return redirect('dashboard_secretaria')
+
     paciente = cita.paciente
 
     # Buscar triaje existente para esta cita (si ya fue registrado)
