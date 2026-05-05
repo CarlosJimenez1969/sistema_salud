@@ -24,11 +24,10 @@ CSRF_TRUSTED_ORIGINS = [
     'https://www.vertexjd.com',
 ]
 
-# Cookies seguras solo en producción (cuando DEBUG=False)
+# Cookies seguras solo en producción (Render maneja la redirección HTTP→HTTPS por su lado)
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE    = True
-    SECURE_SSL_REDIRECT   = True
 
 # ── Aplicaciones ───────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
