@@ -174,32 +174,26 @@ def reservar_cita(request, medico_id):
                 print(f"[RESERVAR_CITA ERROR] {e}")
                 messages.error(request, "No se pudo agendar la cita. Verifica los datos e intenta nuevamente.")
 
-    # Solo mostrar pacientes (no médicos/secretarias) con relación con este médico
     if es_administrativo:
-        base_qs = Paciente.objects.filter(
-            usuario__perfil_medico__isnull=True,
-            usuario__perfil_secretaria__isnull=True,
-        )
         if es_veterinario:
-            # Vets: pacientes con citas previas O dueños de mascotas
+            # Para veterinarios: cualquier paciente con mascotas registradas O con citas previas
+            # No filtramos por perfil médico/secretaria (un usuario podría ser ambos)
             from paciente.models import Mascota
-            total_pacientes_db = Paciente.objects.count()
-            total_mascotas_db  = Mascota.objects.count()
             ids_con_mascotas = list(Mascota.objects.values_list('propietario_id', flat=True).distinct())
-            ids_con_citas    = list(base_qs.filter(citas__medico=medico).values_list('id', flat=True).distinct())
+            ids_con_citas    = list(Paciente.objects.filter(citas__medico=medico).values_list('id', flat=True).distinct())
             ids_finales      = set(ids_con_mascotas) | set(ids_con_citas)
-            print(f"[DEBUG VET] total Pacientes={total_pacientes_db}, Mascotas={total_mascotas_db}")
-            print(f"[DEBUG VET] base_qs count={base_qs.count()} (excluye médicos/secretarias)")
-            print(f"[DEBUG VET] ids con mascotas={ids_con_mascotas}, con citas con vet={ids_con_citas}")
-            print(f"[DEBUG VET] ids_finales={ids_finales}")
             lista_pacientes = (
-                base_qs.filter(id__in=ids_finales)
+                Paciente.objects.filter(id__in=ids_finales)
                 .select_related('usuario')
                 .prefetch_related('mascotas')
                 .order_by('usuario__last_name')
             )
-            print(f"[DEBUG VET] lista_pacientes final count={lista_pacientes.count()}")
         else:
+            # Para médicos no veterinarios: excluir usuarios que sean médicos/secretarias
+            base_qs = Paciente.objects.filter(
+                usuario__perfil_medico__isnull=True,
+                usuario__perfil_secretaria__isnull=True,
+            )
             lista_pacientes = (
                 base_qs.filter(citas__medico=medico)
                 .select_related('usuario')

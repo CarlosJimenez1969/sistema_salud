@@ -16,31 +16,37 @@ def listar_pacientes(request):
     es_vet = _es_veterinario(request)
 
     # Solo pacientes con rol PACIENTE (excluye usuarios médicos/secretarias/admins)
-    # Excluir pacientes cuyos usuarios sean médicos o secretarias
-    base_qs = Paciente.objects.filter(
-        usuario__perfil_medico__isnull=True,
-        usuario__perfil_secretaria__isnull=True,
-    )
+    # Para veterinarios no aplicamos exclusión estricta por perfil (un usuario puede ser ambos)
+    # Para no-veterinarios sí excluimos usuarios médicos/secretarias
+    if es_vet:
+        from paciente.models import Mascota
+        ids_con_mascotas = set(Mascota.objects.values_list('propietario_id', flat=True))
 
-    if request.user.role == 'ADMIN':
-        pacientes = base_qs.select_related('usuario').order_by('-id')
-    elif request.user.role == 'SECRETARIA':
-        medico = request.user.perfil_secretaria.medico
-        if es_vet:
-            pacientes = base_qs.filter(
-                Q(citas__medico=medico) | Q(mascotas__isnull=False)
-            ).select_related('usuario').distinct().order_by('-id')
+        if request.user.role == 'ADMIN':
+            pacientes = Paciente.objects.all().select_related('usuario').order_by('-id')
         else:
+            medico = request.user.perfil_medico if request.user.role == 'MEDICO' else request.user.perfil_secretaria.medico
+            ids_con_citas = set(Paciente.objects.filter(citas__medico=medico).values_list('id', flat=True))
+            ids_finales   = ids_con_mascotas | ids_con_citas
+            pacientes = (
+                Paciente.objects.filter(id__in=ids_finales)
+                .select_related('usuario')
+                .order_by('-id')
+            )
+    else:
+        base_qs = Paciente.objects.filter(
+            usuario__perfil_medico__isnull=True,
+            usuario__perfil_secretaria__isnull=True,
+        )
+        if request.user.role == 'ADMIN':
+            pacientes = base_qs.select_related('usuario').order_by('-id')
+        elif request.user.role == 'SECRETARIA':
+            medico = request.user.perfil_secretaria.medico
             pacientes = base_qs.filter(
                 citas__medico=medico
             ).select_related('usuario').distinct().order_by('-id')
-    else:
-        medico = request.user.perfil_medico
-        if es_vet:
-            pacientes = base_qs.filter(
-                Q(citas__medico=medico) | Q(mascotas__isnull=False)
-            ).select_related('usuario').distinct().order_by('-id')
         else:
+            medico = request.user.perfil_medico
             pacientes = base_qs.filter(
                 citas__medico=medico
             ).select_related('usuario').distinct().order_by('-id')

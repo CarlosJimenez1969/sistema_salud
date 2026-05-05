@@ -64,15 +64,17 @@ def home(request):
             medico = request.user.perfil_medico
             es_vet = medico.especialidad and 'veterin' in medico.especialidad.nombre.lower()
             from django.db.models import Q
-            base_qs = Paciente.objects.filter(
-                usuario__perfil_medico__isnull=True,
-                usuario__perfil_secretaria__isnull=True,
-            )
             if es_vet:
-                total_pacientes = base_qs.filter(
-                    Q(citas__medico=medico) | Q(mascotas__isnull=False)
-                ).distinct().count()
+                # Vets: no excluir por perfil (un usuario puede ser ambos)
+                from paciente.models import Mascota
+                ids_con_mascotas = set(Mascota.objects.values_list('propietario_id', flat=True))
+                ids_con_citas = set(Paciente.objects.filter(citas__medico=medico).values_list('id', flat=True))
+                total_pacientes = len(ids_con_mascotas | ids_con_citas)
             else:
+                base_qs = Paciente.objects.filter(
+                    usuario__perfil_medico__isnull=True,
+                    usuario__perfil_secretaria__isnull=True,
+                )
                 total_pacientes = base_qs.filter(citas__medico=medico).distinct().count()
         except AttributeError:
             total_pacientes = 0
