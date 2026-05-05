@@ -25,12 +25,14 @@
 
                         {% if es_administrativo %}
                         <div class="mb-3">
-                            <label class="form-label fw-bold text-secondary small">1. BUSCAR PACIENTE</label>
+                            <label class="form-label fw-bold text-secondary small">
+                                {% if es_veterinario %}1. BUSCAR DUEÑO{% else %}1. BUSCAR PACIENTE{% endif %}
+                            </label>
                             <select name="paciente_id" id="paciente_select" class="form-select" required>
-                                <option value="">-- Buscar por Nombre o Cédula --</option>
+                                <option value="">-- Buscar por Nombre --</option>
                                 {% for p in lista_pacientes %}
                                     <option value="{{ p.id }}" {% if p.id|stringformat:"s" == paciente_seleccionado_id %}selected{% endif %}>
-                                        {{ p.usuario.cedula }} | {{ p.usuario.get_full_name|upper }}
+                                        {{ p.usuario.get_full_name|upper }}{% if es_veterinario %}{% for m in p.mascotas.all %} 🐾 {{ m.nombre }}{% endfor %}{% endif %}
                                     </option>
                                 {% endfor %}
                             </select>
@@ -149,7 +151,7 @@
     $(document).ready(function() {
         $('#paciente_select').select2({
             theme: 'bootstrap-5',
-            placeholder: '🔍 Buscar por cédula o nombre...',
+            placeholder: '🔍 Buscar por nombre...',
             allowClear: true,
             width: '100%'
         });

@@ -174,18 +174,22 @@ def reservar_cita(request, medico_id):
                 print(f"[RESERVAR_CITA ERROR] {e}")
                 messages.error(request, "No se pudo agendar la cita. Verifica los datos e intenta nuevamente.")
 
-    # Solo mostrar pacientes (rol PACIENTE) que ya tienen relación con este médico
+    # Solo mostrar pacientes (no médicos/secretarias) con relación con este médico
     if es_administrativo:
         base_qs = Paciente.objects.filter(
             usuario__perfil_medico__isnull=True,
             usuario__perfil_secretaria__isnull=True,
         )
         if es_veterinario:
+            # Vets: pacientes con citas previas O dueños de mascotas
+            from paciente.models import Mascota
+            ids_con_mascotas = list(Mascota.objects.values_list('propietario_id', flat=True).distinct())
+            ids_con_citas    = list(base_qs.filter(citas__medico=medico).values_list('id', flat=True).distinct())
+            ids_finales      = set(ids_con_mascotas) | set(ids_con_citas)
             lista_pacientes = (
-                base_qs.filter(Q(citas__medico=medico) | Q(mascotas__isnull=False))
+                base_qs.filter(id__in=ids_finales)
                 .select_related('usuario')
                 .prefetch_related('mascotas')
-                .distinct()
                 .order_by('usuario__last_name')
             )
         else:
