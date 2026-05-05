@@ -29,11 +29,11 @@
                                 <label class="form-label fw-bold text-secondary small">
                                     <i class="bi bi-heart-pulse"></i> 1. BUSCAR MASCOTA
                                 </label>
-                                <select name="mascota_id" id="paciente_select" class="form-select" required>
+                                <select name="mascota_id" id="mascota_select" class="form-select" required>
                                     <option value="">-- Buscar mascota por nombre --</option>
                                     {% for m in lista_mascotas %}
                                         <option value="{{ m.id }}">
-                                            {{ m.nombre }} ({{ m.get_especie_display }}{% if m.raza %} — {{ m.raza }}{% endif %}) — Dueño: {{ m.propietario.usuario.get_full_name }}
+                                            {{ m.nombre }} ({{ m.get_especie_display }}{% if m.raza %} — {{ m.raza }}{% endif %})
                                         </option>
                                     {% empty %}
                                         <option disabled>(No hay mascotas registradas)</option>
@@ -160,24 +160,31 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-    $(document).ready(function() {
-        $('#paciente_select').select2({
-            theme: 'bootstrap-5',
-            placeholder: '🔍 Buscar por nombre...',
-            allowClear: true,
-            width: '100%'
-        });
+    // Detectar el select activo (mascota o paciente)
+    const selectActivo = document.getElementById('mascota_select') || document.getElementById('paciente_select');
 
-        $('#paciente_select').on('select2:select', function (e) {
-            actualizarPagina();
-        });
+    $(document).ready(function() {
+        if (selectActivo) {
+            $(selectActivo).select2({
+                theme: 'bootstrap-5',
+                placeholder: '🔍 Buscar por nombre...',
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Solo recargar la página al cambiar paciente (no mascota)
+            if (selectActivo.id === 'paciente_select') {
+                $(selectActivo).on('select2:select', function (e) {
+                    actualizarPagina();
+                });
+            }
+        }
     });
 
     function actualizarPagina() {
         const pacienteId = document.getElementById('paciente_select').value;
         const urlParams = new URLSearchParams(window.location.search);
-        // Efecto visual de carga
-        document.querySelector('.col-md-8').style.opacity = '0.3'; 
+        document.querySelector('.col-md-8').style.opacity = '0.3';
         if (pacienteId) {
             urlParams.set('paciente_id', pacienteId);
         } else {
@@ -187,12 +194,11 @@
     }
 
     function confirmarYEnviar(hora) {
-        const pacienteSelect = document.getElementById('paciente_select');
-        if (!pacienteSelect || pacienteSelect.value === "") {
-            alert("⚠️ Por favor, seleccione primero un paciente de la lista.");
+        if (!selectActivo || selectActivo.value === "") {
+            alert("⚠️ Por favor, seleccione primero un paciente o mascota de la lista.");
             return;
         }
-        const nombrePaciente = pacienteSelect.options[pacienteSelect.selectedIndex].text;
+        const nombrePaciente = selectActivo.options[selectActivo.selectedIndex].text;
 
         // Llenar el modal con la información
         document.getElementById('modal-paciente').textContent = nombrePaciente;
