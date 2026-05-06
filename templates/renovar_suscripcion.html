@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning text-dark text-center py-3">
+                    <h3 class="mb-0"><i class="bi bi-credit-card-fill"></i> Renovar Suscripción</h3>
+                </div>
+
+                <div class="card-body p-4 text-center">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% if medico.suscripcion_activa %}
+                        {% if medico.en_periodo_prueba %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle-fill"></i>
+                                Estás en <strong>periodo de prueba gratis</strong>.
+                                Te quedan <strong>{{ medico.dias_restantes_suscripcion }} día(s)</strong> antes que finalice.
+                            </div>
+                        {% else %}
+                            <div class="alert alert-success">
+                                Tu suscripción está <strong>activa</strong> hasta el
+                                <strong>{{ medico.fecha_fin_suscripcion|date:"d/m/Y" }}</strong>.
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            Tu suscripción <strong>venció el {{ medico.fecha_fin_suscripcion|date:"d/m/Y" }}</strong>.
+                            Renueva ahora para continuar usando el sistema.
+                        </div>
+                    {% endif %}
+
+                    <hr>
+
+                    <h4 class="mt-4">Plan Anual</h4>
+                    <p class="display-4 text-success fw-bold">$50.00 <small class="text-muted fs-5">USD / año</small></p>
+                    <p class="text-muted">Acceso completo al sistema durante 365 días desde la fecha de pago.</p>
+
+                    <ul class="list-unstyled text-start d-inline-block mt-3 mb-4">
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Agenda y citas ilimitadas</li>
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Historias clínicas con imágenes</li>
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Recetas y facturación electrónica</li>
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Hasta 5 secretarias</li>
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Soporte por correo</li>
+                    </ul>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-lg shadow">
+                            <i class="bi bi-credit-card"></i> Pagar y renovar 1 año
+                        </button>
+                    </form>
+
+                    <p class="text-muted small mt-3">Pago seguro vía PayPhone. Aceptamos Visa, MasterCard, Diners y Discover.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

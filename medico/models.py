@@ -70,6 +70,31 @@ class Medico(models.Model):
     hora_fin = models.TimeField(null=True, blank=True)
     intervalo_minutos = models.PositiveIntegerField(default=30, help_text="Duración de cada cita en minutos")
 
+    # ── Suscripción / Periodo de prueba ───────────────────────────────────────
+    fecha_inicio_suscripcion = models.DateField(null=True, blank=True)
+    fecha_fin_suscripcion    = models.DateField(null=True, blank=True, help_text="Fecha en la que vence la suscripción (prueba o pagada)")
+    en_periodo_prueba        = models.BooleanField(default=True, help_text="True = trial gratis; False = suscripción pagada")
+
+    @property
+    def dias_restantes_suscripcion(self):
+        if not self.fecha_fin_suscripcion:
+            return 0
+        from datetime import date
+        delta = (self.fecha_fin_suscripcion - date.today()).days
+        return max(delta, 0)
+
+    @property
+    def suscripcion_activa(self):
+        if not self.fecha_fin_suscripcion:
+            return False
+        from datetime import date
+        return date.today() <= self.fecha_fin_suscripcion
+
+    @property
+    def suscripcion_por_vencer(self):
+        """True si quedan 7 días o menos."""
+        return self.suscripcion_activa and self.dias_restantes_suscripcion <= 7
+
     def __str__(self):
         return f"Dr. {self.usuario.last_name} - {self.especialidad}"
     

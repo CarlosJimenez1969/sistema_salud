@@ -136,47 +136,209 @@ def home(request):
 User = get_user_model() # 👈 Esto detecta automáticamente que es 'users.User'
 
 def registro_medico(request):
+    """
+    Registro de médico con periodo de prueba GRATIS de 30 días.
+    Después del registro, el médico recibe correo de activación
+    para crear su contraseña. Tras los 30 días deberá pagar suscripción.
+    """
     if request.method == 'POST':
         form = RegistroInicialMedicoForm(request.POST)
         if form.is_valid():
-            # Extraemos los datos limpios (copia profunda para evitar problemas de referencia)
-            datos = form.cleaned_data.copy()
-            
-            # Convertir objetos modelo a valores serializables para la sesión
-            if datos.get('especialidad'):
-                try:
-                    datos['especialidad'] = datos['especialidad'].id
-                except AttributeError:
-                    pass
-            if datos.get('pais'):
-                try:
-                    datos['pais'] = datos['pais'].nombre
-                except AttributeError:
-                    pass
-            if datos.get('ciudad'):
-                try:
-                    datos['ciudad'] = datos['ciudad'].nombre
-                except AttributeError:
-                    pass
+            try:
+                from datetime import date, timedelta
+                from medico.models import Medico, Especialidad
+                User = get_user_model()
 
-            import uuid, json
-            from users.models import RegistroPendiente
-            client_tx_id = str(uuid.uuid4())
-            reg = RegistroPendiente(client_transaction_id=client_tx_id)
-            reg.set_datos(datos)
-            reg.save()
-            request.session['payphone_client_tx'] = client_tx_id
-            request.session.modified = True
+                cd = form.cleaned_data
 
-            return redirect('pasarela_pago')
+                user = User.objects.create_user(
+                    username=cd['username'],
+                    email=cd['email'],
+                    password=None,
+                    first_name=cd['first_name'],
+                    last_name=cd['last_name'],
+                    cedula=cd['cedula'],
+                    role='MEDICO',
+                    is_active=True,
+                    pago_realizado=False,
+                )
+                user.set_unusable_password()
+                user.save()
+
+                hoy = date.today()
+                pais_obj   = cd.get('pais')
+                ciudad_obj = cd.get('ciudad')
+
+                medico_obj = Medico.objects.create(
+                    usuario=user,
+                    especialidad=cd.get('especialidad'),
+                    pais=pais_obj.nombre if pais_obj else '',
+                    ciudad=ciudad_obj.nombre if ciudad_obj else '',
+                    sector=cd.get('sector', ''),
+                    fecha_inicio_suscripcion=hoy,
+                    fecha_fin_suscripcion=hoy + timedelta(days=30),
+                    en_periodo_prueba=True,
+                )
+
+                # Enviar correo de activación de cuenta (en thread)
+                import threading
+                host = request.get_host()
+                scheme = request.scheme
+
+                def enviar_correo(u, host, scheme):
+                    try:
+                        from django.contrib.auth.tokens import default_token_generator
+                        from django.utils.http import urlsafe_base64_encode
+                        from django.utils.encoding import force_bytes
+
+                        token = default_token_generator.make_token(u)
+                        uid   = urlsafe_base64_encode(force_bytes(u.pk))
+                        link  = f"{scheme}://{host}/reset/{uid}/{token}/"
+                        asunto = "Bienvenido a VertexSalud - Activa tu cuenta y disfruta 30 días gratis"
+                        html_body = (
+                            f"<p>Hola <b>{u.first_name}</b>,</p>"
+                            f"<p>¡Bienvenido a VertexSalud! Tu cuenta de médico fue creada exitosamente.</p>"
+                            f"<p><strong>🎉 Tienes 30 días GRATIS para usar todo el sistema.</strong></p>"
+                            f"<p>Para activar tu cuenta y crear tu contraseña, haz clic en el siguiente enlace:</p>"
+                            f'<p><a href="{link}">{link}</a></p>'
+                            f"<p>Recibirás recordatorios antes de que finalice tu periodo de prueba para que puedas continuar usando el sistema.</p>"
+                            f"<p>Si no solicitaste esta cuenta, ignora este mensaje.</p>"
+                        )
+                        if not settings.RESEND_API_KEY:
+                            return
+                        http_requests.post(
+                            "https://api.resend.com/emails",
+                            headers={
+                                "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                                "Content-Type": "application/json",
+                            },
+                            json={
+                                "from": settings.RESEND_FROM,
+                                "to": [u.email],
+                                "subject": asunto,
+                                "html": html_body,
+                            },
+                            timeout=15,
+                        )
+                    except Exception as e:
+                        print(f"[REGISTRO EMAIL ERROR] {e}")
+
+                threading.Thread(target=enviar_correo, args=(user, host, scheme), daemon=True).start()
+
+                request.session['registro_email'] = user.email
+                return redirect('registro_exitoso')
+            except Exception as e:
+                print(f"[REGISTRO MEDICO ERROR] {e}")
+                messages.error(request, f"No se pudo completar el registro: {e}")
         else:
-            # Si el formulario no es válido, imprimimos los errores en la terminal
             print("ERRORES DEL FORMULARIO:", form.errors)
     else:
         form = RegistroInicialMedicoForm()
-    
+
     return render(request, 'registro_medico.html', {'form': form})
 from django.urls import reverse
+
+@login_required
+def renovar_suscripcion(request):
+    """Pantalla para que el médico renueve su suscripción anual."""
+    if not hasattr(request.user, 'perfil_medico'):
+        messages.error(request, "Solo médicos pueden renovar suscripción.")
+        return redirect('home')
+
+    medico = request.user.perfil_medico
+    if request.method == 'POST':
+        # Iniciar pago a PayPhone
+        import uuid
+        client_transaction_id = str(uuid.uuid4())
+        request.session['payphone_client_tx_renovacion'] = client_transaction_id
+        request.session.modified = True
+
+        base_url = f"{request.scheme}://{request.get_host()}"
+        payload = {
+            "amount": 5000,
+            "amountWithTax": 0,
+            "amountWithoutTax": 5000,
+            "tax": 0,
+            "currency": "USD",
+            "storeId": settings.PAYPHONE_STORE_ID,
+            "reference": f"Renovacion-{medico.usuario.username}",
+            "clientTransactionId": client_transaction_id,
+            "responseUrl": f"{base_url}/confirmar-renovacion/",
+            "cancellationUrl": f"{base_url}/renovar-suscripcion/",
+        }
+        try:
+            resp = http_requests.post(
+                "https://pay.payphonetodoesposible.com/api/button/Prepare",
+                json=payload,
+                headers={"Authorization": f"Bearer {settings.PAYPHONE_TOKEN}"},
+                timeout=15,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            payment_url = data.get("payWithCard") or data.get("payWithPayPhone")
+            return redirect(payment_url)
+        except Exception as e:
+            messages.error(request, f"Error iniciando pago: {e}")
+
+    return render(request, 'renovar_suscripcion.html', {'medico': medico})
+
+
+@login_required
+def confirmar_renovacion(request):
+    """Confirma el pago de renovación con PayPhone y extiende la suscripción."""
+    if not hasattr(request.user, 'perfil_medico'):
+        return redirect('home')
+
+    transaction_id        = request.GET.get('id') or request.GET.get('transactionId')
+    client_transaction_id = request.GET.get('clientTransactionId')
+
+    if not transaction_id or not client_transaction_id:
+        messages.error(request, "Pago no confirmado.")
+        return redirect('renovar_suscripcion')
+
+    try:
+        resp = http_requests.post(
+            "https://pay.payphonetodoesposible.com/api/button/V2/Confirm",
+            json={"id": int(transaction_id), "clientTxId": client_transaction_id},
+            headers={"Authorization": f"Bearer {settings.PAYPHONE_TOKEN}"},
+            timeout=20,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        status_code = str(data.get("transactionStatus") or data.get("statusCode") or "")
+        if status_code not in ("3", "approved", "Approved"):
+            messages.error(request, f"Pago no aprobado (estado: {status_code}).")
+            return redirect('renovar_suscripcion')
+
+        # Pago confirmado, extender suscripción 365 días
+        from datetime import date, timedelta
+        medico = request.user.perfil_medico
+        # Si la suscripción aún está vigente, extender desde fecha actual de fin
+        base = max(medico.fecha_fin_suscripcion or date.today(), date.today())
+        medico.fecha_fin_suscripcion = base + timedelta(days=365)
+        medico.en_periodo_prueba = False
+        medico.save()
+        request.user.pago_realizado = True
+        request.user.save()
+
+        messages.success(request, f"¡Suscripción renovada hasta {medico.fecha_fin_suscripcion}!")
+
+        # Generar factura electrónica en background
+        import threading
+        def generar_factura(m):
+            try:
+                from facturacion.services.sri import SriService
+                from decimal import Decimal
+                SriService().crear_factura_pago(m, Decimal('50.00'))
+            except Exception as e:
+                print(f"[FACTURACIÓN RENOVACIÓN] {e}")
+        threading.Thread(target=generar_factura, args=(medico,), daemon=True).start()
+
+        return redirect('home')
+    except Exception as e:
+        messages.error(request, f"Error al verificar pago: {e}")
+        return redirect('renovar_suscripcion')
+
 
 def pasarela_pago(request):
     from users.models import RegistroPendiente

@@ -1,6 +1,44 @@
 {% extends 'base.html' %}
 
 {% block content %}
+{% if request.user.role == 'MEDICO' and request.user.perfil_medico %}
+    {% with medico=request.user.perfil_medico %}
+        {% if medico.fecha_fin_suscripcion %}
+            {% if not medico.suscripcion_activa %}
+            <div class="alert alert-danger d-flex align-items-center justify-content-between m-3 shadow">
+                <div>
+                    <i class="bi bi-exclamation-octagon-fill fs-3 me-2"></i>
+                    <strong>Tu suscripción venció el {{ medico.fecha_fin_suscripcion|date:"d/m/Y" }}.</strong>
+                    Renueva ahora para continuar usando el sistema.
+                </div>
+                <a href="{% url 'renovar_suscripcion' %}" class="btn btn-warning fw-bold">Renovar ahora</a>
+            </div>
+            {% elif medico.suscripcion_por_vencer %}
+            <div class="alert alert-warning d-flex align-items-center justify-content-between m-3 shadow">
+                <div>
+                    <i class="bi bi-clock-history fs-3 me-2"></i>
+                    {% if medico.en_periodo_prueba %}
+                        <strong>Tu periodo de prueba GRATIS finaliza en {{ medico.dias_restantes_suscripcion }} día(s).</strong>
+                        Renueva por $50/año para no perder el acceso.
+                    {% else %}
+                        <strong>Tu suscripción vence en {{ medico.dias_restantes_suscripcion }} día(s).</strong>
+                    {% endif %}
+                </div>
+                <a href="{% url 'renovar_suscripcion' %}" class="btn btn-success fw-bold">Renovar suscripción</a>
+            </div>
+            {% elif medico.en_periodo_prueba %}
+            <div class="alert alert-info d-flex align-items-center justify-content-between m-3">
+                <div>
+                    <i class="bi bi-gift-fill fs-4 me-2"></i>
+                    Estás en <strong>periodo de prueba gratis</strong>. Te quedan <strong>{{ medico.dias_restantes_suscripcion }} día(s)</strong>.
+                </div>
+                <a href="{% url 'renovar_suscripcion' %}" class="btn btn-outline-success btn-sm">Pagar suscripción</a>
+            </div>
+            {% endif %}
+        {% endif %}
+    {% endwith %}
+{% endif %}
+
 <div class="text-center mt-5">
     <div class="welcome-section mb-4">
         <h1 class="fw-bold text-white">Bienvenido, {% if request.user.role == 'MEDICO' %}Dr. {% endif %}{{ request.user.get_full_name }}</h1>

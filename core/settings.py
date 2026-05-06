@@ -76,6 +76,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.ReferrerPolicyMiddleware',
     'core.middleware.SeguridadSesionMiddleware',
+    'core.middleware.SuscripcionMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
