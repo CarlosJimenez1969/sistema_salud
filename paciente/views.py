@@ -321,8 +321,12 @@ def crear_mascota(request):
 
 @login_required
 def editar_mascota(request, mascota_id):
-    paciente = _paciente_del_usuario(request)
-    mascota = get_object_or_404(Mascota, id=mascota_id, propietario=paciente)
+    # Veterinarios pueden editar cualquier mascota; pacientes solo las suyas
+    if _es_veterinario(request) or request.user.role == 'ADMIN':
+        mascota = get_object_or_404(Mascota, id=mascota_id)
+    else:
+        paciente = _paciente_del_usuario(request)
+        mascota = get_object_or_404(Mascota, id=mascota_id, propietario=paciente)
 
     if request.method == 'POST':
         mascota.nombre           = request.POST.get('nombre', '').strip()
@@ -343,6 +347,9 @@ def editar_mascota(request, mascota_id):
             mascota.foto = request.FILES['foto']
         mascota.save()
         messages.success(request, f"'{mascota.nombre}' actualizada correctamente.")
+        # Volver al listado correspondiente según quién edita
+        if _es_veterinario(request) or request.user.role == 'ADMIN':
+            return redirect('listar_pacientes')
         return redirect('listar_mascotas')
 
     return render(request, 'mascotas/crear.html', {

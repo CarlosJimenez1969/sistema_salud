@@ -101,9 +101,17 @@
                                     <td>{{ p.usuario.cedula }}</td>
                                     <td>{{ p.telefono|default:"---" }}</td>
                                     <td class="text-center">
-                                        <a href="{% url 'historial_medico' p.id %}" class="btn btn-sm btn-outline-info rounded-pill px-3">
-                                            <i class="bi bi-file-earmark-medical"></i> Historial
-                                        </a>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'historial_medico' p.id %}" class="btn btn-outline-info" title="Historial clínico">
+                                                <i class="bi bi-file-earmark-medical"></i>
+                                            </a>
+                                            <a href="{% url 'editar_mascota' m.id %}" class="btn btn-outline-success" title="Editar mascota">
+                                                <i class="bi bi-heart-pulse"></i>
+                                            </a>
+                                            <a href="{% url 'editar_paciente' p.id %}" class="btn btn-outline-secondary" title="Editar dueño">
+                                                <i class="bi bi-person"></i>
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% empty %}
