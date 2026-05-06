@@ -86,7 +86,14 @@
                                 {% for m in p.mascotas.all %}
                                 <tr>
                                     <td class="ps-4 fw-bold">
-                                        {% if m.foto %}<img src="{{ m.foto.url }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" class="me-2">{% endif %}
+                                        {% if m.foto %}
+                                            <img src="{{ m.foto.url }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" class="me-2">
+                                        {% else %}
+                                            <span class="d-inline-flex align-items-center justify-content-center me-2"
+                                                  style="width:32px;height:32px;border-radius:50%;background:#e9ecef;color:#0d6efd;">
+                                                <i class="bi bi-heart-pulse"></i>
+                                            </span>
+                                        {% endif %}
                                         {{ m.nombre }}
                                     </td>
                                     <td>{{ m.get_especie_display }}{% if m.raza %} — {{ m.raza }}{% endif %}</td>
