@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow border-0">
+                <div class="card-header bg-secondary text-white text-center py-3">
+                    <h3 class="mb-0"><i class="bi bi-person"></i> Editar Datos del Dueño</h3>
+                </div>
+
+                <div class="card-body p-4">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Nombres</label>
+                                <input type="text" name="first_name" class="form-control" required
+                                       value="{{ paciente.usuario.first_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Apellidos</label>
+                                <input type="text" name="last_name" class="form-control" required
+                                       value="{{ paciente.usuario.last_name }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Cédula</label>
+                                <input type="text" name="cedula" class="form-control" required
+                                       value="{{ paciente.usuario.cedula }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Correo Electrónico</label>
+                                <input type="email" name="email" class="form-control" required
+                                       value="{{ paciente.usuario.email }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Teléfono</label>
+                            <input type="text" name="telefono" class="form-control"
+                                   value="{{ paciente.telefono }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold"><i class="bi bi-geo-alt"></i> Dirección de Domicilio</label>
+                            <input type="text" name="direccion" class="form-control"
+                                   value="{{ paciente.direccion }}">
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <a href="{% url 'listar_pacientes' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-success flex-grow-1">
+                                <i class="bi bi-check-circle"></i> Guardar cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -201,17 +201,34 @@ def crear_paciente_veterinario(request):
 
 @login_required
 def editar_paciente(request, id):
-    # Buscamos al paciente por su ID o devolvemos error 404 si no existe
     paciente = get_object_or_404(Paciente, id=id)
-    
+
+    # Si el editor es veterinario o admin, usar formulario simplificado (solo datos del dueño)
+    if _es_veterinario(request) or request.user.role == 'ADMIN':
+        if request.method == 'POST':
+            usuario = paciente.usuario
+            usuario.first_name = request.POST.get('first_name', '').strip()
+            usuario.last_name  = request.POST.get('last_name', '').strip()
+            usuario.cedula     = request.POST.get('cedula', '').strip()
+            usuario.email      = request.POST.get('email', '').strip()
+            usuario.save()
+
+            paciente.telefono  = request.POST.get('telefono', '').strip()
+            paciente.direccion = request.POST.get('direccion', '').strip()
+            paciente.save()
+
+            messages.success(request, f"Datos de {usuario.get_full_name()} actualizados.")
+            return redirect('listar_pacientes')
+
+        return render(request, 'editar_dueno.html', {'paciente': paciente})
+
+    # Pacientes humanos editan con el formulario completo (datos médicos)
     if request.method == 'POST':
-        # Cargamos el formulario con los datos nuevos (POST) y le decimos que actualice "instance=paciente"
         form = PacienteForm(request.POST, instance=paciente)
         if form.is_valid():
             form.save()
             return redirect('listar_pacientes')
     else:
-        # Si es GET, cargamos el formulario con los datos guardados
         form = PacienteForm(instance=paciente)
     
     # Reutilizamos la plantilla de crear, pero le pasamos un título diferente
