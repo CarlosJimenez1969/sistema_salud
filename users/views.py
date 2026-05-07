@@ -853,6 +853,35 @@ def contacto(request):
 
 
 @csrf_exempt
+def cron_limpiar_datos_prueba(request):
+    """
+    Endpoint protegido para limpiar la BD de datos de prueba.
+    Llamar como: GET /cron/limpiar/?token=<CRON_SECRET_TOKEN>&confirmar=si
+    """
+    from django.http import HttpResponse, HttpResponseForbidden
+
+    token = request.GET.get('token', '')
+    if not settings.CRON_SECRET_TOKEN or token != settings.CRON_SECRET_TOKEN:
+        return HttpResponseForbidden("Token inválido")
+
+    if request.GET.get('confirmar') != 'si':
+        return HttpResponse(
+            "MODO SIMULACIÓN.\n"
+            "Para ejecutar realmente, agrega &confirmar=si a la URL.\n",
+            content_type='text/plain'
+        )
+
+    from django.core.management import call_command
+    from io import StringIO
+    output = StringIO()
+    try:
+        call_command('limpiar_datos_prueba', '--confirmar', stdout=output)
+        return HttpResponse(f"OK\n{output.getvalue()}", content_type='text/plain')
+    except Exception as e:
+        return HttpResponse(f"ERROR: {e}\n{output.getvalue()}", status=500, content_type='text/plain')
+
+
+@csrf_exempt
 def cron_notificar_suscripciones(request):
     """
     Endpoint protegido por token para que un cron externo (cron-job.org) ejecute
