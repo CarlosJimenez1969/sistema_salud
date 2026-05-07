@@ -864,18 +864,15 @@ def cron_limpiar_datos_prueba(request):
     if not settings.CRON_SECRET_TOKEN or token != settings.CRON_SECRET_TOKEN:
         return HttpResponseForbidden("Token inválido")
 
-    if request.GET.get('confirmar') != 'si':
-        return HttpResponse(
-            "MODO SIMULACIÓN.\n"
-            "Para ejecutar realmente, agrega &confirmar=si a la URL.\n",
-            content_type='text/plain'
-        )
-
     from django.core.management import call_command
     from io import StringIO
     output = StringIO()
     try:
-        call_command('limpiar_datos_prueba', '--confirmar', stdout=output)
+        if request.GET.get('confirmar') == 'si':
+            call_command('limpiar_datos_prueba', '--confirmar', stdout=output)
+        else:
+            # Modo simulación: muestra los conteos sin borrar
+            call_command('limpiar_datos_prueba', stdout=output)
         return HttpResponse(f"OK\n{output.getvalue()}", content_type='text/plain')
     except Exception as e:
         return HttpResponse(f"ERROR: {e}\n{output.getvalue()}", status=500, content_type='text/plain')
