@@ -177,14 +177,7 @@ def crear_paciente_veterinario(request):
             )
             if 'mascota_foto' in request.FILES:
                 mascota.foto = request.FILES['mascota_foto']
-                print(f"[VET-CREAR FOTO] subiendo archivo: {request.FILES['mascota_foto'].name} ({request.FILES['mascota_foto'].size} bytes)")
-            else:
-                print("[VET-CREAR FOTO] no se envió foto en request.FILES")
             mascota.save()
-            if mascota.foto:
-                print(f"[VET-CREAR FOTO] guardada en: {mascota.foto.url}")
-            else:
-                print("[VET-CREAR FOTO] mascota.foto está vacío después de save")
 
             messages.success(request, f"Mascota '{mascota.nombre}' registrada para {paciente}.")
             return redirect('listar_pacientes')

@@ -373,14 +373,11 @@ def pasarela_pago(request):
             headers={"Authorization": f"Bearer {settings.PAYPHONE_TOKEN}"},
             timeout=15,
         )
-        print(f"DEBUG PAYPHONE status: {resp.status_code}")
-        print(f"DEBUG PAYPHONE response: {resp.text}")
         resp.raise_for_status()
         data = resp.json()
         payment_url = data.get("payWithCard") or data.get("payWithPayPhone")
         if not payment_url:
             raise ValueError(f"No se recibió URL de pago: {data}")
-        print(f"DEBUG PAYPHONE url: {payment_url}")
         return redirect(payment_url)
     except Exception as e:
         messages.error(request, f"Error al iniciar el pago: {e}")
@@ -617,13 +614,8 @@ def confirmar_pago(request):
     """
     from medico.models import Medico, Especialidad
 
-    print(f"DEBUG CONFIRMAR GET params: {dict(request.GET)}")
-    print(f"DEBUG CONFIRMAR POST params: {dict(request.POST)}")
-
     transaction_id        = request.GET.get('id') or request.GET.get('transactionId') or request.POST.get('transactionId')
     client_transaction_id = request.GET.get('clientTransactionId') or request.POST.get('clientTransactionId')
-
-    print(f"DEBUG transactionId={transaction_id} clientTransactionId={client_transaction_id}")
 
     if not transaction_id or not client_transaction_id:
         messages.error(request, "No se recibieron los datos de confirmación del pago.")
@@ -637,7 +629,6 @@ def confirmar_pago(request):
             headers={"Authorization": f"Bearer {settings.PAYPHONE_TOKEN}"},
             timeout=20,
         )
-        print(f"DEBUG CONFIRM status: {resp.status_code} body: {resp.text}")
         resp.raise_for_status()
         data = resp.json()
     except Exception as e:
