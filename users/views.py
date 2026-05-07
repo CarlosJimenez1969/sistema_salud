@@ -859,3 +859,26 @@ def contacto(request):
             messages.error(request, "No se pudo enviar el mensaje. Intenta nuevamente.")
 
     return render(request, 'contacto.html', {})
+
+
+@csrf_exempt
+def cron_notificar_suscripciones(request):
+    """
+    Endpoint protegido por token para que un cron externo (cron-job.org) ejecute
+    las notificaciones de suscripción.
+    Llamar como: GET /cron/notificar/?token=<CRON_SECRET_TOKEN>
+    """
+    from django.http import HttpResponse, HttpResponseForbidden
+
+    token = request.GET.get('token', '')
+    if not settings.CRON_SECRET_TOKEN or token != settings.CRON_SECRET_TOKEN:
+        return HttpResponseForbidden("Token inválido")
+
+    from django.core.management import call_command
+    from io import StringIO
+    output = StringIO()
+    try:
+        call_command('notificar_suscripciones', stdout=output)
+        return HttpResponse(f"OK\n{output.getvalue()}", content_type='text/plain')
+    except Exception as e:
+        return HttpResponse(f"ERROR: {e}\n{output.getvalue()}", status=500, content_type='text/plain')

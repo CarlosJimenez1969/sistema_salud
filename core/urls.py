@@ -5,7 +5,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 # Importamos las vistas
-from users.views import home, registro_medico, pasarela_pago, pago_exitoso, registro_exitoso, panel_admin, contacto, renovar_suscripcion, confirmar_renovacion
+from users.views import home, registro_medico, pasarela_pago, pago_exitoso, registro_exitoso, panel_admin, contacto, renovar_suscripcion, confirmar_renovacion, cron_notificar_suscripciones
 from medico.views import configurar_horario, ciudades_por_pais
 from paciente.views import (
     listar_pacientes, crear_paciente, editar_paciente, registro_paciente,
@@ -80,6 +80,7 @@ urlpatterns = [
     path('contacto/', contacto, name='contacto'),
     path('renovar-suscripcion/', renovar_suscripcion, name='renovar_suscripcion'),
     path('confirmar-renovacion/', confirmar_renovacion, name='confirmar_renovacion'),
+    path('cron/notificar/', cron_notificar_suscripciones, name='cron_notificar_suscripciones'),
     path('configurar-horario/', configurar_horario, name='configurar_horario'),
     path('api/ciudades/', ciudades_por_pais, name='ciudades_por_pais'),
     path('login-success/', views.redirect_by_role, name='login_success'),

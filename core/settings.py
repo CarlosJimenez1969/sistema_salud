@@ -204,6 +204,9 @@ PAYPHONE_STORE_ID = config('PAYPHONE_STORE_ID', default='')
 RESEND_API_KEY    = config('RESEND_API_KEY', default='')
 RESEND_FROM       = config('RESEND_FROM',    default='VertexSalud <onboarding@resend.dev>')
 
+# ── Cron Token (para endpoint protegido de tareas programadas) ─────────────────
+CRON_SECRET_TOKEN = config('CRON_SECRET_TOKEN', default='')
+
 # ── Facturación Electrónica SRI Ecuador ───────────────────────────────────────
 SRI_RUC                   = config('SRI_RUC',                   default='')
 SRI_RAZON_SOCIAL          = config('SRI_RAZON_SOCIAL',          default='')
