@@ -43,10 +43,17 @@ class Command(BaseCommand):
         hoy = date.today()
         renovar_url = "https://sistema-salud.onrender.com/renovar-suscripcion/"
 
+        self.stdout.write(f"[INFO] Hoy en servidor: {hoy}")
+        total_medicos = Medico.objects.count()
+        self.stdout.write(f"[INFO] Total médicos en BD: {total_medicos}")
+        for m in Medico.objects.all():
+            self.stdout.write(f"  - {m.usuario.email} → vence: {m.fecha_fin_suscripcion}")
+
         # Días específicos a notificar (antes de vencer + el día que vence)
         for dias_aviso in (7, 3, 1, 0):
             objetivo = hoy + timedelta(days=dias_aviso)
             medicos = Medico.objects.filter(fecha_fin_suscripcion=objetivo)
+            self.stdout.write(f"[INFO] Buscando médicos que vencen el {objetivo} (en {dias_aviso}d): encontrados {medicos.count()}")
             for m in medicos:
                 if dias_aviso == 0:
                     asunto = "⚠️ Tu suscripción VertexSalud vence HOY"
