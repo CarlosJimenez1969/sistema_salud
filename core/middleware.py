@@ -14,11 +14,18 @@ class ReferrerPolicyMiddleware:
 
 
 class SeguridadSesionMiddleware:
+    # URLs que no deben ser interceptadas por el manejador de 403
+    URLS_EXCLUIDAS = ('/cron/', '/api/', '/admin/')
+
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         response = self.get_response(request)
+
+        # Excluir endpoints de API/cron/admin del manejo automático de 403
+        if any(request.path.startswith(p) for p in self.URLS_EXCLUIDAS):
+            return response
 
         # Si el sistema devuelve un error 403 (Prohibido), cerramos sesión por seguridad
         if response.status_code == 403:
