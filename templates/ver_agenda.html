@@ -87,6 +87,11 @@
                                 <a href="{% url 'historial_medico' cita.paciente.id %}" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm">
                                     <i class="bi bi-file-earmark-medical"></i> Ver Ficha
                                 </a>
+                                {% if cita.whatsapp_link %}
+                                <a href="{{ cita.whatsapp_link }}" target="_blank" class="btn btn-success btn-sm rounded-pill px-3 shadow-sm" title="Enviar recordatorio por WhatsApp">
+                                    <i class="bi bi-whatsapp"></i>
+                                </a>
+                                {% endif %}
                             </td>
                             <td class="align-middle">
                                 {% if cita.estado == 'P' or cita.estado == 'PENDIENTE' %}
@@ -181,6 +186,11 @@
                     <a href="{% url 'historial_medico' cita.paciente.id %}" class="btn btn-outline-info btn-sm rounded-pill">
                         <i class="bi bi-file-earmark-medical"></i> Ficha
                     </a>
+                    {% if cita.whatsapp_link %}
+                    <a href="{{ cita.whatsapp_link }}" target="_blank" class="btn btn-success btn-sm rounded-pill" title="Enviar recordatorio por WhatsApp">
+                        <i class="bi bi-whatsapp"></i> WhatsApp
+                    </a>
+                    {% endif %}
                     {% if cita.estado == 'P' or cita.estado == 'PENDIENTE' or cita.estado == 'E' or cita.estado == 'EN_ESPERA' %}
                         {% if not es_veterinario %}
                             {% if not cita.triaje %}
