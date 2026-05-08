@@ -107,22 +107,22 @@
                         </div>
                         
                         <div class="card-body d-grid gap-3">
-                            <a href="{% url 'ver_agenda' %}" class="btn btn-primary btn-lg">
+                            <a href="{% url 'ver_agenda' %}" class="btn btn-quick-action">
                                 <i class="bi bi-calendar-day"></i> Ver Agenda Hoy
                             </a>
-                            
-                            <a href="{% url 'listar_pacientes' %}" class="btn btn-outline-light">
+
+                            <a href="{% url 'listar_pacientes' %}" class="btn btn-quick-action">
                                 <i class="bi bi-search"></i> Buscar o Crear Historia Clínica
                             </a>
 
                             {% if user.role == 'MEDICO' %}
-                            <a href="{% url 'configurar_horario' %}" class="btn btn-outline-light">
+                            <a href="{% url 'configurar_horario' %}" class="btn btn-quick-action">
                                 <i class="bi bi-clock-history"></i> Configurar Horario
                             </a>
                             {% endif %}
 
                             {% if user.role == 'ADMIN' %}
-                                <a href="{% url 'panel_admin' %}" class="btn btn-secondary">
+                                <a href="{% url 'panel_admin' %}" class="btn btn-quick-action">
                                     <i class="bi bi-speedometer2"></i> Panel Administrador
                                 </a>
                             {% endif %}
