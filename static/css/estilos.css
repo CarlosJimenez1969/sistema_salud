@@ -27,14 +27,30 @@ body {
     left: 0 !important;
     right: 0 !important;
     z-index: 1030 !important;
-    background-color: #0d6efd !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    background-color: #0f172a !important;  /* dark slate */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
 }
 .navbar-brand {
     font-size: 1.5rem;
     font-weight: 800;
+    color: #fff !important;
+}
+.navbar-custom .nav-link {
+    color: rgba(255,255,255,0.85) !important;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    border-radius: 8px;
+    padding: 0.45rem 0.9rem !important;
+    margin: 0 2px;
+}
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link:focus {
+    background-color: rgba(59, 130, 246, 0.25) !important;  /* azul translúcido al pasar el mouse */
+    color: #fff !important;
+}
+.navbar-custom form button.nav-link:hover {
+    background-color: rgba(220, 53, 69, 0.3) !important;  /* rojo translúcido en "Cerrar sesión" */
 }
 
 /* === TARJETAS GENERALES === */
