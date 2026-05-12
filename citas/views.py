@@ -392,55 +392,52 @@ def eliminar_cita(request, cita_id):
 
 def enviar_correo_activacion(request, user):
     """
-    Genera un token de seguridad y envía el enlace de activación 
-    según el rol del usuario (Médico o Secretaria).
+    Genera un token de seguridad y envía el enlace de activación vía Resend HTTP API
+    (Render bloquea SMTP).
     """
+    import requests as http_requests
     from django.contrib.auth.tokens import default_token_generator
     from django.utils.http import urlsafe_base64_encode
     from django.utils.encoding import force_bytes
-    import ssl
 
-    # 1. Generar los datos de seguridad
     token = default_token_generator.make_token(user)
-    uid = urlsafe_base64_encode(force_bytes(user.pk))
-    
-    # 2. Construir el enlace
-    link = f"http://{request.get_host()}/reset/{uid}/{token}/"
+    uid   = urlsafe_base64_encode(force_bytes(user.pk))
+    link  = f"{request.scheme}://{request.get_host()}/reset/{uid}/{token}/"
 
-    # 3. Detectar el rol para personalizar el mensaje
-    # Usamos .upper() por si acaso el rol está en minúsculas
     rol_nombre = "Médico" if str(user.role).upper() == 'MEDICO' else "Secretaria"
 
-    asunto = f"Bienvenida a MediSys Pro - Activa tu cuenta de {rol_nombre}"
-    
-    mensaje = (
-        f"Hola {user.first_name},\n\n"
-        f"Se ha creado tu perfil de {rol_nombre.lower()} en el sistema.\n"
-        f"Para activar tu cuenta y configurar tu contraseña, haz clic en el siguiente enlace:\n\n"
-        f"{link}\n\n"
-        f"Si no solicitaste esta cuenta, por favor ignora este mensaje."
+    asunto = f"Bienvenida a VertexSalud - Activa tu cuenta de {rol_nombre}"
+
+    html_body = (
+        f"<p>Hola <b>{user.first_name}</b>,</p>"
+        f"<p>Se ha creado tu perfil de {rol_nombre.lower()} en el sistema VertexSalud.</p>"
+        f"<p>Para activar tu cuenta y configurar tu contraseña, haz clic en el siguiente enlace:</p>"
+        f'<p><a href="{link}" style="background:#0d6efd;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;">Activar mi cuenta</a></p>'
+        f"<p>O copia este enlace en tu navegador:<br>{link}</p>"
+        f"<p>Si no solicitaste esta cuenta, por favor ignora este mensaje.</p>"
     )
 
-    # 4. Enviar el correo usando la configuración de settings.py
-    # Mantenemos tu lógica de bypass SSL por si tu entorno local lo requiere
     try:
-        context = ssl._create_unverified_context()
-        connection = get_connection(
-            backend=settings.EMAIL_BACKEND,
-            use_tls=settings.EMAIL_USE_TLS,
-            ssl_context=context,
+        if not settings.RESEND_API_KEY:
+            raise RuntimeError("RESEND_API_KEY no configurado")
+
+        resp = http_requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": settings.RESEND_FROM,
+                "to": [user.email],
+                "subject": asunto,
+                "html": html_body,
+            },
             timeout=15,
         )
-
-        send_mail(
-            asunto,
-            mensaje,
-            settings.EMAIL_HOST_USER,
-            [user.email],
-            connection=connection,
-            fail_silently=False,
-        )
-        print(f"DEBUG: Correo de {rol_nombre} enviado exitosamente a {user.email}")
+        print(f"[ACTIVACION EMAIL] Resend status={resp.status_code} body={resp.text[:200]}")
+        resp.raise_for_status()
+        print(f"[ACTIVACION EMAIL] Enviado a {user.email} (rol: {rol_nombre})")
     except Exception as e:
         print(f"ERR: Error físico enviando correo: {e}")
         raise e # Re-lanzamos para que confirmar_pago vea el error
