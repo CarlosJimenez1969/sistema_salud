@@ -435,6 +435,19 @@ def crear_secretaria(request):
                     'medicos_disponibles': medicos_disponibles,
                     'es_admin': role == 'ADMIN',
                 })
+            if not form.is_valid():
+                # Mostrar el primer error como toast
+                for campo, errores in form.errors.items():
+                    for err in errores:
+                        messages.error(request, f"{campo.capitalize()}: {err}")
+                        break
+                    break
+                return render(request, 'crear_secretaria.html', {
+                    'form': form,
+                    'secretarias': secretarias_actuales,
+                    'medicos_disponibles': medicos_disponibles,
+                    'es_admin': role == 'ADMIN',
+                })
             if form.is_valid():
                 user = None
                 try:

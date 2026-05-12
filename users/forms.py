@@ -108,34 +108,51 @@ def crear_secretaria(request):
     return render(request, 'crear_secretaria.html', {'form': form})
 
 class SecretariaRegistroForm(forms.ModelForm):
+    # Declarados explícitamente para forzar required=True
+    # (en el modelo cedula tiene null=True/blank=True, lo que lo haría opcional sin esto)
+    username   = forms.CharField(label="Usuario",   required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    first_name = forms.CharField(label="Nombres",   required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    last_name  = forms.CharField(label="Apellidos", required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email      = forms.EmailField(label="Correo Electrónico", required=True, widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    cedula     = forms.CharField(label="Cédula",    required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+
     class Meta:
         model = User
         fields = ['username', 'first_name', 'last_name', 'email', 'cedula']
-        widgets = {
-            'username':   forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Usuario', 'required': True}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombres', 'required': True}),
-            'last_name':  forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apellidos', 'required': True}),
-            'email':      forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Correo Electrónico', 'required': True}),
-            'cedula':     forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de Cédula', 'required': True}),
-        }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for nombre, field in self.fields.items():
-            field.required = True
-    
     def clean_email(self):
-        email = self.cleaned_data.get('email')
+        email = (self.cleaned_data.get('email') or '').strip()
+        if not email:
+            raise forms.ValidationError("El correo es obligatorio.")
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("Este correo ya está registrado.")
         return email
 
-    # Validación adicional para la cédula
     def clean_cedula(self):
-        cedula = self.cleaned_data.get('cedula')
+        cedula = (self.cleaned_data.get('cedula') or '').strip()
+        if not cedula:
+            raise forms.ValidationError("La cédula es obligatoria.")
         if User.objects.filter(cedula=cedula).exists():
             raise forms.ValidationError("Esta cédula ya está registrada en el sistema.")
         return cedula
+
+    def clean_username(self):
+        v = (self.cleaned_data.get('username') or '').strip()
+        if not v:
+            raise forms.ValidationError("El usuario es obligatorio.")
+        return v
+
+    def clean_first_name(self):
+        v = (self.cleaned_data.get('first_name') or '').strip()
+        if not v:
+            raise forms.ValidationError("Los nombres son obligatorios.")
+        return v
+
+    def clean_last_name(self):
+        v = (self.cleaned_data.get('last_name') or '').strip()
+        if not v:
+            raise forms.ValidationError("Los apellidos son obligatorios.")
+        return v
     
 class CompletarPerfilMedicoForm(forms.Form): # Usamos forms.Form porque el User ya existe
     especialidad = forms.ModelChoiceField(
