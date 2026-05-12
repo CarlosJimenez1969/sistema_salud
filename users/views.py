@@ -426,8 +426,17 @@ def crear_secretaria(request):
         else:
             # --- TU LÓGICA ORIGINAL DE REGISTRO (SIN CAMBIOS) ---
             form = SecretariaRegistroForm(request.POST)
+            telefono = (request.POST.get('telefono') or '').strip()
+            if not telefono:
+                messages.error(request, "El número de celular es obligatorio.")
+                return render(request, 'crear_secretaria.html', {
+                    'form': form,
+                    'secretarias': secretarias_actuales,
+                    'medicos_disponibles': medicos_disponibles,
+                    'es_admin': role == 'ADMIN',
+                })
             if form.is_valid():
-                user = None 
+                user = None
                 try:
                     with transaction.atomic():
                         cd = form.cleaned_data
@@ -453,7 +462,7 @@ def crear_secretaria(request):
                         Secretaria.objects.create(
                             usuario=user,
                             medico=medico_para_crear,
-                            telefono=request.POST.get('telefono'),
+                            telefono=telefono,
                         )
                         
                         from django.contrib.auth.models import Group

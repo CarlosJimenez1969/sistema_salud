@@ -110,15 +110,19 @@ def crear_secretaria(request):
 class SecretariaRegistroForm(forms.ModelForm):
     class Meta:
         model = User
-        # Añadimos 'cedula' a la lista de campos
         fields = ['username', 'first_name', 'last_name', 'email', 'cedula']
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Usuario'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombres'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apellidos'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Correo Electrónico'}),
-            'cedula': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de Cédula'}),
+            'username':   forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Usuario', 'required': True}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombres', 'required': True}),
+            'last_name':  forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apellidos', 'required': True}),
+            'email':      forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Correo Electrónico', 'required': True}),
+            'cedula':     forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de Cédula', 'required': True}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for nombre, field in self.fields.items():
+            field.required = True
     
     def clean_email(self):
         email = self.cleaned_data.get('email')
