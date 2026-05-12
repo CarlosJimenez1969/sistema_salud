@@ -15,14 +15,6 @@
 
                 <div class="card-body p-4 p-lg-5">
 
-                    {% if messages %}
-                        {% for message in messages %}
-                        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}info{% endif %} d-flex align-items-center" role="alert">
-                            <i class="bi bi-{% if message.tags == 'success' %}check-circle-fill{% elif message.tags == 'error' %}exclamation-triangle-fill{% else %}info-circle-fill{% endif %} me-2 fs-5"></i>
-                            <div>{{ message }}</div>
-                        </div>
-                        {% endfor %}
-                    {% endif %}
 
                     {% if request.GET.registro == 'ok' %}
                         <div class="alert alert-success d-flex align-items-center" role="alert">
