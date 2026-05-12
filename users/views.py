@@ -391,11 +391,11 @@ def crear_secretaria(request):
     if role == 'ADMIN':
         medico_id = request.GET.get('medico_id') or request.POST.get('medico_id')
         medico_actual = Medico.objects.filter(id=medico_id).first() if medico_id else None
-        secretarias_actuales = Secretaria.objects.select_related('usuario', 'medico__usuario').filter(usuario__is_active=True)
+        secretarias_actuales = Secretaria.objects.select_related('usuario', 'medico__usuario').all()
         medicos_disponibles = Medico.objects.select_related('usuario').all()
     elif hasattr(request.user, 'perfil_medico'):
         medico_actual = request.user.perfil_medico
-        secretarias_actuales = Secretaria.objects.filter(medico=medico_actual, usuario__is_active=True)
+        secretarias_actuales = Secretaria.objects.filter(medico=medico_actual).select_related('usuario')
         medicos_disponibles = None
     else:
         messages.error(request, "Acceso denegado.")
