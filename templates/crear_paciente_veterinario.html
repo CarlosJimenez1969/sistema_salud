@@ -40,14 +40,14 @@
                                        value="{{ datos.dueno_email|default:'' }}">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">Teléfono</label>
-                                <input type="text" name="dueno_telefono" class="form-control"
+                                <label class="form-label fw-bold">Teléfono <span class="text-danger">*</span></label>
+                                <input type="text" name="dueno_telefono" class="form-control" required
                                        value="{{ datos.dueno_telefono|default:'' }}">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Dirección</label>
-                            <input type="text" name="dueno_direccion" class="form-control"
+                            <label class="form-label fw-bold">Dirección <span class="text-danger">*</span></label>
+                            <input type="text" name="dueno_direccion" class="form-control" required
                                    value="{{ datos.dueno_direccion|default:'' }}">
                         </div>
 

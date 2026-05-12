@@ -130,7 +130,7 @@ def crear_paciente_veterinario(request):
         m_enf      = request.POST.get('mascota_enf', '').strip()
         m_ester    = bool(request.POST.get('mascota_esterilizado'))
 
-        if not all([dueno_first, dueno_last, dueno_cedula, dueno_email,
+        if not all([dueno_first, dueno_last, dueno_cedula, dueno_email, dueno_telefono, dueno_direccion,
                     m_nombre, m_especie, m_raza, m_sexo, m_color, m_fn, m_peso]):
             messages.error(request, "Todos los campos marcados con * son obligatorios (dueño y mascota).")
             return render(request, 'crear_paciente_veterinario.html', {
@@ -200,15 +200,26 @@ def editar_paciente(request, id):
     # Si el editor es veterinario o admin, usar formulario simplificado (solo datos del dueño)
     if _es_veterinario(request) or request.user.role == 'ADMIN':
         if request.method == 'POST':
+            first_name = request.POST.get('first_name', '').strip()
+            last_name  = request.POST.get('last_name', '').strip()
+            cedula     = request.POST.get('cedula', '').strip()
+            email      = request.POST.get('email', '').strip()
+            telefono   = request.POST.get('telefono', '').strip()
+            direccion  = request.POST.get('direccion', '').strip()
+
+            if not all([first_name, last_name, cedula, email, telefono, direccion]):
+                messages.error(request, "Todos los campos marcados con * son obligatorios.")
+                return render(request, 'editar_dueno.html', {'paciente': paciente})
+
             usuario = paciente.usuario
-            usuario.first_name = request.POST.get('first_name', '').strip()
-            usuario.last_name  = request.POST.get('last_name', '').strip()
-            usuario.cedula     = request.POST.get('cedula', '').strip()
-            usuario.email      = request.POST.get('email', '').strip()
+            usuario.first_name = first_name
+            usuario.last_name  = last_name
+            usuario.cedula     = cedula
+            usuario.email      = email
             usuario.save()
 
-            paciente.telefono  = request.POST.get('telefono', '').strip()
-            paciente.direccion = request.POST.get('direccion', '').strip()
+            paciente.telefono  = telefono
+            paciente.direccion = direccion
             paciente.save()
 
             messages.success(request, f"Datos de {usuario.get_full_name()} actualizados.")

@@ -16,12 +16,12 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Nombres</label>
+                                <label class="form-label fw-bold">Nombres <span class="text-danger">*</span></label>
                                 <input type="text" name="first_name" class="form-control" required
                                        value="{{ paciente.usuario.first_name }}">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Apellidos</label>
+                                <label class="form-label fw-bold">Apellidos <span class="text-danger">*</span></label>
                                 <input type="text" name="last_name" class="form-control" required
                                        value="{{ paciente.usuario.last_name }}">
                             </div>
@@ -29,26 +29,26 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Cédula</label>
+                                <label class="form-label fw-bold">Cédula <span class="text-danger">*</span></label>
                                 <input type="text" name="cedula" class="form-control" required
                                        value="{{ paciente.usuario.cedula }}">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Correo Electrónico</label>
+                                <label class="form-label fw-bold">Correo Electrónico <span class="text-danger">*</span></label>
                                 <input type="email" name="email" class="form-control" required
                                        value="{{ paciente.usuario.email }}">
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Teléfono</label>
-                            <input type="text" name="telefono" class="form-control"
+                            <label class="form-label fw-bold">Teléfono <span class="text-danger">*</span></label>
+                            <input type="text" name="telefono" class="form-control" required
                                    value="{{ paciente.telefono }}">
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold"><i class="bi bi-geo-alt"></i> Dirección de Domicilio</label>
-                            <input type="text" name="direccion" class="form-control"
+                            <label class="form-label fw-bold"><i class="bi bi-geo-alt"></i> Dirección de Domicilio <span class="text-danger">*</span></label>
+                            <input type="text" name="direccion" class="form-control" required
                                    value="{{ paciente.direccion }}">
                         </div>
 
