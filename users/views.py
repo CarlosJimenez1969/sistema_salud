@@ -547,15 +547,21 @@ class ActivarCuentaConfirmView(PasswordResetConfirmView):
     """
     template_name = 'registration/password_reset_confirm.html'
     success_url = '/login/'
+    post_reset_login = False  # NO loguear automáticamente; queremos que vea el mensaje en login
 
     def form_valid(self, form):
-        user = form.save()
-        user.is_active = True
-        user.save(update_fields=['is_active'])
-        messages.success(
-            self.request,
-            f"Contraseña creada correctamente. Ya puedes iniciar sesión, {user.first_name}."
-        )
+        try:
+            user = form.save()
+            user.is_active = True
+            user.save(update_fields=['is_active'])
+            messages.success(
+                self.request,
+                f"¡Contraseña creada correctamente! Ya puedes iniciar sesión, {user.first_name}."
+            )
+            print(f"[ACTIVAR CUENTA] Usuario {user.email} activado correctamente")
+        except Exception as e:
+            print(f"[ACTIVAR CUENTA ERROR] {e}")
+            messages.error(self.request, f"Error al activar cuenta: {e}")
         return redirect('login')
 
 
