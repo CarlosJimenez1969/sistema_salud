@@ -125,6 +125,7 @@
                             </div>
                         </div>
 
+                        {% if not es_veterinario %}
                         <div class="card mb-4 shadow-sm border-info">
                         <div class="card-header bg-info text-white">
                             <h5 class="mb-0"><i class="bi bi-activity"></i> Signos Vitales</h5>
@@ -170,6 +171,8 @@
                             </div>
 
                             </div>
+                        </div>
+                        {% endif %}
 
                         {% if es_oftalmologo %}
                         <div class="card border-info mb-4 shadow-sm mt-4">
