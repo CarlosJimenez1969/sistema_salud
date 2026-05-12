@@ -487,11 +487,16 @@ def historial_medico(request, paciente_id):
 def imprimir_receta(request, historia_id):
     historia = get_object_or_404(HistoriaClinica, id=historia_id)
 
-    # Si ya existe el PDF guardado en Cloudinary, lo redirigimos directamente
-    if historia.receta_pdf:
-        return redirect(historia.receta_pdf.url)
+    # Si ya existe el PDF y es accesible, lo redirigimos
+    # Si ?regen=1 se pasa, regeneramos el PDF aunque exista uno guardado
+    forzar_regen = request.GET.get('regen') == '1'
+    if historia.receta_pdf and not forzar_regen:
+        try:
+            return redirect(historia.receta_pdf.url)
+        except Exception:
+            pass  # Si falla, regeneramos abajo
 
-    # Generar PDF la primera vez
+    # Generar PDF
     from io import BytesIO
     from django.core.files.base import ContentFile
     template = get_template('historia/receta_pdf.html')
@@ -501,12 +506,17 @@ def imprimir_receta(request, historia_id):
     if pisa_status.err:
         return HttpResponse('Error al generar PDF <pre>' + html + '</pre>')
 
-    # Guardar el PDF en Cloudinary
     pdf_bytes = buffer.getvalue()
     filename = f"receta_{historia.id}.pdf"
+
+    # Reemplazar el PDF en Cloudinary (borra el viejo si existía)
+    if historia.receta_pdf:
+        try:
+            historia.receta_pdf.delete(save=False)
+        except Exception:
+            pass
     historia.receta_pdf.save(filename, ContentFile(pdf_bytes), save=True)
 
-    # Devolver el PDF al navegador
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="{filename}"'
     return response
