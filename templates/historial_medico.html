@@ -53,6 +53,16 @@
             <div id="collapse{{ h.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ h.id }}" data-bs-parent="#accordionHistorial">
                 <div class="accordion-body bg-white">
                     
+                    {% if h.veterinaria %}
+                    <div class="row row-cols-3 row-cols-md-6 text-center mb-3 bg-light p-2 rounded mx-1 g-2">
+                        <div class="col"><small class="text-muted">Temp</small><br><strong>{{ h.veterinaria.temperatura|default:"--" }} °C</strong></div>
+                        <div class="col"><small class="text-muted">FC</small><br><strong>{{ h.veterinaria.frecuencia_card|default:"--" }} lpm</strong></div>
+                        <div class="col"><small class="text-muted">FR</small><br><strong>{{ h.veterinaria.frecuencia_resp|default:"--" }} rpm</strong></div>
+                        <div class="col"><small class="text-muted">Peso</small><br><strong>{{ h.veterinaria.peso_actual|default:"--" }} Kg</strong></div>
+                        <div class="col"><small class="text-muted">Cond. Corp.</small><br><strong>{{ h.veterinaria.condicion_corporal|default:"--" }}</strong></div>
+                        <div class="col"><small class="text-muted">Mucosas</small><br><strong>{{ h.veterinaria.get_mucosas_display|default:"--" }}</strong></div>
+                    </div>
+                    {% else %}
                     <div class="row row-cols-3 row-cols-md-5 text-center mb-3 bg-light p-2 rounded mx-1 g-2">
                         <div class="col"><small class="text-muted">Temp</small><br><strong>{{ h.temperatura|default:"--" }} °C</strong></div>
                         <div class="col"><small class="text-muted">Presión</small><br><strong>{{ h.presion_arterial|default:"--" }}</strong></div>
@@ -60,6 +70,7 @@
                         <div class="col"><small class="text-muted">Peso</small><br><strong>{{ h.peso|default:"--" }} Kg</strong></div>
                         <div class="col"><small class="text-muted">Talla</small><br><strong>{{ h.altura|default:"--" }} m</strong></div>
                     </div>
+                    {% endif %}
 
                     <div class="row">
                         <div class="col-md-6">
