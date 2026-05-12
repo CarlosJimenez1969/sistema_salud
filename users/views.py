@@ -426,17 +426,34 @@ def crear_secretaria(request):
         else:
             # --- TU LÓGICA ORIGINAL DE REGISTRO (SIN CAMBIOS) ---
             form = SecretariaRegistroForm(request.POST)
-            telefono = (request.POST.get('telefono') or '').strip()
-            if not telefono:
-                messages.error(request, "El número de celular es obligatorio.")
+
+            # Validación manual previa: todos los campos obligatorios
+            campos_obligatorios = {
+                'username':   'Usuario',
+                'first_name': 'Nombres',
+                'last_name':  'Apellidos',
+                'email':      'Correo Electrónico',
+                'cedula':     'Cédula',
+                'telefono':   'Número de Celular',
+            }
+            faltantes = [
+                label for nombre, label in campos_obligatorios.items()
+                if not (request.POST.get(nombre) or '').strip()
+            ]
+            if role == 'ADMIN' and not (request.POST.get('medico_id') or '').strip():
+                faltantes.insert(0, 'Médico al que asiste')
+
+            if faltantes:
+                messages.error(request, f"Faltan datos obligatorios: {', '.join(faltantes)}")
                 return render(request, 'crear_secretaria.html', {
                     'form': form,
                     'secretarias': secretarias_actuales,
                     'medicos_disponibles': medicos_disponibles,
                     'es_admin': role == 'ADMIN',
                 })
+
+            telefono = request.POST.get('telefono', '').strip()
             if not form.is_valid():
-                # Mostrar el primer error como toast
                 for campo, errores in form.errors.items():
                     for err in errores:
                         messages.error(request, f"{campo.capitalize()}: {err}")
