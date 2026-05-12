@@ -487,36 +487,29 @@ def historial_medico(request, paciente_id):
 def imprimir_receta(request, historia_id):
     historia = get_object_or_404(HistoriaClinica, id=historia_id)
 
-    # Si ya existe el PDF y es accesible, lo redirigimos
-    # Si ?regen=1 se pasa, regeneramos el PDF aunque exista uno guardado
-    forzar_regen = request.GET.get('regen') == '1'
-    if historia.receta_pdf and not forzar_regen:
-        try:
-            return redirect(historia.receta_pdf.url)
-        except Exception:
-            pass  # Si falla, regeneramos abajo
-
-    # Generar PDF
+    # Generar PDF al vuelo siempre (sin redirect a Cloudinary)
     from io import BytesIO
-    from django.core.files.base import ContentFile
     template = get_template('historia/receta_pdf.html')
-    html = template.render({'h': historia})
+
+    try:
+        html = template.render({'h': historia})
+    except Exception as e:
+        return HttpResponse(f"<h2>Error en plantilla:</h2><pre>{e}</pre>", status=500)
+
     buffer = BytesIO()
-    pisa_status = pisa.CreatePDF(html, dest=buffer)
+    try:
+        pisa_status = pisa.CreatePDF(html, dest=buffer)
+    except Exception as e:
+        return HttpResponse(f"<h2>Error generando PDF:</h2><pre>{e}</pre>", status=500)
+
     if pisa_status.err:
-        return HttpResponse('Error al generar PDF <pre>' + html + '</pre>')
+        return HttpResponse(f"<h2>pisa reportó error:</h2><pre>{pisa_status.err}</pre>", status=500)
 
     pdf_bytes = buffer.getvalue()
+    if not pdf_bytes:
+        return HttpResponse("PDF vacío - error en generación", status=500)
+
     filename = f"receta_{historia.id}.pdf"
-
-    # Reemplazar el PDF en Cloudinary (borra el viejo si existía)
-    if historia.receta_pdf:
-        try:
-            historia.receta_pdf.delete(save=False)
-        except Exception:
-            pass
-    historia.receta_pdf.save(filename, ContentFile(pdf_bytes), save=True)
-
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="{filename}"'
     return response
