@@ -102,6 +102,32 @@
                             </div>
                         </div>
 
+                        {% if es_veterinario %}
+                        <h5 class="text-primary border-bottom pb-2 mt-4">2. Antecedentes del Animal</h5>
+                        <div class="card border-warning mb-4 shadow-sm">
+                            <div class="card-header bg-warning text-dark py-2">
+                                <h6 class="mb-0"><i class="bi bi-clock-history"></i> Historia médica de la mascota</h6>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="fw-bold text-dark">Antecedentes médicos del animal:</label>
+                                        {{ form.antecedentes_personales }}
+                                        <small class="text-muted">Enfermedades previas, cirugías, vacunación previa, alergias.</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="fw-bold text-dark">Antecedentes hereditarios / de raza:</label>
+                                        {{ form.antecedentes_familiares }}
+                                        <small class="text-muted">Predisposiciones de la raza (ej: displasia de cadera, problemas cardiacos, etc.)</small>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="fw-bold text-dark">Revisión de sistemas (digestivo, respiratorio, urinario, piel, etc.):</label>
+                                    {{ form.revision_sistemas }}
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
                         <h5 class="text-primary border-bottom pb-2 mt-4">2. Antecedentes (MSP Form. 002)</h5>
                         <div class="card border-warning mb-4 shadow-sm">
                             <div class="card-header bg-warning text-dark py-2">
@@ -124,6 +150,7 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
 
                         {% if not es_veterinario %}
                         <div class="card mb-4 shadow-sm border-info">
@@ -1254,7 +1281,10 @@
                                         {{ form.tipo_diagnostico }}
                                     </div>
                                     <div class="col-md-8">
-                                        <label class="fw-bold text-dark">Diagnóstico (CIE-10): <span class="text-danger">*</span></label>
+                                        <label class="fw-bold text-dark">
+                                            {% if es_veterinario %}Diagnóstico:{% else %}Diagnóstico (CIE-10):{% endif %}
+                                            <span class="text-danger">*</span>
+                                        </label>
                                         {{ form.diagnostico }}
                                     </div>
                                 </div>
@@ -1263,7 +1293,9 @@
                                     {{ form.tratamiento }}
                                 </div>
                                 <div class="mb-3">
-                                    <label class="fw-bold text-dark">Plan Educacional al Paciente:</label>
+                                    <label class="fw-bold text-dark">
+                                        {% if es_veterinario %}Indicaciones al Dueño:{% else %}Plan Educacional al Paciente:{% endif %}
+                                    </label>
                                     {{ form.plan_educacional }}
                                 </div>
                             </div>
@@ -1283,14 +1315,21 @@
                                     <div class="col-md-8 mb-3">
                                         <label class="fw-bold text-danger"><i class="bi bi-exclamation-triangle"></i> Signos de Alarma:</label>
                                         {{ form.signos_alarma }}
-                                        <small class="text-muted">Instrucciones críticas para el paciente en caso de emergencia.</small>
+                                        <small class="text-muted">
+                                            {% if es_veterinario %}
+                                                Síntomas que indican que el dueño debe traer a la mascota de urgencia (ej: vómito persistente, fiebre alta, no come, etc.).
+                                            {% else %}
+                                                Instrucciones críticas para el paciente en caso de emergencia.
+                                            {% endif %}
+                                        </small>
                                     </div>
                                 </div>
 
                                 <div class="alert alert-info d-flex align-items-center mb-0" role="alert">
                                     <i class="bi bi-info-circle-fill me-2"></i>
                                     <div>
-                                        Al guardar, se generará automáticamente el PDF y se enviará al correo: 
+                                        Al guardar, se generará automáticamente el PDF y se enviará al correo
+                                        {% if es_veterinario %}del dueño{% else %}del paciente{% endif %}:
                                         <strong>{{ paciente.usuario.email|default:"(Sin correo registrado)" }}</strong>
                                     </div>
                                 </div>
