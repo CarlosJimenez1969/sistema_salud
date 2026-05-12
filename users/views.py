@@ -406,19 +406,26 @@ def crear_secretaria(request):
     
     if request.method == 'POST':
         if secretaria_id:
-            # --- LÓGICA DE EDICIÓN (SOLO EMAIL Y CELULAR) ---
+            # --- LÓGICA DE EDICIÓN ---
             try:
                 sec_instancia = get_object_or_404(Secretaria, id=secretaria_id, medico=medico_actual)
                 user_sec = sec_instancia.usuario
-                
-                # Actualizamos solo los campos permitidos
-                user_sec.email = request.POST.get('email')
+
+                email    = (request.POST.get('email') or '').strip()
+                telefono = (request.POST.get('telefono') or '').strip()
+
+                if not email or not telefono:
+                    faltantes = []
+                    if not email:    faltantes.append('Correo Electrónico')
+                    if not telefono: faltantes.append('Número de Celular')
+                    messages.error(request, f"Faltan datos obligatorios: {', '.join(faltantes)}")
+                    return redirect('crear_secretaria')
+
+                user_sec.email = email
                 user_sec.save()
-                
-                # Suponiendo que tienes el campo 'telefono' en tu modelo Secretaria
-                sec_instancia.telefono = request.POST.get('telefono')
+                sec_instancia.telefono = telefono
                 sec_instancia.save()
-                
+
                 messages.success(request, f"Datos de {user_sec.first_name} actualizados correctamente.")
                 return redirect('crear_secretaria')
             except Exception as e:
