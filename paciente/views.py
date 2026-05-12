@@ -130,8 +130,9 @@ def crear_paciente_veterinario(request):
         m_enf      = request.POST.get('mascota_enf', '').strip()
         m_ester    = bool(request.POST.get('mascota_esterilizado'))
 
-        if not all([dueno_first, dueno_last, dueno_cedula, dueno_email, m_nombre, m_especie]):
-            messages.error(request, "Faltan datos obligatorios del dueño o de la mascota.")
+        if not all([dueno_first, dueno_last, dueno_cedula, dueno_email,
+                    m_nombre, m_especie, m_raza, m_sexo, m_color, m_fn, m_peso]):
+            messages.error(request, "Todos los campos marcados con * son obligatorios (dueño y mascota).")
             return render(request, 'crear_paciente_veterinario.html', {
                 'datos': request.POST, 'especies': Mascota.ESPECIES,
             })
@@ -300,16 +301,26 @@ def crear_mascota(request):
         return redirect('home')
 
     if request.method == 'POST':
+        nombre  = request.POST.get('nombre', '').strip()
+        especie = request.POST.get('especie', '')
+        raza    = request.POST.get('raza', '').strip()
+        sexo    = request.POST.get('sexo', '')
+        color   = request.POST.get('color', '').strip()
+        fn      = request.POST.get('fecha_nacimiento', '')
+        peso    = request.POST.get('peso', '').strip()
+
+        if not all([nombre, especie, raza, sexo, color, fn, peso]):
+            messages.error(request, "Todos los campos marcados con * son obligatorios.")
+            return render(request, 'mascotas/crear.html', {'datos': request.POST, 'especies': Mascota.ESPECIES})
+
         m = Mascota(propietario=paciente)
-        m.nombre           = request.POST.get('nombre', '').strip()
-        m.especie          = request.POST.get('especie', '')
-        m.raza             = request.POST.get('raza', '').strip()
-        m.sexo             = request.POST.get('sexo', '')
-        m.color            = request.POST.get('color', '').strip()
-        fn                 = request.POST.get('fecha_nacimiento', '')
-        m.fecha_nacimiento = fn or None
-        peso               = request.POST.get('peso', '').strip()
-        m.peso             = peso or None
+        m.nombre           = nombre
+        m.especie          = especie
+        m.raza             = raza
+        m.sexo             = sexo
+        m.color            = color
+        m.fecha_nacimiento = fn
+        m.peso             = peso
         m.esterilizado     = bool(request.POST.get('esterilizado'))
         m.chip_id          = request.POST.get('chip_id', '').strip()
         m.alergias         = request.POST.get('alergias', '').strip()
@@ -317,10 +328,6 @@ def crear_mascota(request):
         m.notas            = request.POST.get('notas', '').strip()
         if 'foto' in request.FILES:
             m.foto = request.FILES['foto']
-
-        if not m.nombre or not m.especie:
-            messages.error(request, "Nombre y especie son obligatorios.")
-            return render(request, 'mascotas/crear.html', {'datos': request.POST, 'especies': Mascota.ESPECIES})
 
         m.save()
         messages.success(request, f"Mascota '{m.nombre}' registrada correctamente.")
@@ -339,15 +346,27 @@ def editar_mascota(request, mascota_id):
         mascota = get_object_or_404(Mascota, id=mascota_id, propietario=paciente)
 
     if request.method == 'POST':
-        mascota.nombre           = request.POST.get('nombre', '').strip()
-        mascota.especie          = request.POST.get('especie', '')
-        mascota.raza             = request.POST.get('raza', '').strip()
-        mascota.sexo             = request.POST.get('sexo', '')
-        mascota.color            = request.POST.get('color', '').strip()
-        fn                       = request.POST.get('fecha_nacimiento', '')
-        mascota.fecha_nacimiento = fn or None
-        peso                     = request.POST.get('peso', '').strip()
-        mascota.peso             = peso or None
+        nombre   = request.POST.get('nombre', '').strip()
+        especie  = request.POST.get('especie', '')
+        raza     = request.POST.get('raza', '').strip()
+        sexo     = request.POST.get('sexo', '')
+        color    = request.POST.get('color', '').strip()
+        fn       = request.POST.get('fecha_nacimiento', '')
+        peso     = request.POST.get('peso', '').strip()
+
+        if not all([nombre, especie, raza, sexo, color, fn, peso]):
+            messages.error(request, "Todos los campos marcados con * son obligatorios.")
+            return render(request, 'mascotas/crear.html', {
+                'datos': request.POST, 'mascota': mascota, 'especies': Mascota.ESPECIES,
+            })
+
+        mascota.nombre           = nombre
+        mascota.especie          = especie
+        mascota.raza             = raza
+        mascota.sexo             = sexo
+        mascota.color            = color
+        mascota.fecha_nacimiento = fn
+        mascota.peso             = peso
         mascota.esterilizado     = bool(request.POST.get('esterilizado'))
         mascota.chip_id          = request.POST.get('chip_id', '').strip()
         mascota.alergias         = request.POST.get('alergias', '').strip()
@@ -357,7 +376,6 @@ def editar_mascota(request, mascota_id):
             mascota.foto = request.FILES['foto']
         mascota.save()
         messages.success(request, f"'{mascota.nombre}' actualizada correctamente.")
-        # Volver al listado correspondiente según quién edita
         if _es_veterinario(request) or request.user.role == 'ADMIN':
             return redirect('listar_pacientes')
         return redirect('listar_mascotas')
