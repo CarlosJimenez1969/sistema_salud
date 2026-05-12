@@ -122,7 +122,7 @@
         </div>
     </nav> 
     {% if messages %}
-    <div class="container mt-3">
+    <div class="container" style="margin-top:70px;">
         {% for message in messages %}
         <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow {% if message.tags == 'success' %}autohide{% endif %}" role="alert">
             <strong>
@@ -130,7 +130,7 @@
             {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill"></i> Atención
             {% elif message.tags == 'error' %}<i class="bi bi-x-dash-circle-fill"></i> Error
             {% endif %}
-            </strong> 
+            </strong>
             {{ message }}
             <button type="button" class="btn-close" data-bs-auto-close="false" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -173,7 +173,7 @@
                     let bsAlert = new bootstrap.Alert(alert);
                     bsAlert.close();
                 });
-            }, 10000); // 10 segundos para que de tiempo a leer
+            }, 15000); // 15 segundos para que de tiempo a leer
         });
     </script>
 </body>
