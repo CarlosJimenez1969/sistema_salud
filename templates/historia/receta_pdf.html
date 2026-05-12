@@ -76,6 +76,26 @@
     </div>
 
     <table class="info-box">
+        {% if h.mascota %}
+        <tr>
+            <td class="label">Mascota:</td>
+            <td>{{ h.mascota.nombre }} ({{ h.mascota.get_especie_display }}{% if h.mascota.raza %} — {{ h.mascota.raza }}{% endif %})</td>
+            <td class="label">Fecha:</td>
+            <td>{{ h.fecha_atencion|date:"d de F, Y" }}</td>
+        </tr>
+        <tr>
+            <td class="label">Dueño:</td>
+            <td>{{ h.paciente.usuario.last_name }} {{ h.paciente.usuario.first_name }}</td>
+            <td class="label">Edad mascota:</td>
+            <td>{{ h.mascota.edad|default:"—" }}</td>
+        </tr>
+        <tr>
+            <td class="label">Cédula dueño:</td>
+            <td>{{ h.paciente.usuario.cedula }}</td>
+            <td class="label">Teléfono:</td>
+            <td>{{ h.paciente.telefono|default:"—" }}</td>
+        </tr>
+        {% else %}
         <tr>
             <td class="label">Paciente:</td>
             <td>{{ h.paciente.usuario.last_name }} {{ h.paciente.usuario.first_name }}</td>
@@ -86,8 +106,9 @@
             <td class="label">Cédula:</td>
             <td>{{ h.paciente.usuario.cedula }}</td>
             <td class="label">Edad:</td>
-            <td>{{ h.paciente.fecha_nacimiento|timesince }}</td>
+            <td>{% if h.paciente.fecha_nacimiento %}{{ h.paciente.fecha_nacimiento|timesince }}{% else %}—{% endif %}</td>
         </tr>
+        {% endif %}
     </table>
 
     <hr style="border: 0; border-top: 1px solid #ddd; margin-bottom: 20px;">
