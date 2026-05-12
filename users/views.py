@@ -427,6 +427,9 @@ def crear_secretaria(request):
             # --- TU LÓGICA ORIGINAL DE REGISTRO (SIN CAMBIOS) ---
             form = SecretariaRegistroForm(request.POST)
 
+            # DEBUG: ver qué llega del formulario
+            print(f"[CREAR SECRETARIA DEBUG] POST data: {dict(request.POST)}")
+
             # Validación manual previa: todos los campos obligatorios
             campos_obligatorios = {
                 'username':   'Usuario',
@@ -440,6 +443,7 @@ def crear_secretaria(request):
                 label for nombre, label in campos_obligatorios.items()
                 if not (request.POST.get(nombre) or '').strip()
             ]
+            print(f"[CREAR SECRETARIA DEBUG] faltantes: {faltantes}")
             if role == 'ADMIN' and not (request.POST.get('medico_id') or '').strip():
                 faltantes.insert(0, 'Médico al que asiste')
 
