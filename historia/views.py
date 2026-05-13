@@ -69,9 +69,17 @@ def crear_historia(request, paciente_id):
         ultima_historia = None
 
     if request.method == 'POST':
-        form = HistoriaForm(request.POST)
-        imagenes = request.FILES.getlist('imagenes_campo') 
-        
+        # Envolver todo en try/except para capturar errores reales en logs
+        try:
+            form = HistoriaForm(request.POST)
+            imagenes = request.FILES.getlist('imagenes_campo')
+        except Exception as _e_init:
+            import traceback
+            print(f"[CREAR HISTORIA INIT ERROR] {_e_init}")
+            print(traceback.format_exc())
+            messages.error(request, f"Error al iniciar historia: {_e_init}")
+            return redirect('crear_historia', paciente_id=paciente.id)
+
         if form.is_valid():
             # Guardar encabezado de historia
             historia = form.save(commit=False)

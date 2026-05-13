@@ -219,3 +219,25 @@ SRI_AMBIENTE              = config('SRI_AMBIENTE',              default='1')
 SRI_IVA_PORCENTAJE        = config('SRI_IVA_PORCENTAJE',        default='0')
 SRI_CERTIFICADO_P12       = config('SRI_CERTIFICADO_P12',       default='')
 SRI_CERTIFICADO_PASSWORD  = config('SRI_CERTIFICADO_PASSWORD',  default='')
+
+# ── Logging: enviar errores 500 a stdout para verlos en Render logs ───────────
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+}
