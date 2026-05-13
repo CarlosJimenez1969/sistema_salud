@@ -71,11 +71,11 @@ def home(request):
                 ids_con_citas = set(Paciente.objects.filter(citas__medico=medico).values_list('id', flat=True))
                 total_pacientes = len(ids_con_mascotas | ids_con_citas)
             else:
-                base_qs = Paciente.objects.filter(
+                # Pacientes generales (todos los del sistema)
+                total_pacientes = Paciente.objects.filter(
                     usuario__perfil_medico__isnull=True,
                     usuario__perfil_secretaria__isnull=True,
-                )
-                total_pacientes = base_qs.filter(citas__medico=medico).distinct().count()
+                ).count()
         except AttributeError:
             total_pacientes = 0
     else:

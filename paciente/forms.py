@@ -31,16 +31,42 @@ class PacienteForm(forms.ModelForm):
             }),
         }
 
-    # --- NUEVO: ESTO CARGA LOS DATOS AL EDITAR ---
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Si estamos editando un paciente existente (tiene ID)
         if self.instance and self.instance.pk:
             self.fields['first_name'].initial = self.instance.usuario.first_name
             self.fields['last_name'].initial = self.instance.usuario.last_name
             self.fields['cedula'].initial = self.instance.usuario.cedula
             self.fields['email'].initial = self.instance.usuario.email
-            # El email y cédula no deberían cambiarse fácilmente, pero por ahora lo dejamos editable
+
+    def clean_cedula(self):
+        cedula = (self.cleaned_data.get('cedula') or '').strip()
+        if not cedula:
+            raise forms.ValidationError("La cédula es obligatoria.")
+        if not cedula.isdigit() or not (8 <= len(cedula) <= 13):
+            raise forms.ValidationError("La cédula debe tener entre 8 y 13 dígitos numéricos.")
+        # Excluir el usuario actual si estamos editando
+        qs = User.objects.filter(cedula=cedula)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(id=self.instance.usuario_id)
+        if qs.exists():
+            raise forms.ValidationError(
+                "Ya existe un paciente con esta cédula en el sistema. Búsquelo en el listado de pacientes."
+            )
+        return cedula
+
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip().lower()
+        if not email:
+            raise forms.ValidationError("El correo es obligatorio.")
+        qs = User.objects.filter(email=email)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(id=self.instance.usuario_id)
+        if qs.exists():
+            raise forms.ValidationError(
+                "Ya existe un usuario registrado con este correo. Use otro correo o busque al paciente existente."
+            )
+        return email
 
     def save(self, commit=True):
         # Si el paciente YA EXISTE, solo actualizamos

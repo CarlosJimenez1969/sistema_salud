@@ -34,24 +34,12 @@ def listar_pacientes(request):
                 .order_by('-id')
             )
     else:
-        base_qs = Paciente.objects.filter(
+        # Los pacientes son GENERALES: cualquier médico/secretaria/admin puede verlos.
+        # Solo excluimos usuarios que son personal del sistema.
+        pacientes = Paciente.objects.filter(
             usuario__perfil_medico__isnull=True,
             usuario__perfil_secretaria__isnull=True,
-        )
-        # Mostrar pacientes con citas + pacientes recién creados sin citas aún
-        if request.user.role == 'ADMIN':
-            pacientes = base_qs.select_related('usuario').order_by('-id')
-        elif request.user.role == 'SECRETARIA':
-            medico = request.user.perfil_secretaria.medico
-            ids_con_citas = set(base_qs.filter(citas__medico=medico).values_list('id', flat=True))
-            # Pacientes sin citas en ningún médico (recién creados)
-            ids_sin_citas = set(base_qs.filter(citas__isnull=True).values_list('id', flat=True))
-            pacientes = base_qs.filter(id__in=ids_con_citas | ids_sin_citas).select_related('usuario').order_by('-id')
-        else:
-            medico = request.user.perfil_medico
-            ids_con_citas = set(base_qs.filter(citas__medico=medico).values_list('id', flat=True))
-            ids_sin_citas = set(base_qs.filter(citas__isnull=True).values_list('id', flat=True))
-            pacientes = base_qs.filter(id__in=ids_con_citas | ids_sin_citas).select_related('usuario').order_by('-id')
+        ).select_related('usuario').order_by('-id')
 
     query = request.GET.get('q')
     if query:
