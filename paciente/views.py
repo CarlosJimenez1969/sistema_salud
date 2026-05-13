@@ -38,18 +38,20 @@ def listar_pacientes(request):
             usuario__perfil_medico__isnull=True,
             usuario__perfil_secretaria__isnull=True,
         )
+        # Mostrar pacientes con citas + pacientes recién creados sin citas aún
         if request.user.role == 'ADMIN':
             pacientes = base_qs.select_related('usuario').order_by('-id')
         elif request.user.role == 'SECRETARIA':
             medico = request.user.perfil_secretaria.medico
-            pacientes = base_qs.filter(
-                citas__medico=medico
-            ).select_related('usuario').distinct().order_by('-id')
+            ids_con_citas = set(base_qs.filter(citas__medico=medico).values_list('id', flat=True))
+            # Pacientes sin citas en ningún médico (recién creados)
+            ids_sin_citas = set(base_qs.filter(citas__isnull=True).values_list('id', flat=True))
+            pacientes = base_qs.filter(id__in=ids_con_citas | ids_sin_citas).select_related('usuario').order_by('-id')
         else:
             medico = request.user.perfil_medico
-            pacientes = base_qs.filter(
-                citas__medico=medico
-            ).select_related('usuario').distinct().order_by('-id')
+            ids_con_citas = set(base_qs.filter(citas__medico=medico).values_list('id', flat=True))
+            ids_sin_citas = set(base_qs.filter(citas__isnull=True).values_list('id', flat=True))
+            pacientes = base_qs.filter(id__in=ids_con_citas | ids_sin_citas).select_related('usuario').order_by('-id')
 
     query = request.GET.get('q')
     if query:
