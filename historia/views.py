@@ -167,15 +167,23 @@ def crear_historia(request, paciente_id):
                     tipo_dieta=request.POST.get('tipo_dieta')
                 )
             elif es_otorrino:
-                HistoriaOtorrino.objects.create(
-                    historia_clinica=historia,
-                    otoscopia_od=request.POST.get('otoscopia_od'),
-                    otoscopia_oi=request.POST.get('otoscopia_oi'),
-                    rinoscopia=request.POST.get('rinoscopia'),
-                    tabique=request.POST.get('tabique'),
-                    orofaringe=request.POST.get('orofaringe'),
-                    audiometria=request.POST.get('audiometria')
-                )
+                try:
+                    HistoriaOtorrino.objects.create(
+                        historia_clinica=historia,
+                        otoscopia_od=(request.POST.get('otoscopia_od') or '').strip()[:100] or 'Conducto permeable, Membrana íntegra',
+                        otoscopia_oi=(request.POST.get('otoscopia_oi') or '').strip()[:100] or 'Conducto permeable, Membrana íntegra',
+                        rinoscopia=(request.POST.get('rinoscopia') or '').strip(),
+                        tabique=(request.POST.get('tabique') or 'CENTRADO').strip(),
+                        orofaringe=(request.POST.get('orofaringe') or '').strip(),
+                        audiometria=(request.POST.get('audiometria') or '').strip()[:100],
+                    )
+                except Exception as e:
+                    import traceback
+                    print(f"[OTORRINO SAVE ERROR] {e}")
+                    print(traceback.format_exc())
+                    historia.delete()  # rollback de la historia base
+                    messages.error(request, f"Error al guardar datos de otorrinolaringología: {e}")
+                    return redirect('crear_historia', paciente_id=paciente.id)
             elif es_traumatologo:
                 HistoriaTraumatologia.objects.create(
                     historia_clinica=historia,
