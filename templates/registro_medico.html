@@ -56,7 +56,7 @@
                             {% if form.email.errors %}
                                 <div class="text-danger small">{{ form.email.errors|striptags }}</div>
                             {% endif %}
-                            <div class="form-text">Aquí recibirás el enlace para crear tu contraseña después del pago.</div>
+                            <div class="form-text">Aquí recibirás el enlace para crear tu contraseña y activar tu cuenta.</div>
                         </div>
 
                         <div class="mb-3">
@@ -100,14 +100,16 @@
                             {% endif %}
                         </div>
 
-                        <div class="alert alert-info small mt-4">
-                            <i class="bi bi-shield-lock me-1"></i>
-                            Tus datos se guardarán temporalmente. Serás redirigido a PayPal para activar tu suscripción profesional de 50.00 USD.
+                        <div class="alert alert-success small mt-4">
+                            <i class="bi bi-gift-fill me-1"></i>
+                            <strong>¡30 días GRATIS!</strong> Al registrarte recibirás un correo para activar tu cuenta
+                            y podrás usar el sistema completo durante 30 días sin costo.
+                            Después podrás renovar tu suscripción anual por $50 USD.
                         </div>
 
                         <div class="d-grid gap-2 mt-4">
                             <button type="submit" class="btn btn-success btn-lg shadow">
-                                Validar y Continuar al Pago <i class="bi bi-arrow-right-circle ms-1"></i>
+                                Crear mi cuenta gratis <i class="bi bi-arrow-right-circle ms-1"></i>
                             </button>
                             <a href="{% url 'home' %}" class="btn btn-outline-secondary">Cancelar</a>
                         </div>
