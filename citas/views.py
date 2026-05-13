@@ -187,14 +187,16 @@ def reservar_cita(request, medico_id):
             )
             lista_pacientes = Paciente.objects.none()
         else:
+            # Pacientes con citas con este médico + pacientes recién creados sin citas aún
             base_qs = Paciente.objects.filter(
                 usuario__perfil_medico__isnull=True,
                 usuario__perfil_secretaria__isnull=True,
             )
+            ids_con_citas = set(base_qs.filter(citas__medico=medico).values_list('id', flat=True))
+            ids_sin_citas = set(base_qs.filter(citas__isnull=True).values_list('id', flat=True))
             lista_pacientes = (
-                base_qs.filter(citas__medico=medico)
+                base_qs.filter(id__in=ids_con_citas | ids_sin_citas)
                 .select_related('usuario')
-                .distinct()
                 .order_by('usuario__last_name')
             )
     else:
