@@ -92,8 +92,22 @@ def crear_paciente(request):
     if request.method == 'POST':
         form = PacienteForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('listar_pacientes')
+            try:
+                form.save()
+                messages.success(request, "Paciente registrado correctamente.")
+                return redirect('listar_pacientes')
+            except Exception as e:
+                import traceback
+                print(f"[CREAR PACIENTE ERROR] {e}")
+                print(traceback.format_exc())
+                messages.error(request, f"No se pudo guardar: {e}")
+        else:
+            # Mostrar primer error del form como toast
+            for campo, errores in form.errors.items():
+                for err in errores:
+                    messages.error(request, f"{campo}: {err}")
+                    break
+                break
     else:
         form = PacienteForm()
 
