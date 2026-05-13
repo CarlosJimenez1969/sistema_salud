@@ -77,12 +77,22 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Contraseña</label>
-                                {{ form.password1 }}
+                                <div class="input-group">
+                                    {{ form.password1 }}
+                                    <button type="button" class="btn btn-outline-secondary" onclick="togglePwdReg(this)" tabindex="-1">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
                                 {% if form.password1.errors %}<div class="text-danger small">{{ form.password1.errors|striptags }}</div>{% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Confirmar Contraseña</label>
-                                {{ form.password2 }}
+                                <div class="input-group">
+                                    {{ form.password2 }}
+                                    <button type="button" class="btn btn-outline-secondary" onclick="togglePwdReg(this)" tabindex="-1">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
                                 {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors|striptags }}</div>{% endif %}
                             </div>
                         </div>
@@ -92,6 +102,22 @@
                                 <i class="bi bi-check-circle me-1"></i> Crear mi cuenta
                             </button>
                         </div>
+
+                        <script>
+                        function togglePwdReg(btn) {
+                            const inp = btn.parentElement.querySelector('input');
+                            const icon = btn.querySelector('i');
+                            if (inp.type === 'password') {
+                                inp.type = 'text';
+                                icon.classList.remove('bi-eye');
+                                icon.classList.add('bi-eye-slash');
+                            } else {
+                                inp.type = 'password';
+                                icon.classList.remove('bi-eye-slash');
+                                icon.classList.add('bi-eye');
+                            }
+                        }
+                        </script>
                     </form>
 
                     <hr class="my-3">
