@@ -88,7 +88,6 @@ def crear_historia(request, paciente_id):
             historia.fecha_atencion = timezone.now()
             # Si es veterinario, vincular la mascota desde la cita
             if es_veterinario:
-                from citas.models import Cita
                 cita_actual = Cita.objects.filter(medico=medico, paciente=paciente, mascota__isnull=False).order_by('-fecha', '-hora').first()
                 if cita_actual:
                     historia.mascota = cita_actual.mascota
