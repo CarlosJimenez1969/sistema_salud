@@ -353,14 +353,16 @@
 
     <div class="mb-3">
         {% if user.role == 'SECRETARIA' %}
-            {# Si es secretaria, regresa a su Dashboard de gestión #}
             <a href="{% url 'dashboard_secretaria' %}" class="btn btn-secondary rounded-pill shadow-sm">
                 <i class="bi bi-arrow-left"></i> Volver al Dashboard
             </a>
+        {% elif request.GET.origen == 'pacientes' %}
+            <a href="{% url 'listar_pacientes' %}" class="btn btn-secondary rounded-pill shadow-sm">
+                <i class="bi bi-arrow-left"></i> Volver a Buscar/Crear Historia Clínica
+            </a>
         {% else %}
-            {# Si es médico, regresa al listado general o a su agenda #}
             <a href="{% url 'ver_agenda' %}" class="btn btn-secondary rounded-pill shadow-sm">
-                <i class="bi bi-arrow-left"></i> Volver a mi Agenda
+                <i class="bi bi-arrow-left"></i> Volver a Mi Agenda
             </a>
         {% endif %}
     </div>
