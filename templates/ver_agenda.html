@@ -144,6 +144,14 @@
                                         <a href="{% url 'crear_historia' cita.paciente.id %}" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
                                             <i class="bi bi-clipboard-pulse me-1"></i> Atender
                                         </a>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="cita_id" value="{{ cita.id }}">
+                                            <input type="hidden" name="accion" value="finalizar">
+                                            <button type="submit" class="btn btn-outline-success btn-sm rounded-circle border-0" title="Marcar como atendida (sin historia clínica)">
+                                                <i class="bi bi-check2-circle"></i>
+                                            </button>
+                                        </form>
                                         <form method="post" class="d-inline" onsubmit="return confirm('¿Está seguro de cancelar esta cita?');">
                                             {% csrf_token %}
                                             <input type="hidden" name="cita_id" value="{{ cita.id }}">

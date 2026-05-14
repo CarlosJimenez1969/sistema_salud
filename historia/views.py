@@ -357,13 +357,26 @@ def crear_historia(request, paciente_id):
                 ImagenHistoria.objects.create(historia=historia, archivo=imagen_file)
 
            # 5. ACTUALIZAR ESTADO DE CITA ACTUAL A FINALIZADA ('A')
+            # Buscamos la cita activa más cercana a hoy (puede ser de hoy o ayer por timezone)
+            from datetime import timedelta
             cita_actual = Cita.objects.filter(
-                paciente=paciente, medico=medico, fecha=hoy
-            ).filter(Q(estado='P') | Q(estado='E')).first()
+                paciente=paciente, medico=medico,
+                fecha__gte=hoy - timedelta(days=1),
+                fecha__lte=hoy + timedelta(days=1),
+            ).filter(Q(estado='P') | Q(estado='E')).order_by('-fecha', '-hora').first()
+
+            # Si no encuentra una de los días cercanos, buscar la más reciente activa
+            if not cita_actual:
+                cita_actual = Cita.objects.filter(
+                    paciente=paciente, medico=medico,
+                ).filter(Q(estado='P') | Q(estado='E')).order_by('-fecha', '-hora').first()
 
             if cita_actual:
-                cita_actual.estado = 'A' 
+                cita_actual.estado = 'A'
                 cita_actual.save(update_fields=['estado'])
+                print(f"[CITA ATENDIDA] Cita id={cita_actual.id} marcada como Atendida")
+            else:
+                print(f"[CITA ATENDIDA] No se encontró cita activa para paciente={paciente.id} medico={medico.id}")
 
            # --- 6. LÓGICA CRÍTICA: CREAR LA CITA DE CONTROL FÍSICA ---
             fecha_hora_raw = request.POST.get('proxima_cita_control')
