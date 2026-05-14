@@ -296,6 +296,38 @@ def registro_paciente(request):
     return render(request, 'registro_paciente.html', {'form': form})
 
 
+@login_required
+def buscar_pacientes_ajax(request):
+    """Devuelve JSON con pacientes que coinciden con el término de búsqueda (mínimo 2 caracteres)."""
+    from django.http import JsonResponse
+
+    role = getattr(request.user, 'role', '')
+    if role not in ('MEDICO', 'SECRETARIA', 'ADMIN'):
+        return JsonResponse({'results': []})
+
+    q = (request.GET.get('q') or '').strip()
+    if len(q) < 2:
+        return JsonResponse({'results': []})
+
+    qs = Paciente.objects.filter(
+        usuario__perfil_medico__isnull=True,
+        usuario__perfil_secretaria__isnull=True,
+    ).filter(
+        Q(usuario__cedula__icontains=q) |
+        Q(usuario__first_name__icontains=q) |
+        Q(usuario__last_name__icontains=q)
+    ).select_related('usuario').order_by('usuario__last_name')[:30]
+
+    results = [
+        {
+            'id': p.id,
+            'text': f"{p.usuario.cedula or '---'} — {p.usuario.last_name.upper()}, {p.usuario.first_name.upper()}",
+        }
+        for p in qs
+    ]
+    return JsonResponse({'results': results})
+
+
 # ─── CRUD de Mascotas ──────────────────────────────────────────────────────────
 
 def _paciente_del_usuario(request):

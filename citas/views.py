@@ -212,6 +212,14 @@ def reservar_cita(request, medico_id):
             except Paciente.DoesNotExist:
                 pass
 
+    # Si hay un paciente preseleccionado, recuperarlo para mostrarlo en el combo AJAX
+    paciente_seleccionado = None
+    if paciente_seleccionado_id:
+        try:
+            paciente_seleccionado = Paciente.objects.select_related('usuario').get(id=paciente_seleccionado_id)
+        except Paciente.DoesNotExist:
+            pass
+
     return render(request, 'reservar_cita.html', {
         'medico': medico,
         'horarios': horarios,
@@ -222,6 +230,7 @@ def reservar_cita(request, medico_id):
         'mis_mascotas': mis_mascotas,
         'es_administrativo': es_administrativo,
         'paciente_seleccionado_id': paciente_seleccionado_id,
+        'paciente_seleccionado': paciente_seleccionado,
         'dia_anterior': fecha_seleccionada - timedelta(days=1) if fecha_seleccionada > hoy else None,
         'dia_siguiente': fecha_seleccionada + timedelta(days=1),
     })

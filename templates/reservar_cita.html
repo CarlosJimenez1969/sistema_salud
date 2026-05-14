@@ -54,14 +54,14 @@
                             <div class="mb-3">
                                 <label class="form-label fw-bold text-secondary small">1. BUSCAR PACIENTE</label>
                                 <select name="paciente_id" id="paciente_select" class="form-select" required>
-                                    <option value="">-- Buscar por nombre o cédula --</option>
-                                    {% for p in lista_pacientes %}
-                                        <option value="{{ p.id }}" {% if p.id|stringformat:"s" == paciente_seleccionado_id %}selected{% endif %}>
-                                            {{ p.usuario.cedula|default:"---" }} — {{ p.usuario.last_name|upper }}, {{ p.usuario.first_name|upper }}
-                                        </option>
-                                    {% endfor %}
+                                    <option value=""></option>
+                                    {% if paciente_seleccionado_id and paciente_seleccionado %}
+                                    <option value="{{ paciente_seleccionado.id }}" selected>
+                                        {{ paciente_seleccionado.usuario.cedula|default:"---" }} — {{ paciente_seleccionado.usuario.last_name|upper }}, {{ paciente_seleccionado.usuario.first_name|upper }}
+                                    </option>
+                                    {% endif %}
                                 </select>
-                                <small class="text-muted">Puedes buscar escribiendo el número de cédula o el nombre/apellido.</small>
+                                <small class="text-muted">Escribe al menos 2 caracteres (cédula o nombre) para buscar.</small>
                             </div>
                             {% endif %}
                         {% endif %}
@@ -173,18 +173,42 @@
 
     $(document).ready(function() {
         if (selectActivo) {
-            $(selectActivo).select2({
-                theme: 'bootstrap-5',
-                placeholder: '🔍 Buscar por nombre o cédula...',
-                allowClear: true,
-                width: '100%'
-            });
+            const isPacienteSelect = selectActivo.id === 'paciente_select';
+            const isMascotaSelect  = selectActivo.id === 'mascota_select';
 
-            // Solo recargar la página al cambiar paciente (no mascota)
-            if (selectActivo.id === 'paciente_select') {
+            const configBase = {
+                theme: 'bootstrap-5',
+                allowClear: true,
+                width: '100%',
+                placeholder: '🔍 Buscar por nombre o cédula...',
+                language: {
+                    inputTooShort: () => 'Escribe al menos 2 caracteres...',
+                    noResults: () => 'No se encontraron pacientes',
+                    searching: () => 'Buscando...',
+                },
+            };
+
+            if (isPacienteSelect) {
+                // AJAX: cargar pacientes dinámicamente desde el servidor
+                $(selectActivo).select2({
+                    ...configBase,
+                    ajax: {
+                        url: '/api/buscar-pacientes/',
+                        dataType: 'json',
+                        delay: 250,
+                        data: params => ({ q: params.term }),
+                        processResults: data => ({ results: data.results }),
+                        cache: true,
+                    },
+                    minimumInputLength: 2,
+                });
+
                 $(selectActivo).on('select2:select', function (e) {
                     actualizarPagina();
                 });
+            } else {
+                // Mascota: lista pre-cargada
+                $(selectActivo).select2({...configBase, placeholder: '🔍 Buscar mascota...'});
             }
         }
     });
