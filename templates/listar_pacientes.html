@@ -181,8 +181,17 @@
     const btnClr = document.getElementById('btn-limpiar-busqueda');
     if (!input || !tbody) return;
 
-    // Guardamos filas originales por si se borra el filtro
+    // Guardamos las filas originales y vaciamos la tabla al inicio
     const filasOriginales = Array.from(tbody.querySelectorAll('tr')).map(r => r.cloneNode(true));
+    const totalCols = 6;  // bastante para cubrir tanto vet como humano
+
+    function renderVacio() {
+        tbody.innerHTML = `
+            <tr><td colspan="${totalCols}" class="text-center py-5 text-muted">
+                <i class="bi bi-search fs-2 d-block mb-2 opacity-50"></i>
+                Escribe una cédula o nombre para buscar pacientes
+            </td></tr>`;
+    }
 
     function normalizar(s) { return (s || '').toLowerCase().trim(); }
 
@@ -191,9 +200,7 @@
         btnClr.style.display = q ? 'inline-block' : 'none';
 
         if (!q) {
-            // Restaurar tabla original
-            tbody.innerHTML = '';
-            filasOriginales.forEach(r => tbody.appendChild(r.cloneNode(true)));
+            renderVacio();
             return;
         }
 
@@ -208,12 +215,17 @@
         });
 
         if (visibles === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><i class="bi bi-search"></i> No se encontraron pacientes con "' + q + '"</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="${totalCols}" class="text-center py-4 text-muted">
+                <i class="bi bi-x-circle"></i> No se encontraron pacientes con "${q}"
+            </td></tr>`;
         }
     }
 
     input.addEventListener('input', filtrar);
     btnClr.addEventListener('click', () => { input.value = ''; filtrar(); input.focus(); });
+
+    // Iniciar con tabla vacía
+    renderVacio();
 })();
 </script>
 {% endblock %}
