@@ -27,24 +27,6 @@ def crear_historia(request, paciente_id):
     medico = request.user.perfil_medico
     hoy = timezone.now().date()
 
-    # Al entrar a atender (GET), marcar inmediatamente la cita activa como ATENDIDA ('A')
-    # Esto garantiza que desaparezca de la agenda aunque el médico no complete la historia.
-    if request.method == 'GET':
-        from datetime import timedelta as _td
-        cita_a_atender = Cita.objects.filter(
-            paciente=paciente, medico=medico,
-            fecha__gte=hoy - _td(days=1),
-            fecha__lte=hoy + _td(days=1),
-        ).filter(Q(estado='P') | Q(estado='E')).order_by('-fecha', '-hora').first()
-        if not cita_a_atender:
-            cita_a_atender = Cita.objects.filter(
-                paciente=paciente, medico=medico,
-            ).filter(Q(estado='P') | Q(estado='E')).order_by('-fecha', '-hora').first()
-        if cita_a_atender:
-            cita_a_atender.estado = 'A'
-            cita_a_atender.save(update_fields=['estado'])
-            print(f"[CITA ATENDIDA AUTO] id={cita_a_atender.id} marcada como 'A'")
-
     # 1. BUSCAR TRIAJE DEL DÍA (modelo Triaje, registrado por la secretaria)
     from .models import Triaje
     triaje_previo = Triaje.objects.filter(
