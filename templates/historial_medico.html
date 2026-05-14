@@ -45,7 +45,9 @@
                         <div class="text-uppercase text-truncate ms-3 me-auto" style="max-width: 500px;">
                             {{ h.diagnostico }}
                         </div>
-                        <span class="badge bg-info text-dark">Dr. {{ h.medico.usuario.last_name }}</span>
+                        <span class="badge bg-info text-dark">
+                            Dr. {{ h.medico.usuario.last_name }}{% if h.medico.especialidad %} — {{ h.medico.especialidad.nombre }}{% endif %}
+                        </span>
                     </div>
                 </button>
             </h2>

@@ -467,31 +467,24 @@ def ver_historia(request, historia_id):
 #Esta función busca todas las historias del paciente
 @login_required
 def historial_medico(request, paciente_id):
+    """
+    Cualquier médico, secretaria o admin puede ver el historial completo del paciente.
+    Los pacientes solo pueden ver su propio historial.
+    """
     paciente = get_object_or_404(Paciente, id=paciente_id)
     role = getattr(request.user, 'role', '')
 
-    # ADMIN ve todo; MEDICO/SECRETARIA solo si tienen relación con el paciente; PACIENTE solo lo suyo
-    from citas.models import Cita
-    if role == 'ADMIN':
-        pass
-    elif role == 'MEDICO' and hasattr(request.user, 'perfil_medico'):
-        if not Cita.objects.filter(medico=request.user.perfil_medico, paciente=paciente).exists():
-            messages.error(request, "No tiene permiso para ver este historial.")
-            return redirect('home')
-    elif role == 'SECRETARIA' and hasattr(request.user, 'perfil_secretaria'):
-        medico = request.user.perfil_secretaria.medico
-        if not Cita.objects.filter(medico=medico, paciente=paciente).exists():
-            messages.error(request, "No tiene permiso para ver este historial.")
-            return redirect('dashboard_secretaria')
-    elif role == 'PACIENTE' and hasattr(request.user, 'perfil_paciente'):
+    # MEDICO/SECRETARIA/ADMIN: pueden ver el historial de cualquier paciente
+    # PACIENTE: solo el suyo
+    if role == 'PACIENTE' and hasattr(request.user, 'perfil_paciente'):
         if request.user.perfil_paciente.id != paciente.id:
             messages.error(request, "No tiene permiso para ver este historial.")
             return redirect('home')
-    else:
+    elif role not in ('MEDICO', 'SECRETARIA', 'ADMIN'):
         messages.error(request, "Acceso denegado.")
         return redirect('home')
 
-    historias = HistoriaClinica.objects.filter(paciente=paciente).order_by('-fecha_atencion')
+    historias = HistoriaClinica.objects.filter(paciente=paciente).select_related('medico__usuario', 'medico__especialidad').order_by('-fecha_atencion')
 
     return render(request, 'historial_medico.html', {
         'paciente': paciente,
