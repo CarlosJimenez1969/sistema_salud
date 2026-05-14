@@ -604,6 +604,8 @@ class ActivarCuentaConfirmView(PasswordResetConfirmView):
             user = form.save()
             user.is_active = True
             user.save(update_fields=['is_active'])
+            # Cerrar cualquier sesión previa (de otro usuario) antes de redirigir al login
+            logout(self.request)
             messages.success(
                 self.request,
                 f"¡Contraseña creada correctamente! Ya puedes iniciar sesión, {user.first_name}."
