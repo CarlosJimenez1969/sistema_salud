@@ -54,13 +54,14 @@
                             <div class="mb-3">
                                 <label class="form-label fw-bold text-secondary small">1. BUSCAR PACIENTE</label>
                                 <select name="paciente_id" id="paciente_select" class="form-select" required>
-                                    <option value="">-- Buscar por Nombre --</option>
+                                    <option value="">-- Buscar por nombre o cédula --</option>
                                     {% for p in lista_pacientes %}
                                         <option value="{{ p.id }}" {% if p.id|stringformat:"s" == paciente_seleccionado_id %}selected{% endif %}>
-                                            {{ p.usuario.get_full_name|upper }}
+                                            {{ p.usuario.cedula|default:"---" }} — {{ p.usuario.last_name|upper }}, {{ p.usuario.first_name|upper }}
                                         </option>
                                     {% endfor %}
                                 </select>
+                                <small class="text-muted">Puedes buscar escribiendo el número de cédula o el nombre/apellido.</small>
                             </div>
                             {% endif %}
                         {% endif %}
@@ -174,7 +175,7 @@
         if (selectActivo) {
             $(selectActivo).select2({
                 theme: 'bootstrap-5',
-                placeholder: '🔍 Buscar por nombre...',
+                placeholder: '🔍 Buscar por nombre o cédula...',
                 allowClear: true,
                 width: '100%'
             });
