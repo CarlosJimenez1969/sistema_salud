@@ -102,9 +102,11 @@
                                     <td>{{ p.telefono|default:"---" }}</td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm" role="group">
+                                            {% if user.role == 'MEDICO' %}
                                             <a href="{% url 'historial_medico' p.id %}" class="btn btn-outline-info" title="Historial clínico">
                                                 <i class="bi bi-file-earmark-medical"></i>
                                             </a>
+                                            {% endif %}
                                             <a href="{% url 'editar_mascota' m.id %}" class="btn btn-outline-success" title="Editar mascota">
                                                 <i class="bi bi-heart-pulse"></i>
                                             </a>
@@ -130,9 +132,11 @@
                                     <td>{{ p.usuario.get_full_name|upper }}</td>
                                     <td>{{ p.telefono|default:"---" }}</td>
                                     <td class="text-center">
+                                        {% if user.role == 'MEDICO' %}
                                         <a href="{% url 'historial_medico' p.id %}" class="btn btn-sm btn-outline-info rounded-pill px-3">
                                             <i class="bi bi-file-earmark-medical"></i> Historial
                                         </a>
+                                        {% endif %}
                                         <a href="{% url 'editar_paciente' p.id %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
                                             <i class="bi bi-pencil"></i> Editar
                                         </a>

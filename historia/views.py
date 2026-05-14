@@ -468,20 +468,25 @@ def ver_historia(request, historia_id):
 @login_required
 def historial_medico(request, paciente_id):
     """
-    Cualquier médico, secretaria o admin puede ver el historial completo del paciente.
-    Los pacientes solo pueden ver su propio historial.
+    CONFIDENCIALIDAD MÉDICA:
+    - Solo MÉDICOS pueden ver el historial clínico de cualquier paciente.
+    - El propio PACIENTE puede ver su propio historial.
+    - Secretarias y Admins NO tienen acceso al historial clínico.
     """
     paciente = get_object_or_404(Paciente, id=paciente_id)
     role = getattr(request.user, 'role', '')
 
-    # MEDICO/SECRETARIA/ADMIN: pueden ver el historial de cualquier paciente
-    # PACIENTE: solo el suyo
-    if role == 'PACIENTE' and hasattr(request.user, 'perfil_paciente'):
+    if role == 'MEDICO' and hasattr(request.user, 'perfil_medico'):
+        pass  # Médicos pueden ver cualquier historial
+    elif role == 'PACIENTE' and hasattr(request.user, 'perfil_paciente'):
         if request.user.perfil_paciente.id != paciente.id:
             messages.error(request, "No tiene permiso para ver este historial.")
             return redirect('home')
-    elif role not in ('MEDICO', 'SECRETARIA', 'ADMIN'):
-        messages.error(request, "Acceso denegado.")
+    else:
+        # Secretarias, admins y otros no acceden al historial clínico
+        messages.error(request, "El historial clínico es confidencial. Solo el médico tratante o el paciente pueden verlo.")
+        if role == 'SECRETARIA':
+            return redirect('dashboard_secretaria')
         return redirect('home')
 
     historias = HistoriaClinica.objects.filter(paciente=paciente).select_related('medico__usuario', 'medico__especialidad').order_by('-fecha_atencion')
