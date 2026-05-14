@@ -43,8 +43,8 @@ class PacienteForm(forms.ModelForm):
         cedula = (self.cleaned_data.get('cedula') or '').strip()
         if not cedula:
             raise forms.ValidationError("La cédula es obligatoria.")
-        if not cedula.isdigit() or not (8 <= len(cedula) <= 13):
-            raise forms.ValidationError("La cédula debe tener entre 8 y 13 dígitos numéricos.")
+        if not cedula.isdigit() or len(cedula) != 10:
+            raise forms.ValidationError("La cédula debe tener exactamente 10 dígitos numéricos.")
         # Excluir el usuario actual si estamos editando
         qs = User.objects.filter(cedula=cedula)
         if self.instance and self.instance.pk:
