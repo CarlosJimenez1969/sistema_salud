@@ -250,11 +250,17 @@ def ver_agenda(request):
     else:
         fecha_agenda = date.today()
 
-    # Filtramos las citas
-    citas = Cita.objects.filter(
-        medico=medico,
-        fecha=fecha_agenda
-    ).order_by('hora')
+    # Filtramos las citas (solo activas: Pendiente y En Espera)
+    # Para ver atendidas/canceladas se puede pasar ?ver=todas
+    ver_todas = request.GET.get('ver') == 'todas'
+    citas_qs = Cita.objects.filter(medico=medico, fecha=fecha_agenda)
+    if ver_todas:
+        citas = citas_qs.order_by('hora')
+    else:
+        citas = citas_qs.filter(estado__in=['P', 'E']).order_by('hora')
+
+    total_atendidas = citas_qs.filter(estado='A').count()
+    total_canceladas = citas_qs.filter(estado='C').count()
 
     # Lógica para cancelar citas desde la misma agenda (POST)
     if request.method == 'POST':
@@ -288,6 +294,9 @@ def ver_agenda(request):
         'fecha_agenda': fecha_agenda,
         'hoy': date.today(),
         'es_veterinario': es_veterinario,
+        'ver_todas': ver_todas,
+        'total_atendidas': total_atendidas,
+        'total_canceladas': total_canceladas,
     })
 
 @login_required
