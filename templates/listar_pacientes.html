@@ -15,17 +15,15 @@
         <div class="container mt-4 mb-4">
             <div class="row align-items-center">
                 <div class="col-12 col-md-7">
-                    <form method="GET">
-                        <div class="input-group">
-                            <input type="text" name="q" class="form-control placeholder-gris" placeholder="Buscar por nombre, apellido o cédula..." value="{{ query|default:'' }}">
-                            <button class="btn btn-primary" type="submit">
-                                <i class="bi bi-search"></i> Buscar
-                            </button>
-                            {% if query %}
-                                <a href="{% url 'listar_pacientes' %}" class="btn btn-outline-secondary">Limpiar</a>
-                            {% endif %}
-                        </div>
-                    </form>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" id="busqueda-paciente" class="form-control placeholder-gris"
+                               placeholder="Escribe cédula o nombre para filtrar..." autocomplete="off">
+                        <button type="button" id="btn-limpiar-busqueda" class="btn btn-outline-secondary" style="display:none;">
+                            Limpiar
+                        </button>
+                    </div>
+                    <small class="text-muted">La tabla se actualiza automáticamente mientras escribes.</small>
                 </div>
 
                 <div class="col-12 col-md-5 text-md-end mt-2 mt-md-0">
@@ -80,7 +78,7 @@
                             <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tabla-pacientes-body">
                         {% for p in pacientes %}
                             {% if es_veterinario %}
                                 {% for m in p.mascotas.all %}
@@ -175,4 +173,47 @@
         color: #6c757d !important;
     }
 </style>
+
+<script>
+(function() {
+    const input  = document.getElementById('busqueda-paciente');
+    const tbody  = document.getElementById('tabla-pacientes-body');
+    const btnClr = document.getElementById('btn-limpiar-busqueda');
+    if (!input || !tbody) return;
+
+    // Guardamos filas originales por si se borra el filtro
+    const filasOriginales = Array.from(tbody.querySelectorAll('tr')).map(r => r.cloneNode(true));
+
+    function normalizar(s) { return (s || '').toLowerCase().trim(); }
+
+    function filtrar() {
+        const q = normalizar(input.value);
+        btnClr.style.display = q ? 'inline-block' : 'none';
+
+        if (!q) {
+            // Restaurar tabla original
+            tbody.innerHTML = '';
+            filasOriginales.forEach(r => tbody.appendChild(r.cloneNode(true)));
+            return;
+        }
+
+        let visibles = 0;
+        tbody.innerHTML = '';
+        filasOriginales.forEach(r => {
+            const texto = normalizar(r.textContent);
+            if (texto.includes(q)) {
+                tbody.appendChild(r.cloneNode(true));
+                visibles++;
+            }
+        });
+
+        if (visibles === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><i class="bi bi-search"></i> No se encontraron pacientes con "' + q + '"</td></tr>';
+        }
+    }
+
+    input.addEventListener('input', filtrar);
+    btnClr.addEventListener('click', () => { input.value = ''; filtrar(); input.focus(); });
+})();
+</script>
 {% endblock %}
