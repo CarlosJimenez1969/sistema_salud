@@ -32,6 +32,8 @@
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold">Cédula <span class="text-danger">*</span></label>
                                 <input type="text" name="dueno_cedula" class="form-control" required
+                                       inputmode="numeric" pattern="[0-9]{10}" maxlength="10"
+                                       title="Debe tener exactamente 10 dígitos numéricos"
                                        value="{{ datos.dueno_cedula|default:'' }}">
                             </div>
                             <div class="col-md-4 mb-3">

@@ -14,7 +14,10 @@ TIPOS_SANGRE = [
 class PacienteForm(forms.ModelForm):
     first_name = forms.CharField(label="Nombres", required=True)
     last_name = forms.CharField(label="Apellidos", required=True)
-    cedula = forms.CharField(label="Cédula", required=True)
+    cedula = forms.CharField(label="Cédula", required=True, widget=forms.TextInput(attrs={
+        'inputmode': 'numeric', 'pattern': '[0-9]{10}', 'maxlength': '10',
+        'title': 'Debe tener exactamente 10 dígitos numéricos',
+    }))
     email = forms.EmailField(label="Correo Electrónico", required=True)
     tipo_sangre = forms.ChoiceField(label="Tipo de Sangre", choices=TIPOS_SANGRE, required=False)
 
@@ -102,7 +105,11 @@ W = {'class': 'form-control'}
 class RegistroPacienteForm(forms.Form):
     first_name  = forms.CharField(label="Nombres",    widget=forms.TextInput(attrs={**W, 'placeholder': 'Tus nombres'}))
     last_name   = forms.CharField(label="Apellidos",  widget=forms.TextInput(attrs={**W, 'placeholder': 'Tus apellidos'}))
-    cedula      = forms.CharField(label="Cédula / Pasaporte", widget=forms.TextInput(attrs={**W, 'placeholder': 'Número de identificación'}))
+    cedula      = forms.CharField(label="Cédula", widget=forms.TextInput(attrs={
+        **W, 'placeholder': '10 dígitos numéricos',
+        'inputmode': 'numeric', 'pattern': '[0-9]{10}', 'maxlength': '10',
+        'title': 'Debe tener exactamente 10 dígitos numéricos',
+    }))
     email       = forms.EmailField(label="Correo Electrónico", widget=forms.EmailInput(attrs={**W, 'placeholder': 'correo@ejemplo.com'}))
     telefono    = forms.CharField(label="Teléfono", required=False, widget=forms.TextInput(attrs={**W, 'placeholder': 'Ej: 0991234567'}))
     direccion   = forms.CharField(label="Dirección", required=False, widget=forms.TextInput(attrs={**W, 'placeholder': 'Ej: Av. Amazonas y Colón, Edificio 1'}))
@@ -123,8 +130,8 @@ class RegistroPacienteForm(forms.Form):
 
     def clean_cedula(self):
         cedula = self.cleaned_data['cedula'].strip()
-        if not cedula.isdigit() or not (8 <= len(cedula) <= 13):
-            raise forms.ValidationError("La cédula/pasaporte debe contener entre 8 y 13 dígitos numéricos.")
+        if not cedula.isdigit() or len(cedula) != 10:
+            raise forms.ValidationError("La cédula debe tener exactamente 10 dígitos numéricos.")
         if User.objects.filter(cedula=cedula).exists():
             raise forms.ValidationError("Esta cédula ya está registrada.")
         return cedula

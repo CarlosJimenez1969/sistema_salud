@@ -141,6 +141,13 @@ def crear_paciente_veterinario(request):
                 'datos': request.POST, 'especies': Mascota.ESPECIES,
             })
 
+        # Validar formato de cédula del dueño
+        if not dueno_cedula.isdigit() or len(dueno_cedula) != 10:
+            messages.error(request, "La cédula del dueño debe tener exactamente 10 dígitos numéricos.")
+            return render(request, 'crear_paciente_veterinario.html', {
+                'datos': request.POST, 'especies': Mascota.ESPECIES,
+            })
+
         # ¿Existe ya el dueño?
         usuario = User.objects.filter(cedula=dueno_cedula).first() or User.objects.filter(email=dueno_email).first()
 
