@@ -23,13 +23,13 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Tu Nombre <span class="text-danger">*</span></label>
                                 <input type="text" name="nombre" class="form-control" required
-                                       value="{{ datos.nombre|default:request.user.get_full_name }}"
+                                       value="{% if datos.nombre %}{{ datos.nombre }}{% elif user.is_authenticated %}{{ user.get_full_name }}{% endif %}"
                                        placeholder="Cómo te llamas">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Tu Correo <span class="text-danger">*</span></label>
                                 <input type="email" name="email" class="form-control" required
-                                       value="{{ datos.email|default:request.user.email }}"
+                                       value="{% if datos.email %}{{ datos.email }}{% elif user.is_authenticated %}{{ user.email }}{% endif %}"
                                        placeholder="correo@ejemplo.com">
                             </div>
                         </div>
