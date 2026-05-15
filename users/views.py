@@ -857,8 +857,10 @@ def panel_admin(request):
     })
 
 
+@login_required
 def contacto(request):
-    """Formulario de contacto / sugerencias. Envía a contacto@vertexjd.com vía Resend."""
+    """Formulario de contacto / sugerencias. Solo usuarios autenticados.
+    Envía a contacto@vertexjd.com vía Resend."""
     if request.method == 'POST':
         nombre  = request.POST.get('nombre', '').strip()
         email   = request.POST.get('email', '').strip()
