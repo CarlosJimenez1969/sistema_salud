@@ -91,6 +91,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.analytics',
             ],
         },
     },
@@ -206,6 +207,9 @@ RESEND_FROM       = config('RESEND_FROM',    default='VertexSalud <onboarding@re
 
 # ── Cron Token (para endpoint protegido de tareas programadas) ─────────────────
 CRON_SECRET_TOKEN = config('CRON_SECRET_TOKEN', default='')
+
+# ── Google Analytics ──────────────────────────────────────────────────────────
+GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', default='')
 
 # ── Facturación Electrónica SRI Ecuador ───────────────────────────────────────
 SRI_RUC                   = config('SRI_RUC',                   default='')
