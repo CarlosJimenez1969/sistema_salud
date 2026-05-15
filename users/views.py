@@ -434,10 +434,6 @@ def crear_secretaria(request):
             # --- TU LÓGICA ORIGINAL DE REGISTRO (SIN CAMBIOS) ---
             form = SecretariaRegistroForm(request.POST)
 
-            # DEBUG: ver qué llega del formulario
-            print(f"[CREAR SECRETARIA DEBUG] POST data: {dict(request.POST)}")
-
-            # Validación manual previa: todos los campos obligatorios
             campos_obligatorios = {
                 'username':   'Usuario',
                 'first_name': 'Nombres',
@@ -450,7 +446,6 @@ def crear_secretaria(request):
                 label for nombre, label in campos_obligatorios.items()
                 if not (request.POST.get(nombre) or '').strip()
             ]
-            print(f"[CREAR SECRETARIA DEBUG] faltantes: {faltantes}")
             if role == 'ADMIN' and not (request.POST.get('medico_id') or '').strip():
                 faltantes.insert(0, 'Médico al que asiste')
 
@@ -631,24 +626,6 @@ def redirect_by_role(request):
         return redirect('home')
     else:
         return redirect('home')
-    
-@login_required
-def probar_email(request):
-    if getattr(request.user, 'role', '') != 'ADMIN':
-        messages.error(request, "Acceso denegado.")
-        return redirect('home')
-    try:
-        asunto = 'Prueba de Conexión VertexSalud'
-        mensaje = 'Si recibes esto, la configuración de Gmail en VertexSalud es correcta.'
-        email_remitente = settings.EMAIL_HOST_USER
-        # Pon tu correo personal aquí para la prueba
-        email_destino = ['tu-correo-personal@gmail.com'] 
-
-        send_mail(asunto, mensaje, email_remitente, email_destino)
-        
-        return HttpResponse("<h1>✅ ¡Éxito!</h1><p>El correo de prueba ha sido enviado. Revisa tu bandeja de entrada (y la carpeta de Spam).</p>")
-    except Exception as e:
-        return HttpResponse(f"<h1>❌ Error de Configuración</h1><p>Detalles: {str(e)}</p>")
     
 def pago_exitoso(request):
     return render(request, 'pago_exitoso.html')

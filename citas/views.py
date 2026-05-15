@@ -148,10 +148,10 @@ def reservar_cita(request, medico_id):
 
         if not hora_post:
             messages.error(request, "Debe seleccionar una hora.")
-        elif es_veterinario and es_administrativo and not mascota_id:
+            return redirect(request.path + f"?fecha={fecha_seleccionada}")
+        elif es_veterinario and not mascota_id:
             messages.error(request, "Debe seleccionar la mascota para la cita veterinaria.")
-        elif es_veterinario and not es_administrativo and not mascota_id:
-            messages.error(request, "Debe seleccionar la mascota para la cita veterinaria.")
+            return redirect(request.path + f"?fecha={fecha_seleccionada}")
         else:
             try:
                 mascota = None

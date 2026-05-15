@@ -88,7 +88,6 @@ urlpatterns = [
     path('login-success/', views.redirect_by_role, name='login_success'),
     path('citas/resumen/<int:paciente_id>/', paciente_views.resumen_paciente_rapido, name='resumen_paciente'),
 
-    path('probar-email/', views.probar_email, name='probar_email'),
     path('pago-exitoso/', pago_exitoso, name='pago_exitoso'),
     path('registro-exitoso/', registro_exitoso, name='registro_exitoso'),
 

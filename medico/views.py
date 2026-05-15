@@ -44,6 +44,7 @@ def configurar_horario(request):
 
 
 def ciudades_por_pais(request):
+    """Devuelve ciudades de un país. Endpoint público usado en formularios de registro."""
     pais_id = request.GET.get('pais_id')
     ciudades = Ciudad.objects.filter(pais_id=pais_id).values('id', 'nombre') if pais_id else []
     return JsonResponse(list(ciudades), safe=False)

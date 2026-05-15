@@ -70,7 +70,7 @@
 <body>
     <div class="header">
         <h1>Dr. {{ h.medico.usuario.first_name }} {{ h.medico.usuario.last_name }}</h1>
-        <p>{{ h.medico.especialidad.nombre }}</p>
+        <p>{% if h.medico.especialidad %}{{ h.medico.especialidad.nombre }}{% else %}Medicina General{% endif %}</p>
         <p>Reg. Senescyt: {{ h.medico.registro_senescyt }}</p>
         <p>Email: {{ h.medico.usuario.email }}</p>
     </div>
@@ -356,7 +356,7 @@
         <br><br>
         <div class="linea-firma"></div>
         <p style="font-size: 12px; margin: 0;"><strong>Dr. {{ h.medico.usuario.get_full_name }}</strong></p>
-        <p style="font-size: 10px; margin: 0; color: #666;">{{ h.medico.especialidad.nombre }}</p>
+        <p style="font-size: 10px; margin: 0; color: #666;">{% if h.medico.especialidad %}{{ h.medico.especialidad.nombre }}{% else %}Medicina General{% endif %}</p>
         <p style="font-size: 10px; margin: 0; color: #666;">Cod. Registro: {{ h.medico.registro_senescyt }}</p>
     </div>
 </body>

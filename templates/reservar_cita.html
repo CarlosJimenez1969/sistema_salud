@@ -22,7 +22,7 @@
                     <div class="text-center mb-4 p-3 bg-light rounded-3 border">
                         <i class="bi bi-person-badge text-primary fs-1"></i>
                         <h4 class="fw-bold mb-0">Dr. {{ medico.usuario.last_name }}</h4>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ medico.especialidad.nombre }}</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{% if medico.especialidad %}{{ medico.especialidad.nombre }}{% else %}Medicina General{% endif %}</span>
                     </div>
 
                     <form method="POST" id="mainForm">

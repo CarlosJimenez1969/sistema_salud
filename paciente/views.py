@@ -169,12 +169,15 @@ def crear_paciente_veterinario(request):
                 usuario = User.objects.create_user(
                     username=dueno_email,
                     email=dueno_email,
-                    password=dueno_cedula,
+                    password=None,
                     first_name=dueno_first,
                     last_name=dueno_last,
                     cedula=dueno_cedula,
                     role=User.Role.PACIENTE,
+                    is_active=True,
                 )
+                usuario.set_unusable_password()
+                usuario.save()
                 paciente = Paciente.objects.create(
                     usuario=usuario, telefono=dueno_telefono, direccion=dueno_direccion,
                 )

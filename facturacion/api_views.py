@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 from .models import FacturaElectronica
 from .api_serializers import EmitirFacturaSerializer, FacturaElectronicaSerializer
@@ -14,6 +15,7 @@ class EmitirFacturaView(APIView):
     POST /api/v1/facturas/emitir/
     Genera, firma y envía una nueva factura electrónica al SRI.
     """
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = EmitirFacturaSerializer(data=request.data)
@@ -92,6 +94,7 @@ class ListarFacturasView(APIView):
     GET /api/v1/facturas/
     Lista facturas con filtros opcionales: q, estado, fecha_desde, fecha_hasta.
     """
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         qs = FacturaElectronica.objects.all().order_by('-fecha_emision')
@@ -121,6 +124,7 @@ class DetalleFacturaView(APIView):
     GET /api/v1/facturas/{id}/
     Detalle de una factura.
     """
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, factura_id):
         try:
@@ -137,6 +141,7 @@ class ReenviarFacturaView(APIView):
     POST /api/v1/facturas/{id}/reenviar/
     Reintenta el envío al SRI para facturas en estado ERROR, RECHAZADA o PENDIENTE.
     """
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, factura_id):
         try:
@@ -165,6 +170,7 @@ class ConsultarAutorizacionView(APIView):
     POST /api/v1/facturas/{id}/consultar/
     Consulta el estado de autorización directamente en el SRI.
     """
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, factura_id):
         try:

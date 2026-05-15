@@ -45,13 +45,13 @@ def enviar_receta_email(historia):
         )
     
     # 4. Configurar el correo
-    subject = f"Receta Médica - SaludDigital - {historia.fecha_atencion.strftime('%d/%m/%Y')}"
+    subject = f"Receta Médica - VertexSalud - {historia.fecha_atencion.strftime('%d/%m/%Y')}"
     message = (
         f"Estimado(a) {paciente_user.first_name} {paciente_user.last_name},\n\n"
         f"Adjunto encontrará su receta médica e indicaciones generadas en su consulta de hoy.\n\n"
         f"Atentamente,\n"
         f"Dr. {historia.medico.usuario.last_name}\n"
-        f"Sistema SaludDigital"
+        f"Sistema VertexSalud"
     )
     
     pdf_value = pdf_result.getvalue()
