@@ -18,7 +18,9 @@ def render_to_pdf(template_src, context_dict={}):
 def enviar_receta_email(historia):
     """Genera el PDF en memoria y lo envía al correo del paciente"""
     paciente_user = historia.paciente.usuario
+    print(f"[RECETA EMAIL] Iniciando envío. paciente_id={historia.paciente.id} email='{paciente_user.email}' historia_id={historia.id}")
     if not paciente_user.email:
+        print("[RECETA EMAIL] Paciente sin correo registrado. Abortando.")
         return False, "El paciente no tiene un correo electrónico registrado."
 
     # Si ya hay un PDF guardado, lo reutilizamos; sino lo generamos y guardamos
@@ -61,6 +63,7 @@ def enviar_receta_email(historia):
         import base64
         try:
             html_body = message.replace('\n', '<br>')
+            print(f"[RECETA EMAIL] Enviando a {paciente_user.email} desde {settings.RESEND_FROM}, pdf_size={len(pdf_value)} bytes")
             resp = http_requests.post(
                 "https://api.resend.com/emails",
                 headers={
@@ -79,11 +82,16 @@ def enviar_receta_email(historia):
                 },
                 timeout=20,
             )
-            print(f"[RECETA EMAIL] Resend status={resp.status_code} body={resp.text[:200]}")
+            print(f"[RECETA EMAIL] Resend status={resp.status_code} body={resp.text[:300]}")
             resp.raise_for_status()
             return True, "Correo enviado con éxito."
         except Exception as e:
+            import traceback
+            print(f"[RECETA EMAIL ERROR] {e}")
+            print(traceback.format_exc())
             return False, f"Error al enviar el correo: {str(e)}"
+    else:
+        print("[RECETA EMAIL] RESEND_API_KEY no configurada, intentando SMTP (fallará en Render)")
 
     # Fallback SMTP
     email = EmailMessage(subject, message, settings.EMAIL_HOST_USER, [paciente_user.email])
