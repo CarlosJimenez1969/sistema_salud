@@ -16,12 +16,14 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 # Render usa un proxy reverso para SSL, hay que decirle a Django que confíe en el header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Permitir CSRF desde el dominio de Render y vertexjd.com
+# Permitir CSRF desde el dominio de Render, vertexjd.com y subdominios
 CSRF_TRUSTED_ORIGINS = [
     'https://sistema-salud.onrender.com',
     'https://*.onrender.com',
     'https://vertexjd.com',
     'https://www.vertexjd.com',
+    'https://salud.vertexjd.com',
+    'https://*.vertexjd.com',
 ]
 
 # Cookies seguras solo en producción (Render maneja la redirección HTTP→HTTPS por su lado)
