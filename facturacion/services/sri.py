@@ -53,7 +53,9 @@ class SriService:
         self.ambiente = getattr(cfg, 'SRI_AMBIENTE', '1')          # '1'=pruebas  '2'=produccion
         self.establecimiento = getattr(cfg, 'SRI_ESTABLECIMIENTO', '001')
         self.punto_emision = getattr(cfg, 'SRI_PUNTO_EMISION', '001')
+        # Certificado: prioriza base64 (producción Render), fallback a ruta de archivo (local)
         self.cert_path = getattr(cfg, 'SRI_CERTIFICADO_P12', '')
+        self.cert_base64 = getattr(cfg, 'SRI_CERTIFICADO_P12_BASE64', '')
         self.cert_password = getattr(cfg, 'SRI_CERTIFICADO_PASSWORD', '')
         self.iva_porcentaje = Decimal(str(getattr(cfg, 'SRI_IVA_PORCENTAJE', '12')))
         self.obligado_contabilidad = getattr(cfg, 'SRI_OBLIGADO_CONTABILIDAD', 'NO')
@@ -201,10 +203,10 @@ class SriService:
         Firma el XML con XAdES-BES usando el certificado P12 configurado.
         Lanza ValueError si no hay certificado configurado.
         """
-        if not self.cert_path:
+        if not self.cert_path and not self.cert_base64:
             raise ValueError(
-                "SRI_CERTIFICADO_P12 no está configurado. "
-                "Defínelo en settings.py o en la variable de entorno."
+                "Certificado SRI no configurado. "
+                "Define SRI_CERTIFICADO_P12_BASE64 (producción) o SRI_CERTIFICADO_P12 (ruta local)."
             )
 
         # ── Cargar certificado P12 ──────────────────────────────────────────
@@ -212,8 +214,11 @@ class SriService:
         from cryptography.hazmat.primitives import hashes, serialization
         from cryptography.hazmat.primitives.asymmetric import padding as asym_padding
 
-        with open(self.cert_path, 'rb') as f:
-            p12_data = f.read()
+        if self.cert_base64:
+            p12_data = base64.b64decode(self.cert_base64)
+        else:
+            with open(self.cert_path, 'rb') as f:
+                p12_data = f.read()
 
         pwd = self.cert_password.encode() if self.cert_password else b''
         private_key, certificate, chain_certs = load_key_and_certificates(p12_data, pwd)
@@ -493,7 +498,7 @@ class SriService:
             except ValueError:
                 # Sin certificado configurado: guardamos sin firma y marcamos error
                 factura.estado = 'ERROR'
-                factura.mensajes_sri = 'Certificado P12 no configurado. Configure SRI_CERTIFICADO_P12.'
+                factura.mensajes_sri = 'Certificado P12 no configurado. Configure SRI_CERTIFICADO_P12_BASE64 (producción) o SRI_CERTIFICADO_P12 (ruta local).'
                 factura.save()
                 return
             except Exception as e:

@@ -224,6 +224,7 @@ SRI_PUNTO_EMISION         = config('SRI_PUNTO_EMISION',         default='001')
 SRI_AMBIENTE              = config('SRI_AMBIENTE',              default='1')
 SRI_IVA_PORCENTAJE        = config('SRI_IVA_PORCENTAJE',        default='0')
 SRI_CERTIFICADO_P12       = config('SRI_CERTIFICADO_P12',       default='')
+SRI_CERTIFICADO_P12_BASE64 = config('SRI_CERTIFICADO_P12_BASE64', default='')
 SRI_CERTIFICADO_PASSWORD  = config('SRI_CERTIFICADO_PASSWORD',  default='')
 
 # ── Logging: enviar errores 500 a stdout para verlos en Render logs ───────────
