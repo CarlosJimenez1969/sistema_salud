@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<link rel="stylesheet" href="https://cdn.payphonetodoesposible.com/box/v2.0/payphone-payment-box.css">
+<script type="module" src="https://cdn.payphonetodoesposible.com/box/v2.0/payphone-payment-box.js"></script>
+
 <div class="container mt-4 mb-5">
     <div class="row justify-content-center">
         <div class="col-lg-7">
@@ -46,12 +49,7 @@
                         <li><i class="bi bi-check-circle-fill text-success me-2"></i> Soporte por correo</li>
                     </ul>
 
-                    <form method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-success btn-lg shadow">
-                            <i class="bi bi-credit-card"></i> Pagar y renovar 1 año
-                        </button>
-                    </form>
+                    <div id="pp-button" class="my-4"></div>
 
                     <p class="text-muted small mt-3">Pago seguro vía PayPhone. Aceptamos Visa, MasterCard, Diners y Discover.</p>
                 </div>
@@ -59,4 +57,28 @@
         </div>
     </div>
 </div>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    new PPaymentButtonBox({
+        token: '{{ payphone_token }}',
+        clientTransactionId: '{{ client_transaction_id }}',
+        amount: {{ amount_cents }},
+        amountWithoutTax: {{ amount_cents }},
+        amountWithTax: 0,
+        tax: 0,
+        service: 0,
+        tip: 0,
+        currency: 'USD',
+        storeId: '{{ payphone_store_id }}',
+        reference: '{{ reference }}',
+        lang: 'es',
+        defaultMethod: 'card',
+        timeZone: -5,
+        email: '{{ medico.usuario.email|escapejs }}',
+        documentId: '{{ medico.usuario.cedula|default:""|escapejs }}',
+        identificationType: 1
+    }).render('pp-button');
+});
+</script>
 {% endblock %}

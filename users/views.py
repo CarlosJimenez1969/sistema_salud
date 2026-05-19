@@ -240,47 +240,27 @@ from django.urls import reverse
 
 @login_required
 def renovar_suscripcion(request):
-    """Pantalla para que el médico renueve su suscripción anual."""
+    """Pantalla para que el médico renueve su suscripción anual con Cajita PayPhone."""
     if not hasattr(request.user, 'perfil_medico'):
         messages.error(request, "Solo médicos pueden renovar suscripción.")
         return redirect('home')
 
     medico = request.user.perfil_medico
-    if request.method == 'POST':
-        # Iniciar pago a PayPhone
-        import uuid
-        client_transaction_id = str(uuid.uuid4())
-        request.session['payphone_client_tx_renovacion'] = client_transaction_id
-        request.session.modified = True
 
-        base_url = f"{request.scheme}://{request.get_host()}"
-        payload = {
-            "amount": 5000,
-            "amountWithTax": 0,
-            "amountWithoutTax": 5000,
-            "tax": 0,
-            "currency": "USD",
-            "storeId": settings.PAYPHONE_STORE_ID,
-            "reference": f"Renovacion-{medico.usuario.username}",
-            "clientTransactionId": client_transaction_id,
-            "responseUrl": f"{base_url}/confirmar-renovacion/",
-            "cancellationUrl": f"{base_url}/renovar-suscripcion/",
-        }
-        try:
-            resp = http_requests.post(
-                "https://pay.payphonetodoesposible.com/api/button/Prepare",
-                json=payload,
-                headers={"Authorization": f"Bearer {settings.PAYPHONE_TOKEN}"},
-                timeout=15,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            payment_url = data.get("payWithCard") or data.get("payWithPayPhone")
-            return redirect(payment_url)
-        except Exception as e:
-            messages.error(request, f"Error iniciando pago: {e}")
+    import uuid
+    client_transaction_id = str(uuid.uuid4())
+    request.session['payphone_client_tx_renovacion'] = client_transaction_id
+    request.session.modified = True
 
-    return render(request, 'renovar_suscripcion.html', {'medico': medico})
+    contexto = {
+        'medico': medico,
+        'payphone_token': settings.PAYPHONE_TOKEN,
+        'payphone_store_id': settings.PAYPHONE_STORE_ID,
+        'client_transaction_id': client_transaction_id,
+        'amount_cents': 5000,  # $50.00 en centavos
+        'reference': f"Renovacion-{medico.usuario.username}",
+    }
+    return render(request, 'renovar_suscripcion.html', contexto)
 
 
 @login_required
@@ -298,7 +278,7 @@ def confirmar_renovacion(request):
 
     try:
         resp = http_requests.post(
-            "https://pay.payphonetodoesposible.com/api/button/V2/Confirm",
+            "https://paymentbox.payphonetodoesposible.com/api/confirm",
             json={"id": int(transaction_id), "clientTxId": client_transaction_id},
             headers={"Authorization": f"Bearer {settings.PAYPHONE_TOKEN}"},
             timeout=20,
