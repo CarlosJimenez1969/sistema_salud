@@ -45,7 +45,11 @@ class Medico(models.Model):
     especialidad = models.ForeignKey(Especialidad, on_delete=models.SET_NULL, null=True)
     
     # Datos profesionales
-    registro_senescyt = models.CharField(max_length=50, blank=True, help_text="Número de registro profesional")
+    registro_senescyt = models.CharField(max_length=50, blank=True, help_text="Número de registro SENESCYT (legacy)")
+    registro_msp = models.CharField(
+        max_length=20, null=True, blank=True, unique=True,
+        help_text="Número de Registro Profesional emitido por el MSP",
+    )
     telefono_consultorio = models.CharField(max_length=20, blank=True)
     direccion_consultorio = models.TextField(blank=True)
     

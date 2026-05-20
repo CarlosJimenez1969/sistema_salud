@@ -17,7 +17,10 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6 mb-3">{{ form.cedula.label_tag }} {{ form.cedula }}</div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.cedula.label_tag }} {{ form.cedula }}
+                            <div id="cedula-feedback" class="small mt-1"></div>
+                        </div>
                         <div class="col-md-6 mb-3">{{ form.email.label_tag }} {{ form.email }}</div>
                     </div>
 
@@ -60,5 +63,48 @@
     inputs.forEach(function(input) {
         input.classList.add('form-control');
     });
+
+    (function() {
+        const cedulaInput = document.querySelector('input[name="cedula"]');
+        const feedback = document.getElementById('cedula-feedback');
+        if (!cedulaInput || !feedback) return;
+
+        const campos = ['first_name', 'last_name', 'email', 'telefono', 'direccion',
+                        'fecha_nacimiento', 'sexo', 'tipo_sangre', 'alergias', 'enfermedades_cronicas'];
+
+        cedulaInput.addEventListener('input', function() {
+            const cedula = this.value.trim();
+            feedback.textContent = '';
+            feedback.className = 'small mt-1';
+            if (cedula.length !== 10 || !/^\d{10}$/.test(cedula)) return;
+
+            fetch(`/api/buscar-por-cedula/${cedula}/`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.valid) {
+                        feedback.textContent = '⚠ ' + (data.message || 'Cédula inválida.');
+                        feedback.className = 'small mt-1 text-danger';
+                        return;
+                    }
+                    if (data.exists) {
+                        feedback.textContent = '✓ Paciente encontrado — datos cargados.';
+                        feedback.className = 'small mt-1 text-success';
+                        campos.forEach(function(name) {
+                            const el = document.querySelector('[name="' + name + '"]');
+                            if (el && data.data[name] !== undefined && data.data[name] !== '') {
+                                el.value = data.data[name];
+                            }
+                        });
+                    } else {
+                        feedback.textContent = '✓ Cédula válida — ingresa los datos manualmente.';
+                        feedback.className = 'small mt-1 text-info';
+                    }
+                })
+                .catch(function() {
+                    feedback.textContent = 'No se pudo verificar la cédula (sin conexión).';
+                    feedback.className = 'small mt-1 text-warning';
+                });
+        });
+    })();
 </script>
 {% endblock %}

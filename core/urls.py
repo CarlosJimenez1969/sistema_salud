@@ -10,7 +10,7 @@ from medico.views import configurar_horario, ciudades_por_pais
 from paciente.views import (
     listar_pacientes, crear_paciente, editar_paciente, registro_paciente,
     listar_mascotas, crear_mascota, editar_mascota, eliminar_mascota,
-    crear_paciente_veterinario, buscar_pacientes_ajax,
+    crear_paciente_veterinario, buscar_pacientes_ajax, buscar_por_cedula,
 )
 from historia.views import crear_historia, historial_medico, imprimir_receta, registrar_triaje  # <--- IMPORTANTE: Importar historial_medico
 from citas.views import buscar_medico, reservar_cita, ver_agenda
@@ -48,6 +48,7 @@ urlpatterns = [
     path('mascotas/editar/<int:mascota_id>/', editar_mascota, name='editar_mascota'),
     path('mascotas/eliminar/<int:mascota_id>/', eliminar_mascota, name='eliminar_mascota'),
     path('api/buscar-pacientes/', buscar_pacientes_ajax, name='buscar_pacientes_ajax'),
+    path('api/buscar-por-cedula/<str:cedula>/', buscar_por_cedula, name='buscar_por_cedula'),
 
     # Pacientes
     path('pacientes/', listar_pacientes, name='listar_pacientes'),

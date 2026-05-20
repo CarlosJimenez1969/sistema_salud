@@ -300,6 +300,57 @@ def registro_paciente(request):
 
 
 @login_required
+def buscar_por_cedula(request, cedula):
+    """Valida cédula y devuelve los datos del usuario asociado si existe."""
+    from django.http import JsonResponse
+    from users.validators import validar_cedula_ecuatoriana
+
+    cedula = (cedula or '').strip()
+    if not cedula.isdigit() or len(cedula) != 10:
+        return JsonResponse({
+            'valid': False,
+            'message': 'La cédula debe tener exactamente 10 dígitos numéricos.',
+        })
+    if not validar_cedula_ecuatoriana(cedula):
+        return JsonResponse({
+            'valid': False,
+            'message': 'Cédula inválida (dígito verificador incorrecto).',
+        })
+
+    try:
+        user = User.objects.get(cedula=cedula)
+    except User.DoesNotExist:
+        return JsonResponse({'valid': True, 'exists': False})
+
+    data = {
+        'first_name': user.first_name or '',
+        'last_name': user.last_name or '',
+        'email': user.email or '',
+    }
+    paciente_id = None
+    if hasattr(user, 'perfil_paciente'):
+        p = user.perfil_paciente
+        paciente_id = p.id
+        data.update({
+            'telefono': p.telefono or '',
+            'direccion': p.direccion or '',
+            'fecha_nacimiento': str(p.fecha_nacimiento) if p.fecha_nacimiento else '',
+            'sexo': p.sexo or '',
+            'tipo_sangre': p.tipo_sangre or '',
+            'alergias': p.alergias or '',
+            'enfermedades_cronicas': p.enfermedades_cronicas or '',
+        })
+
+    return JsonResponse({
+        'valid': True,
+        'exists': True,
+        'is_paciente': paciente_id is not None,
+        'paciente_id': paciente_id,
+        'data': data,
+    })
+
+
+@login_required
 def buscar_pacientes_ajax(request):
     """Devuelve JSON con pacientes que coinciden con el término de búsqueda (mínimo 2 caracteres)."""
     from django.http import JsonResponse

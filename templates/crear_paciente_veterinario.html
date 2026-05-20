@@ -35,6 +35,7 @@
                                        inputmode="numeric" pattern="[0-9]{10}" maxlength="10"
                                        title="Debe tener exactamente 10 dígitos numéricos"
                                        value="{{ datos.dueno_cedula|default:'' }}">
+                                <div id="dueno-cedula-feedback" class="small mt-1"></div>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold">Correo <span class="text-danger">*</span></label>
@@ -144,4 +145,55 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const cedulaInput = document.querySelector('input[name="dueno_cedula"]');
+    const feedback = document.getElementById('dueno-cedula-feedback');
+    if (!cedulaInput || !feedback) return;
+
+    const mapeo = {
+        first_name: 'dueno_first_name',
+        last_name: 'dueno_last_name',
+        email: 'dueno_email',
+        telefono: 'dueno_telefono',
+        direccion: 'dueno_direccion',
+    };
+
+    cedulaInput.addEventListener('input', function() {
+        const cedula = this.value.trim();
+        feedback.textContent = '';
+        feedback.className = 'small mt-1';
+        if (cedula.length !== 10 || !/^\d{10}$/.test(cedula)) return;
+
+        fetch(`/api/buscar-por-cedula/${cedula}/`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.valid) {
+                    feedback.textContent = '⚠ ' + (data.message || 'Cédula inválida.');
+                    feedback.className = 'small mt-1 text-danger';
+                    return;
+                }
+                if (data.exists) {
+                    feedback.textContent = '✓ Dueño encontrado — datos cargados.';
+                    feedback.className = 'small mt-1 text-success';
+                    Object.keys(mapeo).forEach(function(src) {
+                        const dst = mapeo[src];
+                        const el = document.querySelector('[name="' + dst + '"]');
+                        if (el && data.data[src] !== undefined && data.data[src] !== '') {
+                            el.value = data.data[src];
+                        }
+                    });
+                } else {
+                    feedback.textContent = '✓ Cédula válida — ingresa los datos manualmente.';
+                    feedback.className = 'small mt-1 text-info';
+                }
+            })
+            .catch(function() {
+                feedback.textContent = 'No se pudo verificar la cédula (sin conexión).';
+                feedback.className = 'small mt-1 text-warning';
+            });
+    });
+})();
+</script>
 {% endblock %}

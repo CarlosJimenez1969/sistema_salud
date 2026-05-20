@@ -175,6 +175,7 @@ def registro_medico(request):
                     pais=pais_obj.nombre if pais_obj else '',
                     ciudad=ciudad_obj.nombre if ciudad_obj else '',
                     sector=cd.get('sector', ''),
+                    registro_msp=cd.get('registro_msp', ''),
                     fecha_inicio_suscripcion=hoy,
                     fecha_fin_suscripcion=hoy + timedelta(days=30),
                     en_periodo_prueba=True,

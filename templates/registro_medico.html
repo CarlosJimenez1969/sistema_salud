@@ -68,6 +68,14 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label fw-bold">Registro Profesional MSP</label>
+                            {{ form.registro_msp }}
+                            {% if form.registro_msp.errors %}
+                                <div class="text-danger small">{{ form.registro_msp.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label fw-bold">Especialidad</label>
                             {{ form.especialidad }}
                             {% if form.especialidad.errors %}

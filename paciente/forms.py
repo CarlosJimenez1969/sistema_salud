@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from users.models import User
+from users.validators import validar_cedula_ecuatoriana
 from .models import Paciente
 
 TIPOS_SANGRE = [
@@ -48,6 +49,8 @@ class PacienteForm(forms.ModelForm):
             raise forms.ValidationError("La cédula es obligatoria.")
         if not cedula.isdigit() or len(cedula) != 10:
             raise forms.ValidationError("La cédula debe tener exactamente 10 dígitos numéricos.")
+        if not validar_cedula_ecuatoriana(cedula):
+            raise forms.ValidationError("La cédula no es válida (dígito verificador incorrecto).")
         # Excluir el usuario actual si estamos editando
         qs = User.objects.filter(cedula=cedula)
         if self.instance and self.instance.pk:
@@ -132,6 +135,8 @@ class RegistroPacienteForm(forms.Form):
         cedula = self.cleaned_data['cedula'].strip()
         if not cedula.isdigit() or len(cedula) != 10:
             raise forms.ValidationError("La cédula debe tener exactamente 10 dígitos numéricos.")
+        if not validar_cedula_ecuatoriana(cedula):
+            raise forms.ValidationError("La cédula no es válida (dígito verificador incorrecto).")
         if User.objects.filter(cedula=cedula).exists():
             raise forms.ValidationError("Esta cédula ya está registrada.")
         return cedula

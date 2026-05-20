@@ -18,7 +18,19 @@ class RegistroInicialMedicoForm(forms.ModelForm):
     first_name = forms.CharField(label="Nombres", widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tus nombres'}))
     last_name = forms.CharField(label="Apellidos", widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tus apellidos'}))
     email = forms.EmailField(label="Correo Electrónico", widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}))
-    cedula = forms.CharField(label="Cédula", widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de identificación'}))
+    cedula = forms.CharField(label="Cédula", widget=forms.TextInput(attrs={
+        'class': 'form-control', 'placeholder': '10 dígitos numéricos',
+        'inputmode': 'numeric', 'pattern': '[0-9]{10}', 'maxlength': '10',
+    }))
+    registro_msp = forms.CharField(
+        label="Registro Profesional MSP",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Tu número de registro MSP',
+            'inputmode': 'numeric', 'pattern': '[0-9]+', 'maxlength': '20',
+        }),
+        required=True,
+    )
     especialidad = forms.ModelChoiceField(
         queryset=Especialidad.objects.all().order_by('nombre'),
         label="Especialidad Médica",
@@ -57,6 +69,31 @@ class RegistroInicialMedicoForm(forms.ModelForm):
                 self.fields['ciudad'].queryset = Ciudad.objects.filter(pais_id=pais_id)
             except (ValueError, TypeError):
                 pass
+
+    def clean_cedula(self):
+        from users.validators import validar_cedula_ecuatoriana
+        cedula = (self.cleaned_data.get('cedula') or '').strip()
+        if not cedula:
+            raise forms.ValidationError("La cédula es obligatoria.")
+        if not cedula.isdigit() or len(cedula) != 10:
+            raise forms.ValidationError("La cédula debe tener exactamente 10 dígitos numéricos.")
+        if not validar_cedula_ecuatoriana(cedula):
+            raise forms.ValidationError("La cédula no es válida (dígito verificador incorrecto).")
+        if User.objects.filter(cedula=cedula).exists():
+            raise forms.ValidationError("Esta cédula ya está registrada en el sistema.")
+        return cedula
+
+    def clean_registro_msp(self):
+        registro = (self.cleaned_data.get('registro_msp') or '').strip()
+        if not registro:
+            raise forms.ValidationError("El número de Registro MSP es obligatorio.")
+        if not registro.isdigit():
+            raise forms.ValidationError("El Registro MSP debe contener solo dígitos numéricos.")
+        if len(registro) < 4 or len(registro) > 20:
+            raise forms.ValidationError("El Registro MSP debe tener entre 4 y 20 dígitos.")
+        if Medico.objects.filter(registro_msp=registro).exists():
+            raise forms.ValidationError("Este Registro MSP ya está registrado en el sistema.")
+        return registro
 
     def save(self, commit=True):
         with transaction.atomic():
