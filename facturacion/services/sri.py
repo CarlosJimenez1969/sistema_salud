@@ -187,14 +187,21 @@ class SriService:
 
     def _codigo_porcentaje_iva(self) -> str:
         """
-        Códigos SRI para porcentaje de IVA:
+        Códigos SRI para porcentaje de IVA (Ecuador 2024+):
           0  → 0%
-          2  → 12%
-          3  → 14%
-          5  → 5% (desde 2024, medicamentos, etc.)
+          2  → 12% (hasta 31/marzo/2024)
+          3  → 14% (transitorio 2016)
+          4  → 15% (vigente desde 01/abril/2024)
+          5  → 5% (medicamentos, etc.)
         """
-        mapping = {Decimal('0'): '0', Decimal('12'): '2', Decimal('14'): '3', Decimal('5'): '5'}
-        return mapping.get(self.iva_porcentaje, '2')
+        mapping = {
+            Decimal('0'):  '0',
+            Decimal('5'):  '5',
+            Decimal('12'): '2',
+            Decimal('14'): '3',
+            Decimal('15'): '4',
+        }
+        return mapping.get(self.iva_porcentaje, '4')
 
     # ── 3. Firma XAdES-BES ───────────────────────────────────────────────────
 
