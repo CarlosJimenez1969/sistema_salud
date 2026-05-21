@@ -124,21 +124,25 @@
         </div>
     </div>
 
-    {# Resumen de estados #}
+    {# Resumen de estados (solo muestra cuadros con al menos 1 factura) #}
     <div class="row mt-4 g-3">
         {% for valor, etiqueta in estados %}
-        <div class="col-6 col-md-2">
-            <div class="card border-0 shadow-sm text-center py-3" style="border-radius:10px;">
-                <div class="fw-bold fs-3">{{ resumen|get_item:valor|get_item:'cantidad'|default:'0' }}</div>
-                <div class="text-muted small">{{ etiqueta }}</div>
-                <div class="small fw-bold text-success">${{ resumen|get_item:valor|get_item:'total'|default:'0'|floatformat:2 }}</div>
+            {% with item=resumen|get_item:valor %}
+            {% if item.cantidad %}
+            <div class="col-6 col-md-2">
+                <div class="card border-0 shadow-sm text-center py-3 {% if valor == 'ANULADA' %}bg-light text-muted{% endif %}" style="border-radius:10px;">
+                    <div class="fw-bold fs-3">{{ item.cantidad }}</div>
+                    <div class="small">{{ etiqueta }}</div>
+                    <div class="small fw-bold">${{ item.total|default:'0'|floatformat:2 }}</div>
+                </div>
             </div>
-        </div>
+            {% endif %}
+            {% endwith %}
         {% endfor %}
         <div class="col-6 col-md-2">
             <div class="card border-0 shadow-sm text-center py-3 bg-primary text-white" style="border-radius:10px;">
-                <div class="fw-bold fs-3">{{ facturas|length }}</div>
-                <div class="small">Total Facturas</div>
+                <div class="fw-bold fs-3">{{ total_activas }}</div>
+                <div class="small">Facturas Activas</div>
                 <div class="small fw-bold">${{ total_general|floatformat:2 }}</div>
             </div>
         </div>

@@ -47,6 +47,9 @@ def lista_facturas(request):
         cantidad=Count('id'), total=Sum('total')
     ) for v, _ in FacturaElectronica.ESTADOS}
 
+    # Totales globales EXCLUYENDO anuladas (las anuladas no son fiscalmente activas)
+    activas = facturas.exclude(estado='ANULADA')
+
     return render(request, 'facturacion/lista_facturas.html', {
         'facturas':      facturas,
         'estado_filtro': estado_filtro,
@@ -55,7 +58,8 @@ def lista_facturas(request):
         'fecha_hasta':   fecha_hasta,
         'estados':       FacturaElectronica.ESTADOS,
         'resumen':       resumen,
-        'total_general': facturas.aggregate(t=Sum('total'))['t'] or 0,
+        'total_activas': activas.count(),
+        'total_general': activas.aggregate(t=Sum('total'))['t'] or 0,
     })
 
 
