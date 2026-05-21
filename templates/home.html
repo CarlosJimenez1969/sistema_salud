@@ -115,8 +115,8 @@
                                 <i class="bi bi-people-fill"></i> Pacientes
                             </a>
 
-                            <a href="{% url 'crear_paciente' %}" class="btn btn-quick-action">
-                                <i class="bi bi-person-plus-fill"></i> Nuevo Paciente
+                            <a href="{% url 'listar_pacientes' %}" class="btn btn-quick-action">
+                                <i class="bi bi-file-medical-fill"></i> Historias Clínicas
                             </a>
 
                             {% if user.role == 'MEDICO' %}
