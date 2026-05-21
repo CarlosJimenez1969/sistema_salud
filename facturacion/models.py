@@ -36,6 +36,7 @@ class FacturaElectronica(models.Model):
         ('AUTORIZADA', 'Autorizada por SRI'),
         ('RECHAZADA', 'Rechazada por SRI'),
         ('ERROR', 'Error en el proceso'),
+        ('ANULADA', 'Anulada'),
     ]
 
     TIPO_ID = [
@@ -108,5 +109,6 @@ class FacturaElectronica(models.Model):
             'AUTORIZADA': 'success',
             'RECHAZADA': 'danger',
             'ERROR': 'danger',
+            'ANULADA': 'secondary',
         }
         return colores.get(self.estado, 'secondary')

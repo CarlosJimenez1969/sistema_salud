@@ -5,12 +5,12 @@ PRESERVA:
 - Usuario ADMIN (superuser)
 - Especialidades médicas
 - Países y Ciudades
+- Facturas electrónicas (se marcan como ANULADA por cumplimiento fiscal SRI)
 
 ELIMINA:
 - Todos los demás usuarios (médicos, secretarias, pacientes)
 - Médicos, Secretarias, Pacientes, Mascotas
 - Citas, Historias clínicas, imágenes, recetas
-- Facturas electrónicas
 - Registros pendientes de pago
 
 Uso:
@@ -68,8 +68,8 @@ class Command(BaseCommand):
             return
 
         with transaction.atomic():
-            # 1. Eliminar facturas
-            FacturaElectronica.objects.all().delete()
+            # 1. Marcar facturas como ANULADA y desvincular del médico (no eliminar — cumplimiento fiscal SRI)
+            FacturaElectronica.objects.all().update(estado='ANULADA', medico=None)
             # 2. Eliminar registros pendientes
             RegistroPendiente.objects.all().delete()
             # 3. Eliminar historias clínicas (cascade borra imágenes y especialidades)
@@ -92,4 +92,5 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Médicos: {Medico.objects.count()}"))
         self.stdout.write(self.style.SUCCESS(f"Pacientes: {Paciente.objects.count()}"))
         self.stdout.write(self.style.SUCCESS(f"Citas: {Cita.objects.count()}"))
-        self.stdout.write(self.style.SUCCESS("\n✅ Limpieza completada. Especialidades, países y admin preservados."))
+        self.stdout.write(self.style.SUCCESS(f"Facturas (marcadas ANULADA): {FacturaElectronica.objects.filter(estado='ANULADA').count()}"))
+        self.stdout.write(self.style.SUCCESS("\n✅ Limpieza completada. Especialidades, países, admin y facturas preservados."))
