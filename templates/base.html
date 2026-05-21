@@ -55,14 +55,31 @@
                                 </a>
                             </li>
                         {% elif user.role == 'MEDICO' %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'ver_agenda' %}">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-calendar-check"></i> Mi Agenda
                                 </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'ver_agenda' %}">
+                                            <i class="bi bi-calendar-day"></i> Ver Agenda Hoy
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'configurar_horario' %}">
+                                            <i class="bi bi-clock-history"></i> Configurar Horario
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'crear_secretaria' %}">
                                     <i class="bi bi-person-plus"></i> Registrar Personal
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'renovar_suscripcion' %}">
+                                    <i class="bi bi-credit-card-fill"></i> Suscripción
                                 </a>
                             </li>
                         {% elif user.role == 'PACIENTE' %}

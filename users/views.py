@@ -568,29 +568,31 @@ def asignar_password(request, user_id):
 
 class ActivarCuentaConfirmView(PasswordResetConfirmView):
     """
-    Igual que PasswordResetConfirmView pero activa la cuenta al guardar la contraseña.
+    Igual que PasswordResetConfirmView pero activa la cuenta y hace auto-login.
     Usado cuando una secretaria o médico nuevo establece su contraseña por primera vez.
     """
     template_name = 'registration/password_reset_confirm.html'
-    success_url = '/login/'
-    post_reset_login = False  # NO loguear automáticamente; queremos que vea el mensaje en login
+    post_reset_login = False  # Lo hacemos manual para activar el flag is_active antes
 
     def form_valid(self, form):
+        from django.contrib.auth import login
         try:
             user = form.save()
             user.is_active = True
             user.save(update_fields=['is_active'])
-            # Cerrar cualquier sesión previa (de otro usuario) antes de redirigir al login
+            # Cerrar sesiones previas (de otro usuario) y autenticar al usuario recién activado
             logout(self.request)
+            login(self.request, user, backend='users.backends.UsernameOrEmailBackend')
             messages.success(
                 self.request,
-                f"¡Contraseña creada correctamente! Ya puedes iniciar sesión, {user.first_name}."
+                f"¡Bienvenido, {user.first_name}! Tu cuenta está activa."
             )
-            print(f"[ACTIVAR CUENTA] Usuario {user.email} activado correctamente")
+            print(f"[ACTIVAR CUENTA] Usuario {user.email} activado y autenticado")
+            return redirect('login_success')
         except Exception as e:
             print(f"[ACTIVAR CUENTA ERROR] {e}")
             messages.error(self.request, f"Error al activar cuenta: {e}")
-        return redirect('login')
+            return redirect('login')
 
 
 @login_required

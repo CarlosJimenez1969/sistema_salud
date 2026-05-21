@@ -18,7 +18,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
                         <input type="text" id="busqueda-paciente" class="form-control placeholder-gris"
-                               placeholder="Escribe cédula o nombre para filtrar..." autocomplete="off">
+                               placeholder="{% if es_veterinario %}Buscar por mascota, dueño o cédula...{% else %}Buscar por cédula, nombre o apellido...{% endif %}" autocomplete="off">
                         <button type="button" id="btn-limpiar-busqueda" class="btn btn-outline-secondary" style="display:none;">
                             Limpiar
                         </button>

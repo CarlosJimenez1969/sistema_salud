@@ -112,7 +112,11 @@
                             </a>
 
                             <a href="{% url 'listar_pacientes' %}" class="btn btn-quick-action">
-                                <i class="bi bi-search"></i> Buscar o Crear Historia Clínica
+                                <i class="bi bi-people-fill"></i> Pacientes
+                            </a>
+
+                            <a href="{% url 'crear_paciente' %}" class="btn btn-quick-action">
+                                <i class="bi bi-person-plus-fill"></i> Nuevo Paciente
                             </a>
 
                             {% if user.role == 'MEDICO' %}

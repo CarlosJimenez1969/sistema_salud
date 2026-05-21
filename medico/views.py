@@ -27,17 +27,25 @@ def configurar_horario(request):
         hora_inicio = request.POST.get('hora_inicio')
         hora_fin = request.POST.get('hora_fin')
         intervalo = request.POST.get('intervalo_minutos', 30)
+        precio = (request.POST.get('precio_consulta') or '').strip()
 
         if not hora_inicio or not hora_fin:
             messages.error(request, "Debe ingresar hora de inicio y hora de fin.")
         elif hora_inicio >= hora_fin:
             messages.error(request, "La hora de inicio debe ser menor a la hora de fin.")
         else:
+            from decimal import Decimal, InvalidOperation
             medico.hora_inicio = hora_inicio
             medico.hora_fin = hora_fin
             medico.intervalo_minutos = int(intervalo)
+            if precio:
+                try:
+                    medico.precio_consulta = Decimal(precio)
+                except InvalidOperation:
+                    messages.error(request, "Precio de consulta inválido.")
+                    return render(request, 'configurar_horario.html', {'medico': medico})
             medico.save()
-            messages.success(request, "Horario de atención actualizado correctamente.")
+            messages.success(request, "Horario y precio de consulta actualizados correctamente.")
             return redirect('home')
 
     return render(request, 'configurar_horario.html', {'medico': medico})

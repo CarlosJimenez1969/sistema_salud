@@ -126,9 +126,13 @@
                                 <tr>
                                     <td class="ps-3 fw-semibold">Dr. {{ m.usuario.get_full_name }}</td>
                                     <td class="text-muted">{{ m.especialidad }}</td>
-                                    <td>${{ m.precio_consulta|floatformat:2 }}</td>
+                                    <td>{% if m.precio_consulta and m.precio_consulta > 0 %}${{ m.precio_consulta|floatformat:2 }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
                                     <td>
-                                        {% if m.usuario.pago_realizado %}
+                                        {% if not m.suscripcion_activa %}
+                                            <span class="badge bg-danger rounded-pill">Vencida</span>
+                                        {% elif m.en_periodo_prueba %}
+                                            <span class="badge bg-info text-dark rounded-pill">En prueba ({{ m.dias_restantes_suscripcion }}d)</span>
+                                        {% elif m.usuario.pago_realizado %}
                                             <span class="badge bg-success rounded-pill">Activa</span>
                                         {% else %}
                                             <span class="badge bg-warning text-dark rounded-pill">Pendiente</span>

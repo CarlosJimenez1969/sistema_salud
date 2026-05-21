@@ -31,7 +31,7 @@
                             </div>
                         </div>
 
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label class="form-label fw-bold text-secondary small">Duración de cada cita</label>
                             <select name="intervalo_minutos" class="form-select">
                                 <option value="15" {% if medico.intervalo_minutos == 15 %}selected{% endif %}>15 minutos</option>
@@ -40,6 +40,16 @@
                                 <option value="45" {% if medico.intervalo_minutos == 45 %}selected{% endif %}>45 minutos</option>
                                 <option value="60" {% if medico.intervalo_minutos == 60 %}selected{% endif %}>60 minutos</option>
                             </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-secondary small">Precio de consulta (USD)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" min="0" name="precio_consulta" class="form-control"
+                                       value="{{ medico.precio_consulta|default:'' }}" placeholder="Ej: 25.00">
+                            </div>
+                            <small class="text-muted">Lo que cobras por una consulta. Visible a los pacientes.</small>
                         </div>
 
                         {% if medico.hora_inicio and medico.hora_fin %}
