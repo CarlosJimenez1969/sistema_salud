@@ -14,11 +14,36 @@ from .models import (
     HistoriaClinica, ImagenHistoria, HistoriaOftalmologia, HistoriaPediatria,
     HistoriaGinecologia, HistoriaCardiologia, HistoriaDermatologia, HistoriaOdontologia,
     HistoriaPsicologia, HistoriaNutricion, HistoriaOtorrino, HistoriaTraumatologia,
-    Receta, HistoriaGastro, HistoriaPsiquiatria, HistoriaReumatologia, HistoriaGeriatria
+    Receta, HistoriaGastro, HistoriaPsiquiatria, HistoriaReumatologia, HistoriaGeriatria,
+    CodigoCIE10,
 )
 from .forms import HistoriaForm, TriajeForm, RecetaForm
 from .utils import enviar_receta_email
 from users.decorators import medico_required
+
+
+@login_required
+def buscar_cie10(request):
+    """Endpoint AJAX: devuelve hasta 15 códigos CIE-10 que coincidan con la query.
+    El médico puede buscar por código (`J06`) o por descripción (`faringitis`)."""
+    query = (request.GET.get('q') or '').strip()
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
+    qs = CodigoCIE10.objects.filter(
+        Q(codigo__icontains=query) | Q(descripcion__icontains=query)
+    ).order_by('codigo')[:15]
+
+    results = [
+        {
+            'codigo': c.codigo,
+            'descripcion': c.descripcion,
+            'capitulo': c.capitulo,
+            'label': f"{c.codigo} — {c.descripcion}",
+        }
+        for c in qs
+    ]
+    return JsonResponse({'results': results})
 
 @login_required
 @medico_required

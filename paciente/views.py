@@ -317,6 +317,8 @@ def buscar_por_cedula(request, cedula):
             'message': 'Cédula inválida (dígito verificador incorrecto).',
         })
 
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
     try:
         user = User.objects.get(cedula=cedula)
     except User.DoesNotExist:

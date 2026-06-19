@@ -1285,6 +1285,27 @@
                                             {% if es_veterinario %}Diagnóstico:{% else %}Diagnóstico (CIE-10):{% endif %}
                                             <span class="text-danger">*</span>
                                         </label>
+                                        {% if not es_veterinario %}
+                                        <div class="position-relative mb-2" id="cie10-buscador-wrapper">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-primary text-white">
+                                                    <i class="bi bi-search"></i>
+                                                </span>
+                                                <input type="text"
+                                                       id="cie10-buscador"
+                                                       class="form-control"
+                                                       placeholder="Buscar CIE-10 (código o palabra: fiebre, gastritis, J06...)"
+                                                       autocomplete="off">
+                                            </div>
+                                            <div id="cie10-resultados"
+                                                 class="list-group position-absolute w-100 shadow-sm"
+                                                 style="z-index: 1050; max-height: 280px; overflow-y: auto; display: none;">
+                                            </div>
+                                            <small class="text-muted">
+                                                Busca y haz click para añadir al diagnóstico. Catálogo MSP/CIE-10.
+                                            </small>
+                                        </div>
+                                        {% endif %}
                                         {{ form.diagnostico }}
                                     </div>
                                 </div>
@@ -1755,5 +1776,95 @@ function cerrarLightbox() {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') cerrarLightbox();
 });
+</script>
+
+<script>
+// ====== Autocomplete CIE-10 ======
+(function() {
+    const buscador = document.getElementById('cie10-buscador');
+    const resultados = document.getElementById('cie10-resultados');
+    const diagnostico = document.getElementById('id_diagnostico');
+
+    if (!buscador || !resultados || !diagnostico) return;
+
+    let debounceTimer = null;
+
+    function debounce(fn, ms) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(fn, ms);
+    }
+
+    function ocultarResultados() {
+        resultados.style.display = 'none';
+        resultados.innerHTML = '';
+    }
+
+    function mostrarResultados(items) {
+        if (!items || items.length === 0) {
+            resultados.innerHTML = '<div class="list-group-item text-muted small">Sin coincidencias.</div>';
+            resultados.style.display = 'block';
+            return;
+        }
+        resultados.innerHTML = items.map(item => `
+            <button type="button"
+                    class="list-group-item list-group-item-action py-2"
+                    data-codigo="${item.codigo}"
+                    data-descripcion="${item.descripcion.replace(/"/g, '&quot;')}">
+                <span class="badge bg-primary me-2">${item.codigo}</span>
+                <span class="small">${item.descripcion}</span>
+            </button>
+        `).join('');
+        resultados.style.display = 'block';
+
+        resultados.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const codigo = this.dataset.codigo;
+                const descripcion = this.dataset.descripcion;
+                const linea = `${codigo} - ${descripcion}`;
+                const actual = diagnostico.value.trim();
+                if (actual === '') {
+                    diagnostico.value = linea;
+                } else if (!actual.includes(codigo)) {
+                    diagnostico.value = actual + '\n' + linea;
+                }
+                buscador.value = '';
+                ocultarResultados();
+                diagnostico.focus();
+            });
+        });
+    }
+
+    buscador.addEventListener('input', function() {
+        const q = this.value.trim();
+        if (q.length < 2) {
+            ocultarResultados();
+            return;
+        }
+        debounce(() => {
+            fetch(`/api/buscar-cie10/?q=${encodeURIComponent(q)}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(r => r.ok ? r.json() : { results: [] })
+                .then(data => mostrarResultados(data.results))
+                .catch(() => ocultarResultados());
+        }, 200);
+    });
+
+    // Cerrar el dropdown al hacer click fuera
+    document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('cie10-buscador-wrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+            ocultarResultados();
+        }
+    });
+
+    // Esc cierra
+    buscador.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            this.value = '';
+            ocultarResultados();
+        }
+    });
+})();
 </script>
 {% endblock %}

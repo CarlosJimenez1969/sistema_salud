@@ -78,6 +78,14 @@ class Medico(models.Model):
     fecha_inicio_suscripcion = models.DateField(null=True, blank=True)
     fecha_fin_suscripcion    = models.DateField(null=True, blank=True, help_text="Fecha en la que vence la suscripción (prueba o pagada)")
     en_periodo_prueba        = models.BooleanField(default=True, help_text="True = trial gratis; False = suscripción pagada")
+    PLANES = [
+        ('ANUAL',   'Anual ($100/año)'),
+        ('MENSUAL', 'Mensual ($10/mes)'),
+    ]
+    plan_suscripcion = models.CharField(
+        max_length=10, choices=PLANES, default='ANUAL',
+        help_text="Plan elegido: ANUAL extiende 365 días; MENSUAL extiende 30 días",
+    )
 
     @property
     def dias_restantes_suscripcion(self):

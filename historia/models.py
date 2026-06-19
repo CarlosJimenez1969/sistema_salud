@@ -478,3 +478,17 @@ class Triaje(models.Model):
 
     def __str__(self):
         return f"Triaje - {self.paciente} - {self.fecha_registro.date()}"
+
+
+class CodigoCIE10(models.Model):
+    codigo = models.CharField(max_length=10, unique=True, db_index=True, verbose_name="Código CIE-10")
+    descripcion = models.CharField(max_length=300, db_index=True, verbose_name="Descripción")
+    capitulo = models.CharField(max_length=120, blank=True, verbose_name="Capítulo")
+
+    class Meta:
+        verbose_name = "Código CIE-10"
+        verbose_name_plural = "Códigos CIE-10"
+        ordering = ['codigo']
+
+    def __str__(self):
+        return f"{self.codigo} - {self.descripcion}"

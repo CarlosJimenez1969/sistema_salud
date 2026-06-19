@@ -241,16 +241,37 @@ from django.urls import reverse
 
 @login_required
 def renovar_suscripcion(request):
-    """Pantalla para que el médico renueve su suscripción anual con Cajita PayPhone."""
+    """Pantalla para que el médico renueve su suscripción con Cajita PayPhone.
+
+    Acepta ?plan=mensual ($10/mes, extiende 30 días) o ?plan=anual ($100/año, 365 días).
+    Si no se especifica, muestra ambos planes para que el médico elija.
+    """
     if not hasattr(request.user, 'perfil_medico'):
         messages.error(request, "Solo médicos pueden renovar suscripción.")
         return redirect('home')
 
     medico = request.user.perfil_medico
+    plan = (request.GET.get('plan') or '').upper()
+
+    # Si no eligió plan, mostrar pantalla de selección
+    if plan not in ('MENSUAL', 'ANUAL'):
+        return render(request, 'renovar_suscripcion.html', {
+            'medico': medico,
+            'mostrar_seleccion_plan': True,
+        })
+
+    # Configurar monto según plan
+    if plan == 'MENSUAL':
+        amount_cents = 1000   # $10.00
+        plan_label = "Plan Mensual"
+    else:
+        amount_cents = 10000  # $100.00
+        plan_label = "Plan Anual"
 
     import uuid
     client_transaction_id = str(uuid.uuid4())
     request.session['payphone_client_tx_renovacion'] = client_transaction_id
+    request.session['plan_renovacion'] = plan
     request.session.modified = True
 
     contexto = {
@@ -258,10 +279,51 @@ def renovar_suscripcion(request):
         'payphone_token': settings.PAYPHONE_TOKEN,
         'payphone_store_id': settings.PAYPHONE_STORE_ID,
         'client_transaction_id': client_transaction_id,
-        'amount_cents': 5000,  # $50.00 en centavos
-        'reference': f"Renovacion-{medico.usuario.username}",
+        'amount_cents': amount_cents,
+        'plan_seleccionado': plan,
+        'plan_label': plan_label,
+        'reference': f"Renovacion-{plan}-{medico.usuario.username}",
+        'mostrar_seleccion_plan': False,
+        'mock_mode': settings.PAYPHONE_MOCK_MODE,
     }
     return render(request, 'renovar_suscripcion.html', contexto)
+
+
+@login_required
+def mock_pago_renovacion(request):
+    """SOLO PARA DESARROLLO: simula un pago exitoso de PayPhone sin cobrar.
+
+    Solo se activa cuando settings.PAYPHONE_MOCK_MODE es True (DEBUG=True
+    y sin credenciales TEST configuradas). En producción no hace nada.
+    """
+    if not settings.PAYPHONE_MOCK_MODE:
+        messages.error(request, "Endpoint deshabilitado.")
+        return redirect('home')
+
+    if not hasattr(request.user, 'perfil_medico'):
+        return redirect('home')
+
+    from datetime import date, timedelta
+    medico = request.user.perfil_medico
+    plan = request.session.get('plan_renovacion', 'ANUAL')
+    dias = 30 if plan == 'MENSUAL' else 365
+    monto = "10" if plan == 'MENSUAL' else "100"
+
+    base = max(medico.fecha_fin_suscripcion or date.today(), date.today())
+    medico.fecha_fin_suscripcion = base + timedelta(days=dias)
+    medico.en_periodo_prueba = False
+    medico.plan_suscripcion = plan
+    medico.save()
+    request.user.pago_realizado = True
+    request.user.save()
+    request.session.pop('plan_renovacion', None)
+
+    plan_nombre = "Mensual" if plan == 'MENSUAL' else "Anual"
+    messages.success(
+        request,
+        f"[MOCK] Pago de ${monto} simulado. {plan_nombre} activo hasta {medico.fecha_fin_suscripcion:%d/%m/%Y}."
+    )
+    return redirect('home')
 
 
 @login_required
@@ -291,29 +353,44 @@ def confirmar_renovacion(request):
             messages.error(request, f"Pago no aprobado (estado: {status_code}).")
             return redirect('renovar_suscripcion')
 
-        # Pago confirmado, extender suscripción 365 días
+        # Pago confirmado: extender según plan elegido
         from datetime import date, timedelta
+        from decimal import Decimal
         medico = request.user.perfil_medico
+
+        plan = request.session.get('plan_renovacion', 'ANUAL')
+        if plan == 'MENSUAL':
+            dias_extension = 30
+            monto_factura = Decimal('10.00')
+        else:
+            dias_extension = 365
+            monto_factura = Decimal('100.00')
+
         # Si la suscripción aún está vigente, extender desde fecha actual de fin
         base = max(medico.fecha_fin_suscripcion or date.today(), date.today())
-        medico.fecha_fin_suscripcion = base + timedelta(days=365)
+        medico.fecha_fin_suscripcion = base + timedelta(days=dias_extension)
         medico.en_periodo_prueba = False
+        medico.plan_suscripcion = plan
         medico.save()
         request.user.pago_realizado = True
         request.user.save()
+        request.session.pop('plan_renovacion', None)
 
-        messages.success(request, f"¡Suscripción renovada hasta {medico.fecha_fin_suscripcion}!")
+        plan_nombre = "Mensual" if plan == 'MENSUAL' else "Anual"
+        messages.success(
+            request,
+            f"¡{plan_nombre} activado hasta el {medico.fecha_fin_suscripcion:%d/%m/%Y}!"
+        )
 
         # Generar factura electrónica en background
         import threading
-        def generar_factura(m):
+        def generar_factura(m, monto):
             try:
                 from facturacion.services.sri import SriService
-                from decimal import Decimal
-                SriService().crear_factura_pago(m, Decimal('50.00'))
+                SriService().crear_factura_pago(m, monto)
             except Exception as e:
                 print(f"[FACTURACIÓN RENOVACIÓN] {e}")
-        threading.Thread(target=generar_factura, args=(medico,), daemon=True).start()
+        threading.Thread(target=generar_factura, args=(medico, monto_factura), daemon=True).start()
 
         return redirect('home')
     except Exception as e:
@@ -335,9 +412,9 @@ def pasarela_pago(request):
     base_url = f"{request.scheme}://{request.get_host()}"
 
     payload = {
-        "amount": 5000,               # centavos: $50.00
+        "amount": 10000,               # centavos: $100.00 (plan anual)
         "amountWithTax": 0,
-        "amountWithoutTax": 5000,
+        "amountWithoutTax": 10000,
         "tax": 0,
         "currency": "USD",
         "storeId": settings.PAYPHONE_STORE_ID,

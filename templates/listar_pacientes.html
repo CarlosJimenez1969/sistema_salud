@@ -23,7 +23,10 @@
                             Limpiar
                         </button>
                     </div>
-                    <small class="text-muted">La tabla se actualiza automáticamente mientras escribes.</small>
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i>
+                        Los pacientes <strong>no se muestran al ingresar</strong>. Escribe en el buscador para encontrar uno.
+                    </small>
                 </div>
 
                 <div class="col-12 col-md-5 text-md-end mt-2 mt-md-0">
@@ -188,8 +191,9 @@
     function renderVacio() {
         tbody.innerHTML = `
             <tr><td colspan="${totalCols}" class="text-center py-5 text-muted">
-                <i class="bi bi-search fs-2 d-block mb-2 opacity-50"></i>
-                Escribe una cédula o nombre para buscar pacientes
+                <i class="bi bi-search fs-1 d-block mb-3 opacity-50"></i>
+                <div class="fs-5 mb-2">Busca un paciente para empezar</div>
+                <small class="d-block">Escribe cédula, nombre o apellido en el buscador de arriba</small>
             </td></tr>`;
     }
 
