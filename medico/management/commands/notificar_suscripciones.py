@@ -2,10 +2,6 @@
 Envía correos a médicos cuya suscripción está por vencer o ya venció.
 Se debe ejecutar diariamente (cron / Render Job):
     python manage.py notificar_suscripciones
-
-Estrategia por plan:
-- ANUAL/Trial: recordatorios a los 7, 3, 1 y 0 días antes (más oportunidades)
-- MENSUAL: recordatorios a los 3, 1 y 0 días antes (más liviano, ya están acostumbrados)
 """
 from datetime import date, timedelta
 from django.core.management.base import BaseCommand
@@ -40,101 +36,49 @@ def _enviar_correo(email, asunto, html):
         return False
 
 
-def _html_recordatorio(medico, dias_aviso, renovar_url):
-    """Construye el HTML del recordatorio según plan y días restantes."""
-    plan = medico.plan_suscripcion or 'ANUAL'
-    en_prueba = medico.en_periodo_prueba
-
-    if en_prueba:
-        suscripcion_tipo = "periodo de prueba GRATIS"
-        opciones_pago = "$10/mes o $100/año (ahorras $20)"
-    elif plan == 'MENSUAL':
-        suscripcion_tipo = "suscripción mensual"
-        opciones_pago = "$10/mes · O cambia a anual y ahorra $20 ($100/año)"
-    else:
-        suscripcion_tipo = "suscripción anual"
-        opciones_pago = "$100/año"
-
-    if dias_aviso == 0:
-        tiempo = f"<strong>HOY ({medico.fecha_fin_suscripcion:%d/%m/%Y})</strong>"
-        color_btn = "#198754"
-    else:
-        plural = "s" if dias_aviso != 1 else ""
-        tiempo = (
-            f"el <strong>{medico.fecha_fin_suscripcion:%d/%m/%Y}</strong> "
-            f"(en {dias_aviso} día{plural})"
-        )
-        color_btn = "#0d6efd"
-
-    return (
-        f"<p>Hola Dr. {medico.usuario.first_name},</p>"
-        f"<p>Tu {suscripcion_tipo} finaliza {tiempo}.</p>"
-        f"<p>Renueva por <strong>{opciones_pago}</strong> para continuar sin interrupciones:</p>"
-        f'<p><a href="{renovar_url}" style="background:{color_btn};color:#fff;'
-        f'padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;">'
-        f'Renovar suscripción</a></p>'
-        f"<p style='color:#666;font-size:13px;margin-top:24px;'>"
-        f"Si tienes dudas, escríbenos a contacto@vertexjd.com</p>"
-    )
-
-
 class Command(BaseCommand):
-    help = (
-        'Notifica a médicos sobre estado de suscripción. '
-        'ANUAL/trial: 7,3,1,0 días antes. MENSUAL: 3,1,0 días antes.'
-    )
+    help = 'Notifica a médicos sobre estado de suscripción (faltan 7, 3, 1 días o vencida)'
 
     def handle(self, *args, **options):
         hoy = date.today()
         renovar_url = "https://sistema-salud.onrender.com/renovar-suscripcion/"
 
-        # Mapa de días según plan: el médico recibe el aviso si encajan
-        # con su plan_suscripcion (o si está en periodo de prueba).
-        DIAS_ANUAL_O_TRIAL = (7, 3, 1, 0)
-        DIAS_MENSUAL = (3, 1, 0)
-
-        # Recorremos TODOS los días posibles y para cada uno notificamos
-        # solo a los médicos cuyo plan corresponde
+        # Días específicos a notificar (antes de vencer + el día que vence)
         for dias_aviso in (7, 3, 1, 0):
             objetivo = hoy + timedelta(days=dias_aviso)
             medicos = Medico.objects.filter(fecha_fin_suscripcion=objetivo)
-
             for m in medicos:
-                # Decidir si este médico aplica para recibir aviso hoy
-                if m.en_periodo_prueba or m.plan_suscripcion == 'ANUAL':
-                    if dias_aviso not in DIAS_ANUAL_O_TRIAL:
-                        continue
-                elif m.plan_suscripcion == 'MENSUAL':
-                    if dias_aviso not in DIAS_MENSUAL:
-                        continue
-
-                # Asunto según urgencia
                 if dias_aviso == 0:
                     asunto = "⚠️ Tu suscripción VertexSalud vence HOY"
-                else:
-                    plural = "s" if dias_aviso != 1 else ""
-                    asunto = f"VertexSalud: tu suscripción vence en {dias_aviso} día{plural}"
-
-                html = _html_recordatorio(m, dias_aviso, renovar_url)
-                if _enviar_correo(m.usuario.email, asunto, html):
-                    plan_log = (
-                        'TRIAL' if m.en_periodo_prueba
-                        else (m.plan_suscripcion or 'ANUAL')
+                    html = (
+                        f"<p>Hola Dr. {m.usuario.first_name},</p>"
+                        f"<p>Tu {'periodo de prueba' if m.en_periodo_prueba else 'suscripción'} "
+                        f"finaliza <strong>HOY ({m.fecha_fin_suscripcion:%d/%m/%Y})</strong>.</p>"
+                        f"<p>Para no perder el acceso al sistema, renueva por $50/año:</p>"
+                        f'<p><a href="{renovar_url}" style="background:#198754;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;">Renovar ahora</a></p>'
                     )
-                    self.stdout.write(self.style.SUCCESS(
-                        f"Notificado {m.usuario.email} ({plan_log}, vence en {dias_aviso}d)"
-                    ))
+                else:
+                    asunto = f"VertexSalud: tu suscripción vence en {dias_aviso} día(s)"
+                    html = (
+                        f"<p>Hola Dr. {m.usuario.first_name},</p>"
+                        f"<p>Te recordamos que tu "
+                        f"{'periodo de prueba GRATIS' if m.en_periodo_prueba else 'suscripción'} "
+                        f"finaliza el <strong>{m.fecha_fin_suscripcion:%d/%m/%Y}</strong> "
+                        f"(en {dias_aviso} día{'s' if dias_aviso != 1 else ''}).</p>"
+                        f"<p>Renueva por $50/año para continuar usando el sistema sin interrupciones:</p>"
+                        f'<p><a href="{renovar_url}" style="background:#0d6efd;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;">Renovar suscripción</a></p>'
+                    )
+                if _enviar_correo(m.usuario.email, asunto, html):
+                    self.stdout.write(self.style.SUCCESS(f"Notificado {m.usuario.email} (vence en {dias_aviso}d)"))
 
-        # Notificar a vencidos hace 1 día (acceso bloqueado)
+        # Notificar a vencidos hace 1 día
         vencido_ayer = hoy - timedelta(days=1)
         for m in Medico.objects.filter(fecha_fin_suscripcion=vencido_ayer):
             html = (
                 f"<p>Hola Dr. {m.usuario.first_name},</p>"
                 f"<p>Tu suscripción venció ayer y tu acceso al sistema está bloqueado.</p>"
-                f"<p>Renueva ahora para reactivar tu cuenta — $10/mes o $100/año:</p>"
-                f'<p><a href="{renovar_url}" style="background:#dc3545;color:#fff;'
-                f'padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;">'
-                f'Reactivar cuenta</a></p>'
+                f"<p>Renueva ahora para reactivar tu cuenta:</p>"
+                f'<p><a href="{renovar_url}" style="background:#dc3545;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;">Reactivar cuenta</a></p>'
             )
             _enviar_correo(m.usuario.email, "Tu suscripción VertexSalud está vencida", html)
 

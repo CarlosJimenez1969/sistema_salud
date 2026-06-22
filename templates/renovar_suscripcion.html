@@ -1,151 +1,63 @@
 {% extends 'base.html' %}
 
 {% block content %}
-{% if not mostrar_seleccion_plan and not mock_mode %}
 <link rel="stylesheet" href="https://cdn.payphonetodoesposible.com/box/v2.0/payphone-payment-box.css">
 <script type="module" src="https://cdn.payphonetodoesposible.com/box/v2.0/payphone-payment-box.js"></script>
-{% endif %}
 
 <div class="container mt-4 mb-5">
     <div class="row justify-content-center">
-        <div class="col-lg-{% if mostrar_seleccion_plan %}10{% else %}7{% endif %}">
+        <div class="col-lg-7">
             <div class="card shadow border-0">
                 <div class="card-header bg-warning text-dark text-center py-3">
-                    <h3 class="mb-0"><i class="bi bi-credit-card-fill"></i>
-                        {% if mostrar_seleccion_plan %}Elige tu Plan{% else %}Renovar Suscripción{% endif %}
-                    </h3>
+                    <h3 class="mb-0"><i class="bi bi-credit-card-fill"></i> Renovar Suscripción</h3>
                 </div>
 
-                <div class="card-body p-4">
+                <div class="card-body p-4 text-center">
 
                     {% if medico.suscripcion_activa %}
                         {% if medico.en_periodo_prueba %}
-                            <div class="alert alert-info text-center">
+                            <div class="alert alert-info">
                                 <i class="bi bi-info-circle-fill"></i>
                                 Estás en <strong>periodo de prueba gratis</strong>.
                                 Te quedan <strong>{{ medico.dias_restantes_suscripcion }} día(s)</strong> antes que finalice.
                             </div>
                         {% else %}
-                            <div class="alert alert-success text-center">
+                            <div class="alert alert-success">
                                 Tu suscripción está <strong>activa</strong> hasta el
                                 <strong>{{ medico.fecha_fin_suscripcion|date:"d/m/Y" }}</strong>.
                             </div>
                         {% endif %}
                     {% else %}
-                        <div class="alert alert-danger text-center">
+                        <div class="alert alert-danger">
                             <i class="bi bi-exclamation-triangle-fill"></i>
                             Tu suscripción <strong>venció el {{ medico.fecha_fin_suscripcion|date:"d/m/Y" }}</strong>.
                             Renueva ahora para continuar usando el sistema.
                         </div>
                     {% endif %}
 
-                    {% if mostrar_seleccion_plan %}
-                        <!-- PANTALLA DE SELECCIÓN DE PLAN -->
-                        <div class="row g-4 mt-2">
+                    <hr>
 
-                            <!-- PLAN MENSUAL -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border-2 border-primary shadow-sm">
-                                    <div class="card-body text-center p-4">
-                                        <h5 class="text-primary fw-bold mb-3">
-                                            <i class="bi bi-calendar-month"></i> Plan Mensual
-                                        </h5>
-                                        <p class="display-5 text-primary fw-bold mb-0">$10<small class="fs-5 text-muted">/mes</small></p>
-                                        <p class="text-muted small mb-3">Pago cada mes · Cancela cuando quieras</p>
-                                        <ul class="list-unstyled text-start small mb-4">
-                                            <li><i class="bi bi-check2 text-success"></i> Acceso 30 días</li>
-                                            <li><i class="bi bi-check2 text-success"></i> Renovación manual cada mes</li>
-                                            <li><i class="bi bi-check2 text-success"></i> Recordatorio 3 días antes</li>
-                                            <li><i class="bi bi-check2 text-success"></i> Cambia a anual cuando quieras</li>
-                                        </ul>
-                                        <a href="?plan=mensual" class="btn btn-primary btn-lg w-100">
-                                            Elegir Mensual
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
+                    <h4 class="mt-4">Plan Anual</h4>
+                    <p class="display-4 text-success fw-bold">$50.00 <small class="text-muted fs-5">USD / año</small></p>
+                    <p class="text-muted">Acceso completo al sistema durante 365 días desde la fecha de pago.</p>
 
-                            <!-- PLAN ANUAL -->
-                            <div class="col-md-6">
-                                <div class="card h-100 border-3 border-success shadow position-relative">
-                                    <span class="position-absolute top-0 start-50 translate-middle badge bg-success">
-                                        ⭐ Recomendado · Ahorras $20
-                                    </span>
-                                    <div class="card-body text-center p-4">
-                                        <h5 class="text-success fw-bold mb-3">
-                                            <i class="bi bi-calendar-check"></i> Plan Anual
-                                        </h5>
-                                        <p class="display-5 text-success fw-bold mb-0">$100<small class="fs-5 text-muted">/año</small></p>
-                                        <p class="text-muted small mb-3">Solo $8.33/mes · Olvídate por 1 año</p>
-                                        <ul class="list-unstyled text-start small mb-4">
-                                            <li><i class="bi bi-check2 text-success"></i> Acceso 365 días</li>
-                                            <li><i class="bi bi-check2 text-success"></i> Sin recordatorios mensuales</li>
-                                            <li><i class="bi bi-check2 text-success"></i> Mejor precio (ahorras $20)</li>
-                                            <li><i class="bi bi-check2 text-success"></i> Tranquilidad todo el año</li>
-                                        </ul>
-                                        <a href="?plan=anual" class="btn btn-success btn-lg w-100 fw-bold">
-                                            Elegir Anual
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <ul class="list-unstyled text-start d-inline-block mt-3 mb-4">
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Agenda y citas ilimitadas</li>
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Historias clínicas con imágenes</li>
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Recetas y facturación electrónica</li>
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Hasta 5 secretarias</li>
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Soporte por correo</li>
+                    </ul>
 
-                        <p class="text-center text-muted small mt-4">
-                            <i class="bi bi-shield-check"></i>
-                            Ambos planes incluyen las mismas funciones: agenda, historias clínicas, recetas, facturación SRI y hasta 5 secretarias.
-                        </p>
+                    <div id="pp-button" class="my-4"></div>
 
-                    {% else %}
-                        <!-- PANTALLA DE PAGO PAYPHONE -->
-                        <div class="text-center">
-                            <a href="{% url 'renovar_suscripcion' %}" class="btn btn-link btn-sm">
-                                <i class="bi bi-arrow-left"></i> Cambiar plan
-                            </a>
-                            <h4 class="mt-3">{{ plan_label }}</h4>
-                            {% if plan_seleccionado == 'MENSUAL' %}
-                                <p class="display-4 text-primary fw-bold">$10.00 <small class="text-muted fs-5">USD / mes</small></p>
-                                <p class="text-muted">Acceso completo durante 30 días desde la fecha de pago. Recibirás un recordatorio 3 días antes del próximo cobro.</p>
-                            {% else %}
-                                <p class="display-4 text-success fw-bold">$100.00 <small class="text-muted fs-5">USD / año</small></p>
-                                <p class="text-muted">Equivalente a $8.33/mes · Acceso completo durante 365 días desde la fecha de pago.</p>
-                            {% endif %}
-
-                            <ul class="list-unstyled text-start d-inline-block mt-3 mb-4">
-                                <li><i class="bi bi-check-circle-fill text-success me-2"></i> Agenda y citas ilimitadas</li>
-                                <li><i class="bi bi-check-circle-fill text-success me-2"></i> Historias clínicas con imágenes</li>
-                                <li><i class="bi bi-check-circle-fill text-success me-2"></i> Recetas y facturación electrónica</li>
-                                <li><i class="bi bi-check-circle-fill text-success me-2"></i> Hasta 5 secretarias</li>
-                                <li><i class="bi bi-check-circle-fill text-success me-2"></i> Soporte por correo</li>
-                            </ul>
-
-                            {% if mock_mode %}
-                                <!-- MODO MOCK (solo desarrollo local sin credenciales PayPhone) -->
-                                <div class="alert alert-warning small text-start my-4">
-                                    <i class="bi bi-cone-striped"></i>
-                                    <strong>Modo desarrollo:</strong> PayPhone no está configurado en local.
-                                    Usa el botón abajo para simular un pago exitoso (no se cobra nada).
-                                </div>
-                                <a href="{% url 'mock_pago_renovacion' %}" class="btn btn-warning btn-lg w-100">
-                                    <i class="bi bi-magic"></i> Simular pago exitoso ({{ plan_label }})
-                                </a>
-                                <p class="text-muted small mt-3">
-                                    En producción este botón no aparece — se usa PayPhone real.
-                                </p>
-                            {% else %}
-                                <div id="pp-button" class="my-4"></div>
-                                <p class="text-muted small mt-3">Pago seguro vía PayPhone. Aceptamos Visa, MasterCard, Diners y Discover.</p>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-
+                    <p class="text-muted small mt-3">Pago seguro vía PayPhone. Aceptamos Visa, MasterCard, Diners y Discover.</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-{% if not mostrar_seleccion_plan and not mock_mode %}
 <script>
 window.addEventListener('DOMContentLoaded', () => {
     new PPaymentButtonBox({
@@ -169,5 +81,4 @@ window.addEventListener('DOMContentLoaded', () => {
     }).render('pp-button');
 });
 </script>
-{% endif %}
 {% endblock %}

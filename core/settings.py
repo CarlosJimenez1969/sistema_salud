@@ -200,19 +200,8 @@ PAYPAL_CLIENT_SECRET = config('PAYPAL_CLIENT_SECRET', default='')
 PAYPAL_MODE          = config('PAYPAL_MODE',          default='sandbox')
 
 # ── PayPhone ────────────────────────────────────────────────────────────────────
-# En DEBUG (local) se usan credenciales TEST; en producción las reales.
-# Si en DEBUG no hay credenciales TEST configuradas, se activa el "modo mock":
-# botón especial en /renovar-suscripcion/ que simula un pago exitoso sin
-# llamar a PayPhone (solo para desarrollo).
-if DEBUG:
-    PAYPHONE_TOKEN    = config('PAYPHONE_TEST_TOKEN',    default='')
-    PAYPHONE_STORE_ID = config('PAYPHONE_TEST_STORE_ID', default='')
-else:
-    PAYPHONE_TOKEN    = config('PAYPHONE_TOKEN',    default='')
-    PAYPHONE_STORE_ID = config('PAYPHONE_STORE_ID', default='')
-
-# Activa botón de pago simulado en local cuando no hay credenciales TEST aún
-PAYPHONE_MOCK_MODE = DEBUG and not (PAYPHONE_TOKEN and PAYPHONE_STORE_ID)
+PAYPHONE_TOKEN    = config('PAYPHONE_TOKEN',    default='')
+PAYPHONE_STORE_ID = config('PAYPHONE_STORE_ID', default='')
 
 # ── Resend (HTTP API para correos) ──────────────────────────────────────────────
 RESEND_API_KEY    = config('RESEND_API_KEY', default='')

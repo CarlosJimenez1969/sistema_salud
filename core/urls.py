@@ -5,7 +5,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 # Importamos las vistas
-from users.views import home, registro_medico, pasarela_pago, pago_exitoso, registro_exitoso, panel_admin, contacto, renovar_suscripcion, confirmar_renovacion, mock_pago_renovacion, cron_notificar_suscripciones, cron_limpiar_datos_prueba
+from users.views import home, registro_medico, pasarela_pago, pago_exitoso, registro_exitoso, panel_admin, contacto, renovar_suscripcion, confirmar_renovacion, cron_notificar_suscripciones, cron_limpiar_datos_prueba
 from medico.views import configurar_horario, ciudades_por_pais
 from paciente.views import (
     listar_pacientes, crear_paciente, editar_paciente, registro_paciente,
@@ -83,7 +83,6 @@ urlpatterns = [
     path('contacto/', contacto, name='contacto'),
     path('renovar-suscripcion/', renovar_suscripcion, name='renovar_suscripcion'),
     path('confirmar-renovacion/', confirmar_renovacion, name='confirmar_renovacion'),
-    path('mock-pago-renovacion/', mock_pago_renovacion, name='mock_pago_renovacion'),
     path('cron/notificar/', cron_notificar_suscripciones, name='cron_notificar_suscripciones'),
     path('cron/limpiar/', cron_limpiar_datos_prueba, name='cron_limpiar_datos_prueba'),
     path('configurar-horario/', configurar_horario, name='configurar_horario'),
