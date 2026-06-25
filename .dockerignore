@@ -1,0 +1,48 @@
+# Entornos virtuales y caches
+venv/
+.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+
+# Configuracion sensible y local
+.env
+.env.*
+*.env
+
+# Base de datos local (sqlite del dev)
+db.sqlite3
+db.sqlite3-journal
+
+# Archivos generados / media local
+media/
+imagenes/
+documentos/
+backup/
+staticfiles/
+Presentacion/
+
+# Git y herramientas
+.git/
+.gitignore
+.github/
+.gitattributes
+
+# IDE y editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Documentacion no necesaria en la imagen
+README.md
+*.md
+
+# Render config (no aplica en VPS)
+build.sh
