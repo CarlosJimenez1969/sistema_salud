@@ -32,9 +32,6 @@ RUN pip install --upgrade pip && \
 
 COPY . /app/
 
-# collectstatic en build para que whitenoise sirva los archivos en runtime
-RUN python manage.py collectstatic --noinput
-
 RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000

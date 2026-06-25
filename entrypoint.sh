@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo ">>> Recolectando archivos estaticos..."
+python manage.py collectstatic --noinput
+
 echo ">>> Aplicando migraciones..."
 python manage.py migrate --noinput
 
