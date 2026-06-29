@@ -304,16 +304,33 @@ def confirmar_renovacion(request):
 
         messages.success(request, f"¡Suscripción renovada hasta {medico.fecha_fin_suscripcion}!")
 
-        # Generar factura electrónica en background
+        # Generar factura electrónica en background — ligada a la transacción PayPhone
         import threading
-        def generar_factura(m):
+        def generar_factura(m, pp_tx_id, pp_client_tx_id):
             try:
                 from facturacion.services.sri import SriService
                 from decimal import Decimal
-                SriService().crear_factura_pago(m, Decimal('50.00'))
+                SriService().crear_factura_pago(
+                    m, Decimal('50.00'),
+                    payphone_transaction_id=pp_tx_id,
+                    payphone_client_transaction_id=pp_client_tx_id,
+                )
             except Exception as e:
                 print(f"[FACTURACIÓN RENOVACIÓN] {e}")
-        threading.Thread(target=generar_factura, args=(medico,), daemon=True).start()
+                from facturacion.alerts import alertar_factura_fallida
+                from decimal import Decimal
+                alertar_factura_fallida(
+                    "Renovación de suscripción",
+                    e,
+                    medico=m,
+                    monto=Decimal('50.00'),
+                    payphone_transaction_id=pp_tx_id,
+                )
+        threading.Thread(
+            target=generar_factura,
+            args=(medico, transaction_id, client_transaction_id),
+            daemon=True,
+        ).start()
 
         return redirect('home')
     except Exception as e:
@@ -699,7 +716,7 @@ def confirmar_pago(request):
         host = request.get_host()
         scheme = request.scheme
 
-        def tareas_segundo_plano(u, m, host, scheme):
+        def tareas_segundo_plano(u, m, host, scheme, pp_tx_id, pp_client_tx_id):
             try:
                 print(f"[EMAIL] Enviando correo de activación a {u.email}...")
                 from django.contrib.auth.tokens import default_token_generator
@@ -746,11 +763,28 @@ def confirmar_pago(request):
             try:
                 from facturacion.services.sri import SriService
                 from decimal import Decimal
-                SriService().crear_factura_pago(m, Decimal('50.00'))
+                SriService().crear_factura_pago(
+                    m, Decimal('50.00'),
+                    payphone_transaction_id=pp_tx_id,
+                    payphone_client_transaction_id=pp_client_tx_id,
+                )
             except Exception as e:
                 print(f"[FACTURACIÓN] {e}")
+                from facturacion.alerts import alertar_factura_fallida
+                from decimal import Decimal
+                alertar_factura_fallida(
+                    "Registro inicial de médico",
+                    e,
+                    medico=m,
+                    monto=Decimal('50.00'),
+                    payphone_transaction_id=pp_tx_id,
+                )
 
-        threading.Thread(target=tareas_segundo_plano, args=(user, medico_obj, host, scheme), daemon=True).start()
+        threading.Thread(
+            target=tareas_segundo_plano,
+            args=(user, medico_obj, host, scheme, transaction_id, client_transaction_id),
+            daemon=True,
+        ).start()
 
         email_registrado = datos.get('email', '')
         reg.delete()

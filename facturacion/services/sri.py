@@ -638,9 +638,18 @@ class SriService:
 
     # ── 8. Crear factura desde un pago ───────────────────────────────────────
 
-    def crear_factura_pago(self, medico, monto_total: Decimal) -> 'FacturaElectronica':
+    def crear_factura_pago(
+        self,
+        medico,
+        monto_total: Decimal,
+        payphone_transaction_id: str = '',
+        payphone_client_transaction_id: str = '',
+    ) -> 'FacturaElectronica':
         """
         Crea, persiste y procesa una FacturaElectronica para un pago de registro médico.
+
+        Los parámetros payphone_* permiten trazabilidad de la factura con la
+        transacción PayPhone que la originó (útil para conciliación y reversos).
         """
         from facturacion.models import FacturaElectronica, SecuencialFactura
         from django.conf import settings as cfg
@@ -683,6 +692,8 @@ class SriService:
             total=monto_total,
             descripcion='Registro de suscripción - VertexSalud',
             estado='PENDIENTE',
+            payphone_transaction_id=payphone_transaction_id,
+            payphone_client_transaction_id=payphone_client_transaction_id,
         )
 
         # Procesar la factura (genera XML, firma, envía al SRI)

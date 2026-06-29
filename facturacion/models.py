@@ -89,6 +89,16 @@ class FacturaElectronica(models.Model):
     respuesta_sri = models.JSONField(null=True, blank=True)
     mensajes_sri = models.TextField(blank=True)
 
+    # Trazabilidad PayPhone (vacío para facturas históricas o flujos no-PayPhone)
+    payphone_transaction_id = models.CharField(
+        max_length=100, blank=True, default='',
+        help_text='ID retornado por PayPhone tras confirmación de pago',
+    )
+    payphone_client_transaction_id = models.CharField(
+        max_length=100, blank=True, default='',
+        help_text='clientTransactionId (UUID) que enviamos a PayPhone',
+    )
+
     # Auditoría
     fecha_emision = models.DateTimeField(auto_now_add=True)
     fecha_envio = models.DateTimeField(null=True, blank=True)
