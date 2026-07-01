@@ -103,6 +103,16 @@ class FacturaElectronica(models.Model):
     fecha_emision = models.DateTimeField(auto_now_add=True)
     fecha_envio = models.DateTimeField(null=True, blank=True)
 
+    # Reintentos automáticos para facturas PENDIENTE (SRI caído, fecha extemporánea, etc.)
+    intentos_sri = models.PositiveIntegerField(
+        default=0,
+        help_text='Cantidad de intentos de envío al SRI (se incrementa en cada retry).',
+    )
+    ultimo_intento_sri = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Timestamp del último intento de envío al SRI.',
+    )
+
     class Meta:
         ordering = ['-fecha_emision']
         verbose_name = 'Factura Electrónica'
