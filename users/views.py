@@ -334,6 +334,21 @@ def confirmar_renovacion(request):
 
         return redirect('home')
     except Exception as e:
+        import traceback
+        print(f"[CONFIRMAR_RENOVACION ERROR] {type(e).__name__}: {e}")
+        traceback.print_exc()
+        # Alerta email al admin (CRÍTICO: el médico probablemente ya pagó)
+        try:
+            from facturacion.alerts import alertar_confirmacion_pago_fallida
+            alertar_confirmacion_pago_fallida(
+                contexto="Renovación de suscripción",
+                error=e,
+                transaction_id=transaction_id or '',
+                client_transaction_id=client_transaction_id or '',
+                username=request.user.username,
+            )
+        except Exception as alert_err:
+            print(f"[ALERT ERROR] {alert_err}")
         messages.error(request, f"Error al verificar pago: {e}")
         return redirect('renovar_suscripcion')
 
@@ -667,6 +682,20 @@ def confirmar_pago(request):
         resp.raise_for_status()
         data = resp.json()
     except Exception as e:
+        import traceback
+        print(f"[CONFIRMAR_PAGO ERROR] {type(e).__name__}: {e}")
+        traceback.print_exc()
+        try:
+            from facturacion.alerts import alertar_confirmacion_pago_fallida
+            alertar_confirmacion_pago_fallida(
+                contexto="Registro inicial de médico",
+                error=e,
+                transaction_id=transaction_id or '',
+                client_transaction_id=client_transaction_id or '',
+                username='(registro inicial, aún sin username)',
+            )
+        except Exception as alert_err:
+            print(f"[ALERT ERROR] {alert_err}")
         messages.error(request, f"No se pudo verificar el pago: {e}")
         return redirect('registro_medico')
 

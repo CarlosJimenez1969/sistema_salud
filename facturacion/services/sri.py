@@ -485,10 +485,33 @@ class SriService:
 
     # ── 6. Flujo completo ────────────────────────────────────────────────────
 
+    # Palabras clave en mensajes del SRI que sugieren un error temporal recuperable
+    # (fecha extemporánea por diferencia UTC/Ecuador de noche, servicio caído, etc.).
+    # Estas facturas se marcan como PENDIENTE en vez de RECHAZADA para permitir reintento.
+    ERRORES_REINTENTABLES = (
+        'EXTEMPORANEA',
+        'EXTEMPORANEO',
+        'FUERA DEL RANGO',
+        'ESTRUCTURA DE LA CLAVE',   # típicamente asociado a discrepancia fecha
+        'SERVICIO NO DISPONIBLE',
+        'TIMEOUT',
+        'EN MANTENIMIENTO',
+    )
+
+    def _es_error_reintentables(self, mensajes: str) -> bool:
+        if not mensajes:
+            return False
+        m_upper = mensajes.upper()
+        return any(p in m_upper for p in self.ERRORES_REINTENTABLES)
+
     def procesar_factura(self, factura) -> None:
         """
         Ejecuta el flujo completo de facturación electrónica:
           generar XML → firmar → enviar SRI → consultar autorización → actualizar BD
+
+        Si el SRI rechaza con un error temporal (fecha extemporánea, servicio
+        caído), la factura queda en estado PENDIENTE para que se reintente
+        con `python manage.py reintentar_facturas`.
         """
         from django.utils import timezone
         import time
@@ -543,18 +566,29 @@ class SriService:
                     factura.mensajes_sri = 'Comprobante autorizado correctamente.'
                     self._enviar_correo_factura(factura)
                 elif estado_aut in ('NO AUTORIZADO',):
-                    factura.estado = 'RECHAZADA'
                     mensajes = resp_aut.get('mensajes', [])
                     factura.mensajes_sri = '; '.join(m.get('mensaje', '') for m in mensajes)
+                    # Errores temporales (fecha extemporánea, SRI caído, etc.)
+                    # → PENDIENTE para permitir reintento al día siguiente
+                    if self._es_error_reintentables(factura.mensajes_sri):
+                        factura.estado = 'PENDIENTE'
+                    else:
+                        factura.estado = 'RECHAZADA'
                 else:
                     # EN PROCESO: el SRI todavía lo está procesando
                     factura.estado = 'ENVIADA'
                     factura.mensajes_sri = 'Comprobante en proceso de autorización en el SRI.'
             else:
                 # DEVUELTA (rechazada en recepción) o ERROR
-                factura.estado = 'RECHAZADA' if resp_recepcion.get('estado') == 'DEVUELTA' else 'ERROR'
                 mensajes = resp_recepcion.get('mensajes', [])
                 factura.mensajes_sri = '; '.join(m.get('mensaje', '') for m in mensajes)
+                if resp_recepcion.get('estado') == 'DEVUELTA':
+                    if self._es_error_reintentables(factura.mensajes_sri):
+                        factura.estado = 'PENDIENTE'
+                    else:
+                        factura.estado = 'RECHAZADA'
+                else:
+                    factura.estado = 'ERROR'
 
         except Exception as e:
             factura.estado = 'ERROR'

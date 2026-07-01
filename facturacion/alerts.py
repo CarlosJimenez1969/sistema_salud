@@ -56,6 +56,57 @@ def alertar_factura_fallida(
         "</pre>"
     )
 
+    _enviar_email_admin("⚠️ VertexSalud — Falla emisión factura SRI", html)
+
+
+def alertar_confirmacion_pago_fallida(
+    contexto: str,
+    error: Exception,
+    transaction_id: str = '',
+    client_transaction_id: str = '',
+    username: str = '',
+) -> None:
+    """Envía email al admin cuando el callback de PayPhone falla.
+
+    Este es el escenario más crítico: el médico pagó con tarjeta pero el
+    sistema no pudo extender su suscripción. Sin esta alerta, el médico
+    queda pagando sin servicio y el admin no se entera.
+    """
+    if not settings.RESEND_API_KEY:
+        print(f"[ALERT] RESEND_API_KEY no configurado — no se envió alerta a {ADMIN_EMAIL}")
+        return
+
+    filas = [f"<strong>Contexto:</strong> {contexto}"]
+    if username:
+        filas.append(f"<strong>Username:</strong> {username}")
+    if transaction_id:
+        filas.append(f"<strong>PayPhone txId:</strong> {transaction_id}")
+    if client_transaction_id:
+        filas.append(f"<strong>clientTransactionId:</strong> {client_transaction_id}")
+    filas.append(f"<strong>Error:</strong> {type(error).__name__}: {error}")
+
+    tb = traceback.format_exc()
+
+    html = (
+        "<h3 style='color:#dc3545;'>🚨 CRÍTICO: Confirmación de pago PayPhone falló</h3>"
+        "<p><strong>El médico probablemente pagó pero su suscripción NO se extendió.</strong></p>"
+        f"<ul>{''.join(f'<li>{f}</li>' for f in filas)}</ul>"
+        "<h4>Traceback:</h4>"
+        f"<pre style='background:#f8f9fa;padding:12px;border-radius:4px;font-size:11px;overflow:auto;'>"
+        f"{tb}</pre>"
+        "<h4>Acción sugerida:</h4>"
+        "<ol>"
+        "<li>Verificar en <a href='https://commerce.payphone.app'>commerce.payphone.app</a> si el pago fue efectivamente cobrado</li>"
+        "<li>Si cobró: reintentar la confirmación manualmente en Django shell</li>"
+        "<li>Si NO cobró: no hay acción, el médico verá pantalla de pago de nuevo</li>"
+        "</ol>"
+    )
+
+    _enviar_email_admin("🚨 VertexSalud — Confirmación PayPhone falló (CRÍTICO)", html)
+
+
+def _enviar_email_admin(subject: str, html: str) -> None:
+    """Helper interno para enviar emails al admin vía Resend."""
     try:
         requests.post(
             "https://api.resend.com/emails",
@@ -66,11 +117,11 @@ def alertar_factura_fallida(
             json={
                 "from": settings.RESEND_FROM,
                 "to": [ADMIN_EMAIL],
-                "subject": "⚠️ VertexSalud — Falla emisión factura SRI",
+                "subject": subject,
                 "html": html,
             },
             timeout=10,
         )
     except Exception as e:
         # Nunca propagar — esto se llama desde un except y no debe romper más
-        print(f"[ALERT ERROR] No se pudo enviar alerta de factura fallida: {e}")
+        print(f"[ALERT ERROR] No se pudo enviar alerta al admin: {e}")
