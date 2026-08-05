@@ -4,17 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}VertexSalud{% endblock %}</title>
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
-      
+
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=7">
 
+    <style>
+      :root{
+        --vx-ink:#0a0f0d; --vx-surface:#121b17; --vx-surface2:#0e1613;
+        --vx-line:#233028; --vx-brand:#16a34a; --vx-brand-500:#22c55e; --vx-text:#cbd5e1;
+      }
+      body.vx-app{ background:var(--vx-ink); color:var(--vx-text); min-height:100vh; }
+      .vx-layout{ display:flex; min-height:100vh; }
+      /* ===== Sidebar ===== */
+      .vx-sidebar{ position:fixed; top:0; left:0; width:260px; height:100vh; background:var(--vx-surface);
+        border-right:1px solid var(--vx-line); display:flex; flex-direction:column; z-index:1040; transition:transform .2s; }
+      .vx-brand{ display:flex; align-items:center; gap:.55rem; height:56px; padding:0 1.25rem;
+        border-bottom:1px solid var(--vx-line); color:#fff; font-weight:700; text-decoration:none; flex-shrink:0; }
+      .vx-brand .vx-logo{ width:26px;height:26px;border-radius:7px;
+        background:linear-gradient(135deg,#16a34a,#0ea5e9); display:inline-flex; align-items:center; justify-content:center; color:#fff; }
+      .vx-brand .vx-accent{ color:var(--vx-brand-500); }
+      .vx-nav{ flex:1; overflow-y:auto; padding:1rem .75rem; }
+      .vx-section{ font-size:10px; font-weight:600; color:#4b5563; text-transform:uppercase;
+        letter-spacing:.05em; padding:0 .75rem; margin:1.1rem 0 .35rem; }
+      .vx-section.first{ margin-top:.25rem; }
+      .vx-item{ display:flex; align-items:flex-start; gap:.7rem; padding:.5rem .75rem; border-radius:.5rem;
+        color:var(--vx-text); text-decoration:none; transition:.15s; font-size:.9rem; margin-bottom:2px; }
+      .vx-item:hover{ background:var(--vx-surface2); color:#fff; }
+      .vx-item.active{ background:rgba(22,163,74,.12); color:var(--vx-brand-500); font-weight:500; }
+      .vx-item i{ font-size:1.05rem; line-height:1.25; width:1.1rem; text-align:center; }
+      .vx-item .vx-txt{ display:flex; flex-direction:column; }
+      .vx-item .vx-sub{ font-size:10px; color:#64748b; line-height:1.2; }
+      .vx-badge{ margin-left:auto; background:var(--vx-brand); color:#fff; font-size:10px;
+        line-height:1; border-radius:999px; padding:.2rem .4rem; align-self:center; }
+      .vx-foot{ border-top:1px solid var(--vx-line); padding:.6rem .75rem; flex-shrink:0; }
+      .vx-user{ display:flex; align-items:center; gap:.6rem; padding:.4rem .75rem; }
+      .vx-user .vx-avatar{ font-size:1.6rem; color:#fff; }
+      .vx-user small{ color:#64748b; }
+      .vx-logout{ width:100%; text-align:left; }
+      /* ===== Main ===== */
+      .vx-main{ flex:1; min-width:0; margin-left:260px; display:flex; flex-direction:column; }
+      .vx-topbar{ display:none; }
+      .vx-content{ flex:1; }
+      .vx-content .container, .vx-content .container-fluid{ }
+      .vx-footer{ text-align:center; padding:1.25rem; color:#475569; border-top:1px solid var(--vx-line); }
+      .vx-footer a{ color:#64748b; }
+      /* ===== Móvil ===== */
+      .vx-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1035; display:none; }
+      .vx-overlay.show{ display:block; }
+      @media (max-width: 991.98px){
+        .vx-sidebar{ transform:translateX(-100%); }
+        .vx-sidebar.open{ transform:translateX(0); }
+        .vx-main{ margin-left:0; }
+        .vx-topbar{ display:flex; align-items:center; gap:.75rem; height:56px; padding:0 1rem;
+          background:var(--vx-surface); border-bottom:1px solid var(--vx-line); position:sticky; top:0; z-index:1030; }
+        .vx-topbar .vx-toggle{ background:none; border:none; color:var(--vx-text); font-size:1.5rem; line-height:1; }
+        .vx-topbar .vx-brand{ height:auto; padding:0; border:none; }
+      }
+    </style>
+
     {% if GOOGLE_ANALYTICS_ID %}
-    <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ GOOGLE_ANALYTICS_ID }}"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -24,211 +77,191 @@
     </script>
     {% endif %}
 </head>
-<body>
+<body class="{% if user.is_authenticated %}vx-app{% endif %}">
 
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold d-flex align-items-center"
-               href="{% if user.role == 'ADMIN' %}{% url 'panel_admin' %}{% else %}{% url 'home' %}{% endif %}">
-                <i class="bi bi-hospital-fill me-2"></i> VertexSalud
-            </a>
+{% if user.is_authenticated %}
+{% with rn=request.resolver_match.url_name %}
+<div class="vx-layout">
 
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+  <!-- ===== Sidebar ===== -->
+  <aside class="vx-sidebar" id="vxSidebar">
+    <a class="vx-brand" href="{% if user.role == 'ADMIN' %}{% url 'panel_admin' %}{% else %}{% url 'home' %}{% endif %}">
+      <span class="vx-logo"><i class="bi bi-hospital-fill"></i></span>
+      Vertex<span class="vx-accent">Salud</span>
+    </a>
 
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
-                    
-                    {% if user.is_authenticated %}
-                        
-                        {# OPCIONES SEGÚN ROL #}
-                        {% if user.role == 'ADMIN' %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'lista_facturas' %}">
-                                    <i class="bi bi-receipt-cutoff"></i> Facturación
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'panel_admin' %}">
-                                    <i class="bi bi-speedometer2"></i> Panel Admin
-                                </a>
-                            </li>
-                            {% if user.perfil_medico %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'solicitudes_cita' %}">
-                                    <i class="bi bi-inbox"></i> Solicitudes
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'ficha_editar' %}">
-                                    <i class="bi bi-globe"></i> Mi página web
-                                </a>
-                            </li>
-                            {% endif %}
-                        {% elif user.role == 'MEDICO' %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-calendar-check"></i> Mi Agenda
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'ver_agenda' %}">
-                                            <i class="bi bi-calendar-day"></i> Ver Agenda Hoy
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'configurar_horario' %}">
-                                            <i class="bi bi-clock-history"></i> Configurar Horario
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'solicitudes_cita' %}">
-                                            <i class="bi bi-inbox"></i> Solicitudes de cita
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'ficha_editar' %}">
-                                            <i class="bi bi-globe"></i> Mi página web
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'crear_secretaria' %}">
-                                    <i class="bi bi-person-plus"></i> Registrar Personal
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'renovar_suscripcion' %}">
-                                    <i class="bi bi-credit-card-fill"></i> Suscripción
-                                </a>
-                            </li>
-                        {% elif user.role == 'PACIENTE' %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'buscar_medico' %}">
-                                    <i class="bi bi-search"></i> Buscar Médico
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'listar_mascotas' %}">
-                                    <i class="bi bi-heart-pulse"></i> Mis Mascotas
-                                </a>
-                            </li>
-                        {% elif user.role == 'SECRETARIA' %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'dashboard_secretaria' %}">
-                                    <i class="bi bi-speedometer2"></i> Gestión de Citas
-                                </a>
-                            </li>
-                        {% endif %}
+    <nav class="vx-nav">
+      <p class="vx-section first">Principal</p>
+      <a class="vx-item {% if rn == 'home' or rn == 'panel_admin' %}active{% endif %}"
+         href="{% if user.role == 'ADMIN' %}{% url 'panel_admin' %}{% else %}{% url 'home' %}{% endif %}">
+        <i class="bi bi-house-door-fill"></i>
+        <span class="vx-txt"><span>Inicio</span><span class="vx-sub">Resumen general</span></span>
+      </a>
 
-                        <li class="nav-item d-none d-lg-block mx-2 text-white-50">|</li>
+      {% if user.role == 'ADMIN' %}
+        <p class="vx-section">Gestión</p>
+        <a class="vx-item {% if rn == 'panel_admin' %}active{% endif %}" href="{% url 'panel_admin' %}">
+          <i class="bi bi-speedometer2"></i><span class="vx-txt"><span>Panel Admin</span><span class="vx-sub">Administración del sistema</span></span></a>
+        <a class="vx-item {% if rn == 'lista_facturas' %}active{% endif %}" href="{% url 'lista_facturas' %}">
+          <i class="bi bi-receipt-cutoff"></i><span class="vx-txt"><span>Facturación</span><span class="vx-sub">Facturas electrónicas SRI</span></span></a>
+        {% if user.perfil_medico %}
+        <p class="vx-section">Mi consultorio</p>
+        <a class="vx-item {% if rn == 'solicitudes_cita' %}active{% endif %}" href="{% url 'solicitudes_cita' %}">
+          <i class="bi bi-inbox-fill"></i><span class="vx-txt"><span>Solicitudes de cita</span><span class="vx-sub">Pacientes que piden cita</span></span></a>
+        <a class="vx-item {% if rn == 'ficha_editar' %}active{% endif %}" href="{% url 'ficha_editar' %}">
+          <i class="bi bi-globe"></i><span class="vx-txt"><span>Mi página web</span><span class="vx-sub">Tu ficha para Google</span></span></a>
+        {% endif %}
 
-                        <li class="nav-item">
-                            <div class="nav-link d-flex align-items-center">
-                                <div class="text-end me-2 d-none d-md-block">
-                                    <span class="d-block text-white fw-bold lh-1">{{ user.get_full_name|default:user.username }}</span>
-                                    {% if user.role == 'MEDICO' and user.perfil_medico and user.perfil_medico.especialidad %}
-                                        <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">
-                                            <i class="bi bi-clipboard2-pulse-fill me-1"></i>{{ user.perfil_medico.especialidad.nombre }}
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-light text-primary" style="font-size: 0.65rem; text-transform: uppercase;">
-                                            {{ user.get_role_display }}
-                                        </span>
-                                    {% endif %}
-                                </div>
-                                <i class="bi bi-person-circle fs-4 text-white"></i>
-                            </div>
-                        </li>
-                        
-                        <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-link nav-link" style="display: inline; cursor: pointer;">
-                                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
-                            </button>
-                        </form>
+      {% elif user.role == 'MEDICO' %}
+        <p class="vx-section">Mi agenda</p>
+        <a class="vx-item {% if rn == 'ver_agenda' %}active{% endif %}" href="{% url 'ver_agenda' %}">
+          <i class="bi bi-calendar-day"></i><span class="vx-txt"><span>Ver agenda</span><span class="vx-sub">Citas de hoy</span></span></a>
+        <a class="vx-item {% if rn == 'configurar_horario' %}active{% endif %}" href="{% url 'configurar_horario' %}">
+          <i class="bi bi-clock-history"></i><span class="vx-txt"><span>Configurar horario</span><span class="vx-sub">Días y horas de atención</span></span></a>
+        <a class="vx-item {% if rn == 'solicitudes_cita' %}active{% endif %}" href="{% url 'solicitudes_cita' %}">
+          <i class="bi bi-inbox-fill"></i><span class="vx-txt"><span>Solicitudes de cita</span><span class="vx-sub">Pacientes que piden cita</span></span></a>
 
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'contacto' %}">
-                                <i class="bi bi-envelope-heart"></i> Contacto
-                            </a>
-                        </li>
-                    {% else %}
-                        {% if request.resolver_match.url_name != 'login' %}
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'contacto' %}">
-                                <i class="bi bi-envelope-heart"></i> Contacto
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white fw-bold" href="{% url 'login' %}">
-                                <i class="bi bi-box-arrow-in-right me-1"></i> Ingresar
-                            </a>
-                        </li>
-                        {% endif %}
-                    {% endif %}
-                </ul>
-            </div>
+        <p class="vx-section">Pacientes</p>
+        <a class="vx-item {% if rn == 'listar_pacientes' %}active{% endif %}" href="{% url 'listar_pacientes' %}">
+          <i class="bi bi-people-fill"></i><span class="vx-txt"><span>Pacientes</span><span class="vx-sub">Listado de pacientes</span></span></a>
+
+        <p class="vx-section">Mi presencia</p>
+        <a class="vx-item {% if rn == 'ficha_editar' %}active{% endif %}" href="{% url 'ficha_editar' %}">
+          <i class="bi bi-globe"></i><span class="vx-txt"><span>Mi página web</span><span class="vx-sub">Tu página para que te encuentren en Google</span></span></a>
+
+        <p class="vx-section">Cuenta</p>
+        <a class="vx-item {% if rn == 'crear_secretaria' %}active{% endif %}" href="{% url 'crear_secretaria' %}">
+          <i class="bi bi-person-plus-fill"></i><span class="vx-txt"><span>Registrar personal</span><span class="vx-sub">Secretaria / asistente</span></span></a>
+        <a class="vx-item {% if rn == 'renovar_suscripcion' %}active{% endif %}" href="{% url 'renovar_suscripcion' %}">
+          <i class="bi bi-credit-card-fill"></i><span class="vx-txt"><span>Suscripción</span><span class="vx-sub">Estado y renovación</span></span></a>
+
+      {% elif user.role == 'PACIENTE' %}
+        <p class="vx-section">Atención</p>
+        <a class="vx-item {% if rn == 'buscar_medico' %}active{% endif %}" href="{% url 'buscar_medico' %}">
+          <i class="bi bi-search-heart"></i><span class="vx-txt"><span>Buscar médico</span><span class="vx-sub">Encuentra y agenda tu cita</span></span></a>
+        <a class="vx-item {% if rn == 'listar_mascotas' %}active{% endif %}" href="{% url 'listar_mascotas' %}">
+          <i class="bi bi-heart-pulse-fill"></i><span class="vx-txt"><span>Mis mascotas</span><span class="vx-sub">Para citas veterinarias</span></span></a>
+
+      {% elif user.role == 'SECRETARIA' %}
+        <p class="vx-section">Gestión</p>
+        <a class="vx-item {% if rn == 'dashboard_secretaria' %}active{% endif %}" href="{% url 'dashboard_secretaria' %}">
+          <i class="bi bi-clipboard2-check-fill"></i><span class="vx-txt"><span>Gestión de citas</span><span class="vx-sub">Agenda del médico</span></span></a>
+        <a class="vx-item {% if rn == 'solicitudes_cita' %}active{% endif %}" href="{% url 'solicitudes_cita' %}">
+          <i class="bi bi-inbox-fill"></i><span class="vx-txt"><span>Solicitudes de cita</span><span class="vx-sub">Pacientes que piden cita</span></span></a>
+      {% endif %}
+
+      <p class="vx-section">Ayuda</p>
+      <a class="vx-item {% if rn == 'contacto' %}active{% endif %}" href="{% url 'contacto' %}">
+        <i class="bi bi-envelope-heart-fill"></i><span class="vx-txt"><span>Contacto</span><span class="vx-sub">Soporte y sugerencias</span></span></a>
+    </nav>
+
+    <!-- Pie: usuario + salir -->
+    <div class="vx-foot">
+      <div class="vx-user">
+        <i class="bi bi-person-circle vx-avatar"></i>
+        <div class="lh-1">
+          <div class="text-white fw-semibold">{{ user.get_full_name|default:user.username }}</div>
+          {% if user.role == 'MEDICO' and user.perfil_medico and user.perfil_medico.especialidad %}
+            <small><i class="bi bi-clipboard2-pulse"></i> {{ user.perfil_medico.especialidad.nombre }}</small>
+          {% else %}
+            <small class="text-uppercase">{{ user.get_role_display }}</small>
+          {% endif %}
         </div>
-    </nav> 
-    {% if messages %}
-    <div class="toast-stack" id="toastStack">
-        {% for message in messages %}
-        <div class="toast-message toast-{{ message.tags }}" role="alert">
-            <div class="toast-icon">
-                {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill"></i>
-                {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill"></i>
-                {% elif message.tags == 'error' %}<i class="bi bi-x-circle-fill"></i>
-                {% else %}<i class="bi bi-info-circle-fill"></i>
+      </div>
+      <form action="{% url 'logout' %}" method="post" class="mt-1">
+        {% csrf_token %}
+        <button type="submit" class="vx-item vx-logout" style="color:#fb7185; border:none; background:none;">
+          <i class="bi bi-box-arrow-right"></i><span class="vx-txt"><span>Cerrar sesión</span></span>
+        </button>
+      </form>
+    </div>
+  </aside>
+  <div class="vx-overlay" id="vxOverlay" onclick="vxCloseSidebar()"></div>
+
+  <!-- ===== Columna principal ===== -->
+  <div class="vx-main">
+    <!-- Barra superior (solo móvil) -->
+    <div class="vx-topbar">
+      <button class="vx-toggle" onclick="vxOpenSidebar()"><i class="bi bi-list"></i></button>
+      <span class="vx-brand"><span class="vx-logo"><i class="bi bi-hospital-fill"></i></span> Vertex<span class="vx-accent">Salud</span></span>
+    </div>
+
+    <main class="vx-content px-2 px-md-4 py-3 py-md-4">
+{% endwith %}
+{% else %}
+  <!-- Sin sesión: barra superior simple + contenido -->
+  <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background:var(--vx-surface); border-bottom:1px solid var(--vx-line);">
+    <div class="container">
+      <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="{% url 'home' %}">
+        <span class="vx-logo" style="width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#16a34a,#0ea5e9);display:inline-flex;align-items:center;justify-content:center;color:#fff;"><i class="bi bi-hospital-fill"></i></span>
+        Vertex<span class="vx-accent" style="color:var(--vx-brand-500);">Salud</span>
+      </a>
+      {% if request.resolver_match.url_name != 'login' %}
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <a class="btn btn-sm btn-outline-light" href="{% url 'contacto' %}"><i class="bi bi-envelope-heart"></i> Contacto</a>
+        <a class="btn btn-sm btn-success" href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right"></i> Ingresar</a>
+      </div>
+      {% endif %}
+    </div>
+  </nav>
+  <main class="container py-4">
+{% endif %}
+
+    {% block content %}{% endblock %}
+
+{% if user.is_authenticated %}
+    </main>
+    <footer class="vx-footer">
+      <small>&copy; 2026 VertexSalud — VERTEXJD &middot;
+        <a href="{% url 'contacto' %}" class="text-decoration-none">Contacto / Sugerencias</a></small>
+    </footer>
+  </div>
+</div>
+{% else %}
+  </main>
+{% endif %}
+
+<!-- ===== Toasts ===== -->
+{% if messages %}
+<div class="toast-stack" id="toastStack">
+    {% for message in messages %}
+    <div class="toast-message toast-{{ message.tags }}" role="alert">
+        <div class="toast-icon">
+            {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill"></i>
+            {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill"></i>
+            {% elif message.tags == 'error' %}<i class="bi bi-x-circle-fill"></i>
+            {% else %}<i class="bi bi-info-circle-fill"></i>
+            {% endif %}
+        </div>
+        <div class="toast-body">
+            <div class="toast-title">
+                {% if message.tags == 'success' %}¡Éxito!
+                {% elif message.tags == 'warning' %}Atención
+                {% elif message.tags == 'error' %}Error
+                {% else %}Información
                 {% endif %}
             </div>
-            <div class="toast-body">
-                <div class="toast-title">
-                    {% if message.tags == 'success' %}¡Éxito!
-                    {% elif message.tags == 'warning' %}Atención
-                    {% elif message.tags == 'error' %}Error
-                    {% else %}Información
-                    {% endif %}
-                </div>
-                <div class="toast-text">{{ message }}</div>
-            </div>
-            <button type="button" class="toast-close" onclick="this.parentElement.remove()">×</button>
-            <div class="toast-progress"></div>
+            <div class="toast-text">{{ message }}</div>
         </div>
-        {% endfor %}
+        <button type="button" class="toast-close" onclick="this.parentElement.remove()">×</button>
+        <div class="toast-progress"></div>
     </div>
-    {% endif %}
-    <div class="container mt-3">
-        
-        <script>
-    // Esto hará que todos los mensajes del sistema desaparezcan en 10 segundos
+    {% endfor %}
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Sidebar móvil
+    function vxOpenSidebar(){ document.getElementById('vxSidebar').classList.add('open'); document.getElementById('vxOverlay').classList.add('show'); }
+    function vxCloseSidebar(){ document.getElementById('vxSidebar').classList.remove('open'); document.getElementById('vxOverlay').classList.remove('show'); }
+    // Auto-cierre de toasts
     setTimeout(function() {
         document.querySelectorAll('.toast-message').forEach(function(t) {
             t.classList.add('toast-fadeout');
-            setTimeout(() => t.remove(), 500);
+            setTimeout(function(){ t.remove(); }, 500);
         });
-    }, 6000);  // 6 segundos de visibilidad
+    }, 6000);
 </script>
-    </div>
-
-    <main class="container-fluid px-0 py-3 py-md-4" style="margin-top:56px;">
-        {% block content %}
-        {% endblock %}
-    </main>
-
-    <footer class="text-center py-4 text-muted border-top mt-auto">
-        <small>
-            &copy; 2026 VertexSalud - VERTEXJD &middot;
-            <a href="{% url 'contacto' %}" class="text-decoration-none">Contacto / Sugerencias</a>
-        </small>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // (Auto-cierre de toasts se maneja en el script inline después de la pila de toasts)
-    </script>
 </body>
 </html>
