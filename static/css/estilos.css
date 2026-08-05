@@ -337,3 +337,14 @@ input[name="proxima_cita"] {
 .qa-label{ font-size: .92rem; font-weight: 600; line-height: 1.15; display: block; }
 .qa-sub{ font-size: 11px; color: #94a3b8; }
 .qa-tile.primary{ background: rgba(45,212,191,.10); border-color: rgba(45,212,191,.35); }
+
+/* === input-group y card-footer coherentes con el tema oscuro === */
+.input-group-text{
+    background-color: #0d0f11;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #94a3b8;
+}
+.card-footer{
+    background-color: transparent;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
