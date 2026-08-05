@@ -1,4 +1,4 @@
-{% load static %}<!doctype html>
+{% load static l10n %}<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
@@ -120,11 +120,14 @@
         {% endif %}
 
         <!-- Ubicación -->
-        {% if ficha.direccion or ficha.mapa_url %}
+        {% if ficha.direccion or ficha.mapa_url or ficha.lat %}
         <div>
           <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Ubicación</h2>
           {% if ficha.direccion %}<p class="text-slate-300">📍 {{ ficha.direccion }}</p>{% endif %}
-          {% if ficha.mapa_url %}<a href="{{ ficha.mapa_url }}" target="_blank" rel="noopener" class="text-teal hover:underline text-sm">Ver en Google Maps →</a>{% endif %}
+          {% if ficha.lat and ficha.lng %}
+          <div id="map" class="mt-2 rounded-xl overflow-hidden border border-line" style="height:240px;"></div>
+          {% endif %}
+          {% if ficha.mapa_url %}<a href="{{ ficha.mapa_url }}" target="_blank" rel="noopener" class="inline-block mt-2 text-teal hover:underline text-sm">Cómo llegar (Google Maps) →</a>{% endif %}
         </div>
         {% endif %}
 
@@ -146,5 +149,23 @@
       </div>
     </div>
   </div>
+
+  {% if ficha.lat and ficha.lng %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    (function(){
+      var el = document.getElementById('map'); if(!el || !window.L) return;
+      var lat = {% localize off %}{{ ficha.lat }}{% endlocalize %};
+      var lng = {% localize off %}{{ ficha.lng }}{% endlocalize %};
+      var map = L.map('map', { scrollWheelZoom:false }).setView([lat, lng], 16);
+      // CARTO dark (combina con el tema oscuro)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                  { maxZoom:19, subdomains:'abcd', attribution:'© OpenStreetMap · © CARTO' }).addTo(map);
+      L.marker([lat, lng]).addTo(map);
+      setTimeout(function(){ map.invalidateSize(); }, 150);
+    })();
+  </script>
+  {% endif %}
 </body>
 </html>
