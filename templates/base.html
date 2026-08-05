@@ -77,9 +77,9 @@
     </script>
     {% endif %}
 </head>
-<body class="{% if user.is_authenticated %}vx-app{% endif %}">
+<body class="{% if user.is_authenticated and request.resolver_match.url_name != 'login' %}vx-app{% endif %}">
 
-{% if user.is_authenticated %}
+{% if user.is_authenticated and request.resolver_match.url_name != 'login' %}
 {% with rn=request.resolver_match.url_name %}
 <div class="vx-layout">
 
@@ -210,7 +210,7 @@
 
     {% block content %}{% endblock %}
 
-{% if user.is_authenticated %}
+{% if user.is_authenticated and request.resolver_match.url_name != 'login' %}
     </main>
     <footer class="vx-footer">
       <small>&copy; 2026 VertexSalud — VERTEXJD &middot;
