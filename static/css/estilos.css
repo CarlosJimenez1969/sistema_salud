@@ -298,3 +298,42 @@ input[name="proxima_cita"] {
     background-color: #ffffff;
     color: #212529;
 }
+/* === ACCIONES RÁPIDAS: grilla de tiles uniformes (reutilizable) === */
+.qa-wrap{
+    background: var(--card-dark);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+.qa-title{
+    font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: #94a3b8; margin-bottom: .9rem;
+}
+.qa-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: .75rem;
+}
+.qa-tile{
+    display: flex; align-items: center; gap: .75rem;
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; padding: .9rem;
+    text-decoration: none; color: #cbd5e1 !important;
+    transition: all .18s ease;
+}
+.qa-tile:hover{
+    border-color: rgba(45,212,191,.5);
+    background: rgba(45,212,191,.08);
+    transform: translateY(-2px);
+    color: #fff !important;
+}
+.qa-ic{
+    width: 42px; height: 42px; border-radius: 11px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; background: var(--gradient-teal); color: #fff; flex-shrink: 0;
+}
+.qa-label{ font-size: .92rem; font-weight: 600; line-height: 1.15; display: block; }
+.qa-sub{ font-size: 11px; color: #94a3b8; }
+.qa-tile.primary{ background: rgba(45,212,191,.10); border-color: rgba(45,212,191,.35); }

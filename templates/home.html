@@ -89,8 +89,8 @@
             <div class="row">
                 <div class="col-md-8">
                     <div class="card shadow mb-4">
-                        <div class="card-header bg-white font-weight-bold text-primary">
-                            <i class="bi bi-bar-chart-line"></i> Evolución de Citas por Mes
+                        <div class="card-header fw-bold text-white">
+                            <i class="bi bi-bar-chart-line text-info"></i> Evolución de Citas por Mes
                         </div>
                         <div class="card-body">
                             <div class="chart-area">
@@ -191,14 +191,18 @@
                 });
             </script>
         {% elif user.role == "PACIENTE" %}
-            <div class="col-md-6 offset-md-3">
-                <div class="card border-primary mb-3">
-                    <div class="card-body text-primary">
-                        <h5 class="card-title">Agendar Cita</h5>
-                        <p class="card-text">Buscar un médico y reservar turno.</p>
-                        
-                        <a href="{% url 'buscar_medico' %}" class="btn btn-primary">Buscar Médico</a>
-                        
+            <div class="col-md-8 offset-md-2">
+                <div class="qa-wrap text-start">
+                    <div class="qa-title">¿Qué deseas hacer?</div>
+                    <div class="qa-grid">
+                        <a href="{% url 'buscar_medico' %}" class="qa-tile primary">
+                            <span class="qa-ic"><i class="bi bi-search-heart"></i></span>
+                            <span><span class="qa-label">Buscar médico</span><span class="qa-sub">Encuentra y agenda tu cita</span></span>
+                        </a>
+                        <a href="{% url 'listar_mascotas' %}" class="qa-tile">
+                            <span class="qa-ic"><i class="bi bi-heart-pulse-fill"></i></span>
+                            <span><span class="qa-label">Mis mascotas</span><span class="qa-sub">Para citas veterinarias</span></span>
+                        </a>
                     </div>
                 </div>
             </div>
