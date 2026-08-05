@@ -69,3 +69,55 @@ class Cita(models.Model):
             )
 
         return f"https://wa.me/{numero}?text={quote(mensaje)}"
+
+
+class SolicitudCita(models.Model):
+    """Solicitud de cita generada desde la ficha pública del médico (sin login).
+    El médico la revisa y luego la convierte en una Cita real eligiendo hora."""
+
+    ESTADOS = [
+        ('pendiente', 'Pendiente'),
+        ('contactada', 'Contactada'),
+        ('agendada', 'Agendada'),
+        ('descartada', 'Descartada'),
+    ]
+
+    medico = models.ForeignKey(
+        Medico, on_delete=models.CASCADE, related_name='solicitudes_cita')
+    nombre = models.CharField(max_length=150)
+    telefono = models.CharField(max_length=30)
+    motivo = models.TextField(blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='pendiente')
+    origen = models.CharField(max_length=40, default='ficha_publica')
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-creado_en']
+        verbose_name = 'Solicitud de cita'
+        verbose_name_plural = 'Solicitudes de cita'
+
+    def __str__(self):
+        return f"{self.nombre} → Dr. {self.medico.usuario.last_name} ({self.get_estado_display()})"
+
+    @property
+    def telefono_normalizado(self):
+        tel = (self.telefono or '').strip().replace(' ', '').replace('-', '').replace('+', '')
+        if not tel or not tel.replace('.', '').isdigit():
+            return None
+        if tel.startswith('593'):
+            return tel
+        if tel.startswith('0'):
+            return '593' + tel[1:]
+        return '593' + tel  # asumir Ecuador
+
+    @property
+    def whatsapp_link(self):
+        numero = self.telefono_normalizado
+        if not numero:
+            return None
+        from urllib.parse import quote
+        mensaje = (
+            f"Hola {self.nombre}, le contactamos de VertexSalud respecto a su "
+            f"solicitud de cita. ¿Coordinamos día y hora?"
+        )
+        return f"https://wa.me/{numero}?text={quote(mensaje)}"

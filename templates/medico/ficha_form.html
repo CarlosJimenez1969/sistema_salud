@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Mi ficha pública — VertexSalud{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 820px;">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0"><i class="bi bi-person-vcard text-success"></i> Mi ficha pública</h3>
+    <a href="{% url 'ver_agenda' %}" class="btn btn-sm btn-outline-secondary">← Volver a la agenda</a>
+  </div>
+  <p class="text-muted">Esta es tu página pública para que los pacientes te encuentren en Google y soliciten cita. Solo se muestra lo que llenes aquí; <strong>no expone datos clínicos</strong>.</p>
+
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert {% if m.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} py-2">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" class="card shadow-sm border-0">
+    {% csrf_token %}
+    <div class="card-body">
+
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" role="switch" id="publicada" name="publicada" {% if ficha.publicada %}checked{% endif %}>
+        <label class="form-check-label fw-semibold" for="publicada">Publicar mi ficha (visible en internet)</label>
+      </div>
+
+      <!-- Especialidad: select + "Otra" -->
+      <div class="mb-3">
+        <label class="form-label">Título o especialidad</label>
+        <select class="form-select" id="esp-select" onchange="toggleOtra()">
+          <option value="">Elige tu especialidad…</option>
+          {% for e in especialidades %}
+            <option value="{{ e }}" {% if ficha.titulo_profesional == e %}selected{% endif %}>{{ e }}</option>
+          {% endfor %}
+          <option value="__otra__" {% if esp_es_otra %}selected{% endif %}>Otra (escribir)…</option>
+        </select>
+        <input type="text" class="form-control mt-2 {% if not esp_es_otra %}d-none{% endif %}" id="esp-otra"
+               placeholder="Escribe tu especialidad" value="{% if esp_es_otra %}{{ ficha.titulo_profesional }}{% endif %}">
+        <input type="hidden" name="titulo_profesional" id="esp-hidden" value="{{ ficha.titulo_profesional }}">
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Ciudad</label>
+          <input type="text" class="form-control" name="ciudad" id="f-ciudad" value="{{ ficha.ciudad }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Dirección</label>
+          <input type="text" class="form-control" name="direccion" id="f-direccion" value="{{ ficha.direccion }}" placeholder="Se llena al marcar en el mapa">
+        </div>
+      </div>
+
+      <!-- MAPA -->
+      <div class="mt-3">
+        <label class="form-label">Ubicación en el mapa</label>
+        <div class="input-group mb-2">
+          <input type="text" class="form-control" id="map-search" placeholder="Busca tu dirección o ciudad…"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();buscarMapa();}">
+          <button type="button" class="btn btn-outline-success" onclick="buscarMapa()">Buscar</button>
+        </div>
+        <div id="map" style="height:280px; border-radius:8px;" class="border"></div>
+        <small class="text-muted d-block mt-1" id="map-status">{% if ficha.lat %}✓ Ubicación marcada{% else %}Haz clic en el mapa para marcar tu consultorio.{% endif %}</small>
+        <input type="hidden" name="lat" id="f-lat" value="{{ ficha.lat|default_if_none:'' }}">
+        <input type="hidden" name="lng" id="f-lng" value="{{ ficha.lng|default_if_none:'' }}">
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <label class="form-label">Teléfono</label>
+          <input type="text" class="form-control" name="telefono" value="{{ ficha.telefono }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">WhatsApp</label>
+          <input type="text" class="form-control" name="whatsapp" value="{{ ficha.whatsapp }}" placeholder="09XXXXXXXX">
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <label class="form-label">Descripción</label>
+        <textarea class="form-control" name="descripcion" rows="3" placeholder="Preséntate: experiencia, enfoque, etc.">{{ ficha.descripcion }}</textarea>
+      </div>
+      <div class="mt-3">
+        <label class="form-label">Servicios <small class="text-muted">(uno por línea)</small></label>
+        <textarea class="form-control" name="servicios" rows="4">{{ ficha.servicios }}</textarea>
+      </div>
+      <div class="mt-3">
+        <label class="form-label">Horarios de atención <small class="text-muted">(uno por línea)</small></label>
+        <textarea class="form-control" name="horarios" rows="3" placeholder="Lun a Vie: 09:00 - 18:00">{{ ficha.horarios }}</textarea>
+      </div>
+    </div>
+    <div class="card-footer bg-white">
+      <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Guardar ficha</button>
+    </div>
+  </form>
+
+  <!-- Compartir: enlace público + QR -->
+  <div class="card shadow-sm border-0 mt-3">
+    <div class="card-body">
+      <h5 class="mb-3"><i class="bi bi-share"></i> Comparte tu ficha</h5>
+      <div class="input-group mb-3">
+        <input type="text" class="form-control" readonly value="{{ url_publica }}" onclick="this.select()">
+        <a href="{{ url_publica }}" target="_blank" class="btn btn-outline-primary">Ver mi ficha ↗</a>
+      </div>
+      <div class="text-center">
+        <img src="{% url 'ficha_qr' %}" alt="Código QR de mi ficha" width="180" height="180" class="border rounded p-2">
+        <div class="text-muted small mt-1">Imprime este QR para tu consultorio.</div>
+      </div>
+      {% if not ficha.publicada %}
+        <div class="alert alert-warning mt-3 mb-0 py-2 small">Tu ficha está <strong>sin publicar</strong>: activa el interruptor de arriba y guarda para que sea visible.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleOtra(){
+  var sel = document.getElementById('esp-select');
+  var otra = document.getElementById('esp-otra');
+  var hid = document.getElementById('esp-hidden');
+  if (sel.value === '__otra__') {
+    otra.classList.remove('d-none');
+    hid.value = otra.value;
+  } else {
+    otra.classList.add('d-none');
+    hid.value = sel.value;
+  }
+}
+document.getElementById('esp-otra').addEventListener('input', function(){
+  document.getElementById('esp-hidden').value = this.value;
+});
+</script>
+
+<!-- Leaflet (mapa gratis, sin API key) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+  var el = document.getElementById('map'); if(!el || !window.L) return;
+  var latEl = document.getElementById('f-lat'), lngEl = document.getElementById('f-lng');
+  var has = latEl.value !== '';
+  var lat0 = parseFloat(latEl.value) || -0.1807, lng0 = parseFloat(lngEl.value) || -78.4678; // Quito por defecto
+  var map = L.map('map').setView([lat0, lng0], has ? 16 : 12);
+  // CARTO tiles (NO usar OSM directo: bloquea por Referer)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+              {maxZoom:19, subdomains:'abcd', attribution:'© OpenStreetMap · © CARTO'}).addTo(map);
+  var marker = has ? L.marker([lat0, lng0]).addTo(map) : null;
+  function setLoc(la, ln){
+    latEl.value = la.toFixed(6); lngEl.value = ln.toFixed(6);
+    if(marker){ marker.setLatLng([la, ln]); } else { marker = L.marker([la, ln]).addTo(map); }
+    var status = document.getElementById('map-status');
+    status.textContent = 'Obteniendo dirección…';
+    // Reverse geocoding con Photon (NO Nominatim: bloqueado desde navegador)
+    fetch('https://photon.komoot.io/reverse?lat=' + la + '&lon=' + ln)
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var f = d && d.features && d.features[0];
+        if(f){
+          var p = f.properties || {};
+          var partes = [p.name || p.street, p.housenumber, p.district, p.city || p.town || p.county].filter(Boolean);
+          var addr = partes.join(', ');
+          var dir = document.getElementById('f-direccion');
+          if(dir && addr){ dir.value = addr; }
+          var ciu = document.getElementById('f-ciudad');
+          var ciudad = p.city || p.town || p.county || p.state || '';
+          if(ciu && ciudad && !ciu.value.trim()){ ciu.value = ciudad; }
+          status.textContent = '✓ ' + (addr || 'Ubicación marcada');
+        } else { status.textContent = '✓ Ubicación marcada'; }
+      })
+      .catch(function(){ status.textContent = '✓ Ubicación marcada'; });
+  }
+  map.on('click', function(e){ setLoc(e.latlng.lat, e.latlng.lng); });
+  window.buscarMapa = function(){
+    var q = document.getElementById('map-search').value.trim(); if(!q) return;
+    document.getElementById('map-status').textContent = 'Buscando…';
+    fetch('https://photon.komoot.io/api/?limit=1&q=' + encodeURIComponent(q))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var f = d && d.features && d.features[0];
+        if(f){ var c = f.geometry.coordinates; map.setView([c[1], c[0]], 16); setLoc(c[1], c[0]); }
+        else { document.getElementById('map-status').textContent = 'No se encontró. Haz clic en el mapa.'; }
+      })
+      .catch(function(){ document.getElementById('map-status').textContent = 'No se pudo buscar. Marca el punto en el mapa.'; });
+  };
+  setTimeout(function(){ map.invalidateSize(); }, 200);
+})();
+</script>
+{% endblock %}

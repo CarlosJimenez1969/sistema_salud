@@ -14,6 +14,9 @@ from paciente.views import (
 )
 from historia.views import crear_historia, historial_medico, imprimir_receta, registrar_triaje, buscar_cie10  # <--- IMPORTANTE: Importar historial_medico
 from citas.views import buscar_medico, reservar_cita, ver_agenda
+from medico.ficha_views import (
+    ficha_publica, FichaEditView, ficha_qr, solicitudes_cita, cambiar_estado_solicitud,
+)
 
 from paciente import views as paciente_views
 
@@ -95,6 +98,15 @@ urlpatterns = [
 
     path('confirmar-pago/', users_views.confirmar_pago, name='confirmar_pago'),
     path('pasarela-pago/', users_views.pasarela_pago, name='pasarela_pago'),
+
+    # Ficha pública del médico (SEO) + solicitudes de cita
+    path('mi-ficha/', FichaEditView.as_view(), name='ficha_editar'),
+    path('mi-ficha/qr/', ficha_qr, name='ficha_qr'),
+    path('solicitudes-cita/', solicitudes_cita, name='solicitudes_cita'),
+    path('solicitudes-cita/<int:sol_id>/<str:accion>/', cambiar_estado_solicitud, name='cambiar_estado_solicitud'),
+
+    # Página pública (sin login) — al final para no capturar otras rutas
+    path('p/<slug:slug>/', ficha_publica, name='ficha_publica'),
 ]
 
 if settings.DEBUG:

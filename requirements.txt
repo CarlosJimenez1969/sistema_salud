@@ -25,6 +25,7 @@ pycparser==3.0
 pyHanko==0.32.0
 pyhanko-certvalidator==0.29.0
 pypdf==6.6.2
+qrcode==8.2
 python-bidi==0.6.7
 python-decouple==3.8
 PyYAML==6.0.3

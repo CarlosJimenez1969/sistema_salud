@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Solicitudes de cita — VertexSalud{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 960px;">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0"><i class="bi bi-inbox text-success"></i> Solicitudes de cita</h3>
+    <div class="btn-group btn-group-sm" role="group">
+      <a href="?ver=pendientes" class="btn {% if ver != 'todas' %}btn-success{% else %}btn-outline-success{% endif %}">
+        Pendientes {% if total_pendientes %}<span class="badge bg-light text-dark">{{ total_pendientes }}</span>{% endif %}
+      </a>
+      <a href="?ver=todas" class="btn {% if ver == 'todas' %}btn-success{% else %}btn-outline-success{% endif %}">Todas</a>
+    </div>
+  </div>
+
+  <p class="text-muted">Estas solicitudes llegan desde tu <a href="{% url 'ficha_editar' %}">ficha pública</a>. Contacta al paciente y, cuando acuerden día y hora, <strong>agenda la cita</strong> en tu módulo de reservas y marca la solicitud como <em>Agendada</em>.</p>
+
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert {% if m.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} py-2">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+
+  {% if solicitudes %}
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Paciente</th>
+            <th>Teléfono</th>
+            <th>Motivo</th>
+            <th>Recibida</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in solicitudes %}
+          <tr>
+            <td class="fw-semibold">{{ s.nombre }}</td>
+            <td>
+              {% if s.whatsapp_link %}
+                <a href="{{ s.whatsapp_link }}" target="_blank" rel="noopener" class="text-success text-decoration-none" title="WhatsApp">
+                  <i class="bi bi-whatsapp"></i> {{ s.telefono }}</a>
+              {% else %}{{ s.telefono }}{% endif %}
+              <a href="tel:{{ s.telefono }}" class="ms-2 text-secondary" title="Llamar"><i class="bi bi-telephone"></i></a>
+            </td>
+            <td class="small text-muted">{{ s.motivo|default:"—"|truncatechars:60 }}</td>
+            <td class="small">{{ s.creado_en|date:"d/m/Y H:i" }}</td>
+            <td>
+              {% if s.estado == 'pendiente' %}<span class="badge bg-warning text-dark">Pendiente</span>
+              {% elif s.estado == 'contactada' %}<span class="badge bg-info text-dark">Contactada</span>
+              {% elif s.estado == 'agendada' %}<span class="badge bg-success">Agendada</span>
+              {% else %}<span class="badge bg-secondary">Descartada</span>{% endif %}
+            </td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                {% if s.estado != 'agendada' %}
+                <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'contactada' %}" class="d-inline">{% csrf_token %}
+                  <button class="btn btn-outline-info" title="Marcar contactada"><i class="bi bi-chat-dots"></i></button>
+                </form>
+                <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'agendada' %}" class="d-inline">{% csrf_token %}
+                  <button class="btn btn-outline-success" title="Marcar agendada"><i class="bi bi-calendar-check"></i></button>
+                </form>
+                <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'descartada' %}" class="d-inline">{% csrf_token %}
+                  <button class="btn btn-outline-secondary" title="Descartar"><i class="bi bi-x-lg"></i></button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'pendiente' %}" class="d-inline">{% csrf_token %}
+                  <button class="btn btn-outline-warning" title="Reabrir"><i class="bi bi-arrow-counterclockwise"></i></button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="text-center text-muted py-5">
+    <i class="bi bi-inbox display-4 d-block mb-2"></i>
+    No hay solicitudes {% if ver != 'todas' %}pendientes{% endif %}.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
