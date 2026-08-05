@@ -165,6 +165,11 @@ class FichaEditView(View):
         ficha.telefono = (g("telefono") or "").strip()[:30]
         ficha.whatsapp = (g("whatsapp") or "").strip()[:30]
         ficha.horarios = (g("horarios") or "").strip()
+        precio_raw = (g("precio_consulta") or "").strip().replace(",", ".")
+        try:
+            ficha.precio_consulta = float(precio_raw) if precio_raw else None
+        except (ValueError, TypeError):
+            ficha.precio_consulta = None
         ficha.publicada = g("publicada") == "on"
         ficha.save()
         messages.success(request, "¡Ficha guardada!")

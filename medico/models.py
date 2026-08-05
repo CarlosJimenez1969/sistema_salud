@@ -151,6 +151,9 @@ class FichaPublica(models.Model):
     telefono = models.CharField(max_length=30, blank=True)
     whatsapp = models.CharField(max_length=30, blank=True)
     horarios = models.TextField(blank=True, help_text="Uno por línea")
+    precio_consulta = models.DecimalField(
+        "valor de la consulta", max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Opcional. Si lo dejas vacío, no se muestra el precio en tu página.")
 
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)

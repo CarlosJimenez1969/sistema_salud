@@ -68,6 +68,12 @@
             📅 Agendar cita</a>
         </div>
 
+        {% if ficha.precio_consulta %}
+        <div class="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-2 rounded-lg font-medium">
+          💵 Valor de la consulta: <span class="font-bold">${{ ficha.precio_consulta }}</span>
+        </div>
+        {% endif %}
+
         <!-- Descripción -->
         {% if ficha.descripcion %}
         <div>
