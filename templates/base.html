@@ -91,16 +91,17 @@
     </a>
 
     <nav class="vx-nav">
+      {% if user.role != 'ADMIN' %}
       <p class="vx-section first">Principal</p>
-      <a class="vx-item {% if rn == 'home' or rn == 'panel_admin' %}active{% endif %}"
-         href="{% if user.role == 'ADMIN' %}{% url 'panel_admin' %}{% else %}{% url 'home' %}{% endif %}">
+      <a class="vx-item {% if rn == 'home' %}active{% endif %}" href="{% url 'home' %}">
         <i class="bi bi-house-door-fill"></i>
         <span class="vx-txt"><span>Inicio</span><span class="vx-sub">Resumen general</span></span>
       </a>
+      {% endif %}
 
       {% if user.role == 'ADMIN' %}
-        <p class="vx-section">Gestión</p>
-        <a class="vx-item {% if rn == 'panel_admin' %}active{% endif %}" href="{% url 'panel_admin' %}">
+        <p class="vx-section first">Gestión</p>
+        <a class="vx-item {% if rn == 'panel_admin' or rn == 'home' %}active{% endif %}" href="{% url 'panel_admin' %}">
           <i class="bi bi-speedometer2"></i><span class="vx-txt"><span>Panel Admin</span><span class="vx-sub">Administración del sistema</span></span></a>
         <a class="vx-item {% if rn == 'lista_facturas' %}active{% endif %}" href="{% url 'lista_facturas' %}">
           <i class="bi bi-receipt-cutoff"></i><span class="vx-txt"><span>Facturación</span><span class="vx-sub">Facturas electrónicas SRI</span></span></a>
