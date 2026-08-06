@@ -348,3 +348,8 @@ input[name="proxima_cita"] {
     background-color: transparent;
     border-top: 1px solid rgba(255,255,255,0.06);
 }
+
+/* === Legibilidad de textos atenuados sobre el tema oscuro === */
+.text-muted{ color: #94a3b8 !important; }        /* gris claro legible */
+.text-white-50{ color: rgba(255,255,255,.65) !important; }
+.bg-light .text-muted{ color: #6c757d !important; } /* en secciones claras, gris estándar */
