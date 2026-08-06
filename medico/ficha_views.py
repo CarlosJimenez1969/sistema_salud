@@ -198,15 +198,16 @@ def solicitudes_cita(request):
     if not medico:
         messages.error(request, "Solo médicos o secretarias ven solicitudes de cita.")
         return redirect("home")
-    ver = request.GET.get("ver", "pendientes")
+    ver = request.GET.get("ver", "activas")
     qs = SolicitudCita.objects.filter(medico=medico)
     if ver != "todas":
-        qs = qs.filter(estado="pendiente")
+        # Bandeja activa: siguen requiriendo acción (aún no se agendaron ni descartaron)
+        qs = qs.filter(estado__in=["pendiente", "contactada"])
     return render(request, "medico/solicitudes_cita.html", {
         "solicitudes": qs,
         "ver": ver,
-        "total_pendientes": SolicitudCita.objects.filter(
-            medico=medico, estado="pendiente").count(),
+        "total_activas": SolicitudCita.objects.filter(
+            medico=medico, estado__in=["pendiente", "contactada"]).count(),
     })
 
 

@@ -6,8 +6,8 @@
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h3 class="mb-0"><i class="bi bi-inbox text-success"></i> Solicitudes de cita</h3>
     <div class="btn-group btn-group-sm" role="group">
-      <a href="?ver=pendientes" class="btn {% if ver != 'todas' %}btn-success{% else %}btn-outline-success{% endif %}">
-        Pendientes {% if total_pendientes %}<span class="badge bg-light text-dark">{{ total_pendientes }}</span>{% endif %}
+      <a href="?ver=activas" class="btn {% if ver != 'todas' %}btn-success{% else %}btn-outline-success{% endif %}">
+        Activas {% if total_activas %}<span class="badge bg-light text-dark">{{ total_activas }}</span>{% endif %}
       </a>
       <a href="?ver=todas" class="btn {% if ver == 'todas' %}btn-success{% else %}btn-outline-success{% endif %}">Todas</a>
     </div>
@@ -58,14 +58,16 @@
             </td>
             <td class="text-end">
               <div class="btn-group btn-group-sm">
-                {% if s.estado != 'agendada' %}
+                {% if s.estado == 'pendiente' %}
                 <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'contactada' %}" class="d-inline">{% csrf_token %}
                   <button class="btn btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top"
                           title="Marcar como contactada (ya te comunicaste con el paciente)"><i class="bi bi-chat-dots"></i></button>
                 </form>
+                {% endif %}
+                {% if s.estado == 'pendiente' or s.estado == 'contactada' %}
                 <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'agendada' %}" class="d-inline">{% csrf_token %}
                   <button class="btn btn-outline-success" data-bs-toggle="tooltip" data-bs-placement="top"
-                          title="Marcar como agendada (ya coordinaron día y hora)"><i class="bi bi-calendar-check"></i></button>
+                          title="Marcar como agendada (ya coordinaron la cita — sale de la bandeja)"><i class="bi bi-calendar-check"></i></button>
                 </form>
                 <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'descartada' %}" class="d-inline">{% csrf_token %}
                   <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -74,7 +76,7 @@
                 {% else %}
                 <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'pendiente' %}" class="d-inline">{% csrf_token %}
                   <button class="btn btn-outline-warning" data-bs-toggle="tooltip" data-bs-placement="top"
-                          title="Reabrir (volver a pendiente)"><i class="bi bi-arrow-counterclockwise"></i></button>
+                          title="Reabrir (volver a la bandeja como pendiente)"><i class="bi bi-arrow-counterclockwise"></i></button>
                 </form>
                 {% endif %}
               </div>
@@ -88,7 +90,7 @@
   {% else %}
   <div class="text-center text-muted py-5">
     <i class="bi bi-inbox display-4 d-block mb-2"></i>
-    No hay solicitudes {% if ver != 'todas' %}pendientes{% endif %}.
+    No hay solicitudes {% if ver != 'todas' %}activas{% endif %}.
   </div>
   {% endif %}
 </div>
