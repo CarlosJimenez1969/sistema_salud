@@ -353,3 +353,12 @@ input[name="proxima_cita"] {
 .text-muted{ color: #94a3b8 !important; }        /* gris claro legible */
 .text-white-50{ color: rgba(255,255,255,.65) !important; }
 .bg-light .text-muted{ color: #6c757d !important; } /* en secciones claras, gris estándar */
+
+/* === Modales coherentes con el tema oscuro === */
+.modal-content{
+    background-color: #1E2226;
+    color: #e2e8f0;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-md);
+}
+.modal-header, .modal-footer{ border-color: rgba(255,255,255,0.08); }

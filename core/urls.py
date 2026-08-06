@@ -16,6 +16,7 @@ from historia.views import crear_historia, historial_medico, imprimir_receta, re
 from citas.views import buscar_medico, reservar_cita, ver_agenda
 from medico.ficha_views import (
     ficha_publica, FichaEditView, ficha_qr, solicitudes_cita, cambiar_estado_solicitud,
+    agendar_solicitud,
 )
 
 from paciente import views as paciente_views
@@ -103,6 +104,7 @@ urlpatterns = [
     path('mi-ficha/', FichaEditView.as_view(), name='ficha_editar'),
     path('mi-ficha/qr/', ficha_qr, name='ficha_qr'),
     path('solicitudes-cita/', solicitudes_cita, name='solicitudes_cita'),
+    path('solicitudes-cita/<int:sol_id>/agendar/', agendar_solicitud, name='agendar_solicitud'),
     path('solicitudes-cita/<int:sol_id>/<str:accion>/', cambiar_estado_solicitud, name='cambiar_estado_solicitud'),
 
     # Página pública (sin login) — al final para no capturar otras rutas

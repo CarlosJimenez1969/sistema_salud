@@ -65,10 +65,8 @@
                 </form>
                 {% endif %}
                 {% if s.estado == 'pendiente' or s.estado == 'contactada' %}
-                <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'agendada' %}" class="d-inline">{% csrf_token %}
-                  <button class="btn btn-outline-success" data-bs-toggle="tooltip" data-bs-placement="top"
-                          title="Marcar como agendada (ya coordinaron la cita — sale de la bandeja)"><i class="bi bi-calendar-check"></i></button>
-                </form>
+                <button type="button" class="btn btn-outline-success" data-bs-toggle="modal"
+                        data-bs-target="#agendar{{ s.id }}" title="Agendar cita (elegir día y hora)"><i class="bi bi-calendar-check"></i></button>
                 <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'descartada' %}" class="d-inline">{% csrf_token %}
                   <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="top"
                           title="Descartar esta solicitud"><i class="bi bi-x-lg"></i></button>
@@ -87,6 +85,45 @@
       </table>
     </div>
   </div>
+
+  {# Modales de agendamiento (día + hora) #}
+  {% for s in solicitudes %}
+  <div class="modal fade" id="agendar{{ s.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" action="{% url 'agendar_solicitud' s.id %}">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-calendar-check text-success"></i> Agendar cita</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-1"><strong>{{ s.nombre }}</strong> · {{ s.telefono }}</p>
+            <p class="small text-muted">{{ s.motivo|default:"Sin motivo indicado" }}</p>
+            <div class="row g-2 mt-2">
+              <div class="col-6">
+                <label class="form-label">Día</label>
+                <input type="date" name="fecha" class="form-control" required value="{{ hoy_iso }}" min="{{ hoy_iso }}">
+              </div>
+              <div class="col-6">
+                <label class="form-label">Hora</label>
+                <input type="time" name="hora" class="form-control" required
+                       {% if medico.hora_inicio %}value="{{ medico.hora_inicio|time:'H:i' }}"{% endif %}>
+              </div>
+            </div>
+            {% if medico.hora_inicio and medico.hora_fin %}
+            <small class="text-muted d-block mt-2">Tu horario de atención: {{ medico.hora_inicio|time:'H:i' }} – {{ medico.hora_fin|time:'H:i' }}</small>
+            {% endif %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success"><i class="bi bi-calendar-check"></i> Agendar y crear cita</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
   {% else %}
   <div class="text-center text-muted py-5">
     <i class="bi bi-inbox display-4 d-block mb-2"></i>

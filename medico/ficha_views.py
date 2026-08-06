@@ -198,6 +198,7 @@ def solicitudes_cita(request):
     if not medico:
         messages.error(request, "Solo médicos o secretarias ven solicitudes de cita.")
         return redirect("home")
+    from django.utils import timezone
     ver = request.GET.get("ver", "activas")
     qs = SolicitudCita.objects.filter(medico=medico)
     if ver != "todas":
@@ -206,9 +207,75 @@ def solicitudes_cita(request):
     return render(request, "medico/solicitudes_cita.html", {
         "solicitudes": qs,
         "ver": ver,
+        "hoy_iso": timezone.localdate().isoformat(),
+        "medico": medico,
         "total_activas": SolicitudCita.objects.filter(
             medico=medico, estado__in=["pendiente", "contactada"]).count(),
     })
+
+
+@login_required
+def agendar_solicitud(request, sol_id):
+    """Convierte una solicitud en una Cita real (fecha + hora) y la agenda.
+    Crea (o reutiliza por teléfono) un Paciente a partir de los datos de la solicitud."""
+    from datetime import datetime
+    from django.contrib.auth import get_user_model
+    from paciente.models import Paciente
+    from citas.models import Cita
+
+    medico = _medico_del_usuario(request)
+    if not medico:
+        return redirect("home")
+    sol = get_object_or_404(SolicitudCita, id=sol_id, medico=medico)
+
+    if request.method != "POST":
+        return redirect("solicitudes_cita")
+
+    fecha_raw = (request.POST.get("fecha") or "").strip()
+    hora_raw = (request.POST.get("hora") or "").strip()
+    try:
+        fecha_d = datetime.strptime(fecha_raw, "%Y-%m-%d").date()
+        hora_t = datetime.strptime(hora_raw, "%H:%M").time()
+    except ValueError:
+        messages.error(request, "Elige una fecha y una hora válidas.")
+        return redirect("solicitudes_cita")
+
+    # Paciente: reutilizar por teléfono o crear uno mínimo
+    paciente = (Paciente.objects
+                .filter(telefono=sol.telefono)
+                .select_related("usuario").first())
+    if not paciente:
+        U = get_user_model()
+        partes = (sol.nombre or "Paciente").split(" ", 1)
+        first = partes[0][:150]
+        last = (partes[1] if len(partes) > 1 else "")[:150]
+        base = "pac_sol%s" % sol.id
+        uname, email, i = base, "%s@sincorreo.vertexsalud" % base, 1
+        while U.objects.filter(username=uname).exists():
+            i += 1
+            uname = "%s_%d" % (base, i)
+        while U.objects.filter(email=email).exists():
+            i += 1
+            email = "%s_%d@sincorreo.vertexsalud" % (base, i)
+        u = U.objects.create(username=uname, email=email,
+                             first_name=first, last_name=last, role="PACIENTE")
+        u.set_unusable_password()
+        u.save()
+        paciente = Paciente.objects.create(usuario=u, telefono=sol.telefono)
+
+    cita = Cita.objects.create(
+        medico=medico, paciente=paciente, fecha=fecha_d, hora=hora_t,
+        motivo=sol.motivo or "Solicitud desde la página web", estado="P")
+
+    sol.estado = "agendada"
+    sol.cita = cita
+    sol.save(update_fields=["estado", "cita"])
+
+    messages.success(
+        request,
+        "Cita agendada para %s el %s a las %s. Ya aparece en tu agenda."
+        % (sol.nombre, fecha_d.strftime("%d/%m/%Y"), hora_raw))
+    return redirect("/citas/agenda/?fecha=%s" % fecha_d.isoformat())
 
 
 @login_required

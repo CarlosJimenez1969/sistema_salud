@@ -89,6 +89,10 @@ class SolicitudCita(models.Model):
     motivo = models.TextField(blank=True)
     estado = models.CharField(max_length=20, choices=ESTADOS, default='pendiente')
     origen = models.CharField(max_length=40, default='ficha_publica')
+    # Cita real generada al agendar (para trazabilidad)
+    cita = models.ForeignKey(
+        'Cita', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='solicitud_origen')
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
