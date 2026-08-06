@@ -231,6 +231,7 @@ def agendar_solicitud(request, sol_id):
     if request.method != "POST":
         return redirect("solicitudes_cita")
 
+    from django.utils import timezone
     fecha_raw = (request.POST.get("fecha") or "").strip()
     hora_raw = (request.POST.get("hora") or "").strip()
     try:
@@ -238,6 +239,14 @@ def agendar_solicitud(request, sol_id):
         hora_t = datetime.strptime(hora_raw, "%H:%M").time()
     except ValueError:
         messages.error(request, "Elige una fecha y una hora válidas.")
+        return redirect("solicitudes_cita")
+
+    # No permitir agendar en el pasado (usa la hora local de Ecuador)
+    ahora = timezone.localtime(timezone.now())
+    if fecha_d < ahora.date() or (fecha_d == ahora.date() and hora_t < ahora.time()):
+        messages.error(
+            request,
+            "Esa fecha y hora ya pasaron. Elige un horario a futuro para la cita.")
         return redirect("solicitudes_cita")
 
     # Paciente: reutilizar por teléfono o crear uno mínimo
