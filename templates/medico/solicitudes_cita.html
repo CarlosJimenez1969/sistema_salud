@@ -41,10 +41,12 @@
             <td class="fw-semibold">{{ s.nombre }}</td>
             <td>
               {% if s.whatsapp_link %}
-                <a href="{{ s.whatsapp_link }}" target="_blank" rel="noopener" class="text-success text-decoration-none" title="WhatsApp">
+                <a href="{{ s.whatsapp_link }}" target="_blank" rel="noopener" class="text-success text-decoration-none"
+                   data-bs-toggle="tooltip" data-bs-placement="top" title="Escribir al paciente por WhatsApp">
                   <i class="bi bi-whatsapp"></i> {{ s.telefono }}</a>
               {% else %}{{ s.telefono }}{% endif %}
-              <a href="tel:{{ s.telefono }}" class="ms-2 text-secondary" title="Llamar"><i class="bi bi-telephone"></i></a>
+              <a href="tel:{{ s.telefono }}" class="ms-2 text-secondary"
+                 data-bs-toggle="tooltip" data-bs-placement="top" title="Llamar al paciente"><i class="bi bi-telephone"></i></a>
             </td>
             <td class="small text-muted">{{ s.motivo|default:"—"|truncatechars:60 }}</td>
             <td class="small">{{ s.creado_en|date:"d/m/Y H:i" }}</td>
@@ -58,17 +60,21 @@
               <div class="btn-group btn-group-sm">
                 {% if s.estado != 'agendada' %}
                 <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'contactada' %}" class="d-inline">{% csrf_token %}
-                  <button class="btn btn-outline-info" title="Marcar contactada"><i class="bi bi-chat-dots"></i></button>
+                  <button class="btn btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top"
+                          title="Marcar como contactada (ya te comunicaste con el paciente)"><i class="bi bi-chat-dots"></i></button>
                 </form>
                 <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'agendada' %}" class="d-inline">{% csrf_token %}
-                  <button class="btn btn-outline-success" title="Marcar agendada"><i class="bi bi-calendar-check"></i></button>
+                  <button class="btn btn-outline-success" data-bs-toggle="tooltip" data-bs-placement="top"
+                          title="Marcar como agendada (ya coordinaron día y hora)"><i class="bi bi-calendar-check"></i></button>
                 </form>
                 <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'descartada' %}" class="d-inline">{% csrf_token %}
-                  <button class="btn btn-outline-secondary" title="Descartar"><i class="bi bi-x-lg"></i></button>
+                  <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="top"
+                          title="Descartar esta solicitud"><i class="bi bi-x-lg"></i></button>
                 </form>
                 {% else %}
                 <form method="post" action="{% url 'cambiar_estado_solicitud' s.id 'pendiente' %}" class="d-inline">{% csrf_token %}
-                  <button class="btn btn-outline-warning" title="Reabrir"><i class="bi bi-arrow-counterclockwise"></i></button>
+                  <button class="btn btn-outline-warning" data-bs-toggle="tooltip" data-bs-placement="top"
+                          title="Reabrir (volver a pendiente)"><i class="bi bi-arrow-counterclockwise"></i></button>
                 </form>
                 {% endif %}
               </div>
@@ -86,4 +92,15 @@
   </div>
   {% endif %}
 </div>
+
+<script>
+  // Activa los tooltips de Bootstrap (descripción al pasar el mouse)
+  document.addEventListener('DOMContentLoaded', function(){
+    if (window.bootstrap && bootstrap.Tooltip) {
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el){
+        new bootstrap.Tooltip(el, { trigger: 'hover' });
+      });
+    }
+  });
+</script>
 {% endblock %}
