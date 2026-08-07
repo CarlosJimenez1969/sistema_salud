@@ -362,3 +362,22 @@ input[name="proxima_cita"] {
     border-radius: var(--radius-md);
 }
 .modal-header, .modal-footer{ border-color: rgba(255,255,255,0.08); }
+
+/* === ODONTOGRAMA === */
+.odo-wrap{ background:#0e1613; border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:1rem; }
+.odo-legend{ display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1rem; }
+.odo-tool{ display:inline-flex; align-items:center; gap:.35rem; padding:.3rem .6rem; border-radius:999px;
+    border:1px solid rgba(255,255,255,.15); background:#131517; color:#cbd5e1; cursor:pointer; font-size:.78rem; }
+.odo-tool.active{ outline:2px solid #22c55e; outline-offset:1px; color:#fff; }
+.odo-swatch{ width:14px; height:14px; border-radius:3px; border:1px solid rgba(255,255,255,.3); display:inline-block; }
+.odo-arch{ display:flex; flex-direction:column; gap:.6rem; align-items:center; overflow-x:auto; padding:.25rem; }
+.odo-row{ display:flex; gap:3px; }
+.odo-gap{ width:14px; flex:0 0 auto; }
+.tooth{ width:30px; text-align:center; user-select:none; }
+.tooth.clickable{ cursor:pointer; }
+.tooth .tnum{ font-size:9px; color:#94a3b8; display:block; margin-bottom:2px; }
+.tooth .tbox{ width:26px; height:34px; border:1px solid rgba(255,255,255,.25); border-radius:5px;
+    display:block; margin:0 auto; background:#1b1f24; transition:.1s; position:relative; }
+.tooth.clickable:hover .tbox{ border-color:#22c55e; }
+.tooth .tbox.is-ausente::after{ content:'✕'; position:absolute; inset:0; display:flex; align-items:center;
+    justify-content:center; color:#f87171; font-size:15px; font-weight:bold; }

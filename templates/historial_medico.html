@@ -210,19 +210,26 @@
                         <div class="card-header bg-secondary text-white py-1">
                             <small><i class="bi bi-mouth"></i> DATOS ODONTOLÓGICOS</small>
                         </div>
-                        <div class="card-body bg-light">
+                        <div class="card-body">
                             <div class="row text-center mb-2">
                                 <div class="col border-end">HIGIENE: <strong>{{ h.odontologia.get_higiene_oral_display }}</strong></div>
                                 <div class="col">ENCÍAS: <strong>{{ h.odontologia.get_encias_display }}</strong></div>
                             </div>
-                            {% if h.odontologia.dientes_tratados %}
-                                <p class="mb-1"><strong>Piezas Tratadas:</strong> {{ h.odontologia.dientes_tratados }}</p>
+                            {% if h.odontologia.odontograma %}
+                                <div class="odo-wrap mb-2">
+                                    <div class="odo-view odo-arch" data-odo='{{ h.odontologia.odontograma_json }}'></div>
+                                    <div class="odo-legend odo-legend-view mt-2"></div>
+                                </div>
                             {% endif %}
-                            <hr class="my-2">
-                            <p class="mb-0"><strong>Procedimiento:</strong> {{ h.odontologia.procedimiento }}</p>
-                            {% if h.odontologia.proxima_cita %}
+                            {% if h.odontologia.dientes_tratados %}
+                                <p class="mb-1"><strong>Piezas tratadas:</strong> {{ h.odontologia.dientes_tratados }}</p>
+                            {% endif %}
+                            {% if h.odontologia.procedimiento %}<p class="mb-1"><strong>Procedimiento:</strong> {{ h.odontologia.procedimiento }}</p>{% endif %}
+                            {% if h.odontologia.plan_tratamiento %}<p class="mb-1"><strong>Plan de tratamiento:</strong> {{ h.odontologia.plan_tratamiento }}</p>{% endif %}
+                            {% if h.odontologia.observaciones %}<p class="mb-0"><strong>Observaciones:</strong> {{ h.odontologia.observaciones }}</p>{% endif %}
+                            {% if h.odontologia.proxima_cita_control %}
                                 <div class="alert alert-warning mt-2 py-1 px-2 text-center">
-                                    <small><i class="bi bi-calendar-event"></i> Próxima cita sugerida: <strong>{{ h.odontologia.proxima_cita|date:"d/M/Y" }}</strong></small>
+                                    <small><i class="bi bi-calendar-event"></i> Próxima cita sugerida: <strong>{{ h.odontologia.proxima_cita_control|date:"d/M/Y" }}</strong></small>
                                 </div>
                             {% endif %}
                         </div>
@@ -367,4 +374,40 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+// Odontogramas en modo lectura (uno por historia odontológica)
+(function(){
+  var UPPER=[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+  var LOWER=[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+  var STATES={ caries:{l:'Caries',c:'#ef4444'}, obturado:{l:'Obturado',c:'#3b82f6'},
+    corona:{l:'Corona',c:'#f59e0b'}, endodoncia:{l:'Endodoncia',c:'#a855f7'},
+    ausente:{l:'Ausente / Extracción',c:'#111827'}, implante:{l:'Implante',c:'#10b981'},
+    fractura:{l:'Fractura',c:'#f97316'}, sellante:{l:'Sellante',c:'#06b6d4'} };
+  function makeRow(nums,data){
+    var row=document.createElement('div'); row.className='odo-row';
+    nums.forEach(function(n,idx){
+      if(idx===8){ var g=document.createElement('div'); g.className='odo-gap'; row.appendChild(g); }
+      var t=document.createElement('div'); t.className='tooth'; t.dataset.tooth=n;
+      var num=document.createElement('span'); num.className='tnum'; num.textContent=n;
+      var box=document.createElement('span'); box.className='tbox';
+      var st=data[n]; if(st && STATES[st]){ box.style.background=STATES[st].c; box.title=STATES[st].l;
+        if(st==='ausente') box.classList.add('is-ausente'); }
+      t.appendChild(num); t.appendChild(box); row.appendChild(t);
+    });
+    return row;
+  }
+  document.querySelectorAll('.odo-view').forEach(function(el){
+    var data={}; try{ data=JSON.parse(el.dataset.odo||'{}')||{}; }catch(e){ data={}; }
+    el.appendChild(makeRow(UPPER,data)); el.appendChild(makeRow(LOWER,data));
+    // Leyenda de estados usados
+    var usados={}; Object.keys(data).forEach(function(k){ usados[data[k]]=true; });
+    var leg=el.parentNode.querySelector('.odo-legend-view');
+    if(leg){ Object.keys(usados).forEach(function(st){ if(STATES[st]){
+      var s=STATES[st]; var b=document.createElement('span'); b.className='odo-tool';
+      b.innerHTML='<span class="odo-swatch" style="background:'+s.c+'"></span>'+s.l; leg.appendChild(b); }});
+    }
+  });
+})();
+</script>
 {% endblock %}

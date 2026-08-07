@@ -414,12 +414,12 @@
                         {% if es_odontologo %}
                         <div class="card border-secondary mb-4 shadow-sm mt-4">
                             <div class="card-header bg-secondary text-white">
-                                <h5 class="mb-0"><i class="bi bi-mouth"></i> Odontograma / Procedimiento</h5>
+                                <h5 class="mb-0"><i class="bi bi-mouth"></i> Odontología</h5>
                             </div>
-                            <div class="card-body bg-light">
+                            <div class="card-body">
                                 <div class="row mb-3">
                                     <div class="col-md-6">
-                                        <label class="fw-bold text-secondary">Higiene Oral</label>
+                                        <label class="fw-bold">Higiene Oral</label>
                                         <select name="higiene_oral" class="form-select">
                                             <option value="BUENA">Buena</option>
                                             <option value="REGULAR" selected>Regular</option>
@@ -427,7 +427,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="fw-bold text-secondary">Estado de Encías</label>
+                                        <label class="fw-bold">Estado de Encías</label>
                                         <select name="encias" class="form-select">
                                             <option value="SANAS">Sanas</option>
                                             <option value="INFLAMADAS">Inflamadas (Gingivitis)</option>
@@ -435,25 +435,86 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label>Piezas Dentales Tratadas (Separar por comas):</label>
-                                    <input type="text" name="dientes_tratados" class="form-control" placeholder="Ej: 18, 24, 36 (Molares superiores)">
+
+                                {# ── Odontograma visual ── #}
+                                <label class="fw-bold d-block mb-2"><i class="bi bi-grid-3x3-gap-fill"></i> Odontograma</label>
+                                <div class="odo-wrap">
+                                    <div class="odo-legend" id="odoLegend"></div>
+                                    <div class="odo-arch" id="odoArch"></div>
+                                    <small class="text-muted d-block mt-2">Elige un estado arriba y haz clic en cada pieza. Selecciona <strong>Sano</strong> para limpiar una pieza.</small>
+                                </div>
+                                <input type="hidden" name="odontograma_json" id="odontograma_json" value="{}">
+
+                                <div class="mb-3 mt-3">
+                                    <label>Piezas tratadas hoy (opcional):</label>
+                                    <input type="text" name="dientes_tratados" class="form-control" placeholder="Ej: 18, 24, 36">
                                 </div>
                                 <div class="mb-3">
-                                    <label>Procedimiento Realizado:</label>
-                                    <textarea name="procedimiento" class="form-control" rows="3" placeholder="Ej: Profilaxis profunda, restauración con resina..."></textarea>
+                                    <label>Procedimiento realizado:</label>
+                                    <textarea name="procedimiento" class="form-control" rows="2" placeholder="Ej: Profilaxis, restauración con resina en 16..."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Plan de tratamiento:</label>
+                                    <textarea name="plan_tratamiento" class="form-control" rows="2" placeholder="Ej: 1) Endodoncia 26  2) Corona  3) Control en 3 meses"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label>Observaciones:</label>
+                                    <textarea name="observaciones_odo" class="form-control" rows="2"></textarea>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <label class="fw-bold text-primary">
-                                            <i class="bi bi-clock-history"></i> Próxima Cita (Control - Fecha y Hora):
+                                        <label class="fw-bold text-info">
+                                            <i class="bi bi-clock-history"></i> Próxima cita (control):
                                         </label>
                                         {{ form.proxima_cita_control }}
-                                        <small class="text-muted d-block">Indique el día y la hora sugerida para el retorno.</small>
+                                        <small class="text-muted d-block">Día sugerido para el retorno.</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        <script>
+                        (function(){
+                          var UPPER=[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+                          var LOWER=[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+                          var STATES={ sano:{l:'Sano',c:''}, caries:{l:'Caries',c:'#ef4444'},
+                            obturado:{l:'Obturado',c:'#3b82f6'}, corona:{l:'Corona',c:'#f59e0b'},
+                            endodoncia:{l:'Endodoncia',c:'#a855f7'}, ausente:{l:'Ausente / Extracción',c:'#111827'},
+                            implante:{l:'Implante',c:'#10b981'}, fractura:{l:'Fractura',c:'#f97316'},
+                            sellante:{l:'Sellante',c:'#06b6d4'} };
+                          var current='caries', data={};
+                          var hidden=document.getElementById('odontograma_json');
+                          try{ data=JSON.parse(hidden.value||'{}')||{}; }catch(e){ data={}; }
+                          var legend=document.getElementById('odoLegend');
+                          Object.keys(STATES).forEach(function(k){
+                            var s=STATES[k];
+                            var b=document.createElement('span');
+                            b.className='odo-tool'+(k===current?' active':''); b.dataset.state=k;
+                            b.innerHTML='<span class="odo-swatch" style="background:'+(s.c||'#1b1f24')+'"></span>'+s.l;
+                            b.onclick=function(){ current=k;
+                              document.querySelectorAll('.odo-tool').forEach(function(t){t.classList.remove('active');});
+                              b.classList.add('active'); };
+                            legend.appendChild(b);
+                          });
+                          function paint(box,state){ var s=STATES[state]||STATES.sano;
+                            box.style.background = s.c || '#1b1f24';
+                            box.classList.toggle('is-ausente', state==='ausente'); box.title=s.l; }
+                          function makeRow(nums){ var row=document.createElement('div'); row.className='odo-row';
+                            nums.forEach(function(n,idx){
+                              if(idx===8){ var g=document.createElement('div'); g.className='odo-gap'; row.appendChild(g); }
+                              var t=document.createElement('div'); t.className='tooth clickable'; t.dataset.tooth=n;
+                              var num=document.createElement('span'); num.className='tnum'; num.textContent=n;
+                              var box=document.createElement('span'); box.className='tbox';
+                              paint(box, data[n]||'sano');
+                              t.appendChild(num); t.appendChild(box);
+                              t.onclick=function(){ if(current==='sano'){ delete data[n]; } else { data[n]=current; }
+                                paint(box,current); hidden.value=JSON.stringify(data); };
+                              row.appendChild(t);
+                            });
+                            return row; }
+                          var arch=document.getElementById('odoArch');
+                          arch.appendChild(makeRow(UPPER)); arch.appendChild(makeRow(LOWER));
+                        })();
+                        </script>
                         {% endif %}
 
                         {% if es_psicologo %}

@@ -193,12 +193,22 @@ class HistoriaOdontologia(models.Model):
     higiene_oral = models.CharField(max_length=20, choices=[('BUENA', 'Buena'), ('REGULAR', 'Regular'), ('MALA', 'Mala')], default='REGULAR', verbose_name="Higiene Oral")
     encias = models.CharField(max_length=50, choices=[('SANAS', 'Sanas'), ('INFLAMADAS', 'Inflamadas (Gingivitis)'), ('SANGRANTES', 'Sangrantes')], default='SANAS')
     
+    # Odontograma: mapa de piezas -> estado. Ej: {"16": "caries", "24": "obturado"}
+    odontograma = models.JSONField(default=dict, blank=True, verbose_name="Odontograma")
+
     # Tratamiento Específico
     dientes_tratados = models.CharField(max_length=100, verbose_name="Dientes / Piezas (Ej: 18, 24, 36)", blank=True)
-    procedimiento = models.TextField(verbose_name="Procedimiento Realizado (Obturación, Exodoncia, Profilaxis...)")
-    
+    procedimiento = models.TextField(verbose_name="Procedimiento Realizado (Obturación, Exodoncia, Profilaxis...)", blank=True)
+    plan_tratamiento = models.TextField(verbose_name="Plan de tratamiento", blank=True)
+    observaciones = models.TextField(verbose_name="Observaciones", blank=True)
+
     # Plan
     proxima_cita_control = models.DateField(null=True, blank=True, verbose_name="Próxima Cita / Control")
+
+    @property
+    def odontograma_json(self):
+        import json
+        return json.dumps(self.odontograma or {})
 
     def __str__(self):
         return f"Odonto - {self.historia_clinica.paciente}"

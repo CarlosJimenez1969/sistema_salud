@@ -169,15 +169,22 @@ def crear_historia(request, paciente_id):
                     biopsia=biopsia_val
                 )
             elif es_odontologo:
-                fecha_cita = request.POST.get('proxima_cita')
-                if not fecha_cita: fecha_cita = None
+                import json as _json
+                try:
+                    odontograma = _json.loads(request.POST.get('odontograma_json') or '{}')
+                    if not isinstance(odontograma, dict):
+                        odontograma = {}
+                except (ValueError, TypeError):
+                    odontograma = {}
                 HistoriaOdontologia.objects.create(
                     historia_clinica=historia,
-                    higiene_oral=request.POST.get('higiene_oral'),
-                    encias=request.POST.get('encias'),
-                    dientes_tratados=request.POST.get('dientes_tratados'),
-                    procedimiento=request.POST.get('procedimiento'),
-                    proxima_cita=fecha_cita
+                    higiene_oral=request.POST.get('higiene_oral') or 'REGULAR',
+                    encias=request.POST.get('encias') or 'SANAS',
+                    odontograma=odontograma,
+                    dientes_tratados=request.POST.get('dientes_tratados', ''),
+                    procedimiento=request.POST.get('procedimiento', ''),
+                    plan_tratamiento=request.POST.get('plan_tratamiento', ''),
+                    observaciones=request.POST.get('observaciones_odo', ''),
                 )
             elif es_psicologo:
                 HistoriaPsicologia.objects.create(
