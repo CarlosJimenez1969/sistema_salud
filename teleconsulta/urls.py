@@ -10,6 +10,7 @@ urlpatterns = [
     path('sala/<int:sesion_id>/', views.sala_medico, name='sala_medico'),
     path('sala/<int:sesion_id>/admitir/', views.admitir, name='admitir'),
     path('sala/<int:sesion_id>/finalizar/', views.finalizar, name='finalizar'),
+    path('sala/<int:sesion_id>/derivar/', views.derivar, name='derivar'),
     path('sala/<int:sesion_id>/estado/', views.estado_medico_json, name='estado_medico'),
 
     # Paciente (por token, sin login)

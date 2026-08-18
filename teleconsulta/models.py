@@ -31,8 +31,14 @@ class TeleconsultaSesion(models.Model):
         ('SALA_ESPERA', 'En sala de espera'),
         ('EN_CURSO', 'En curso'),
         ('FINALIZADA', 'Finalizada'),
+        ('DERIVADA', 'Derivada a presencial/emergencia'),
         ('FALLIDA', 'Falla técnica'),
         ('CANCELADA', 'Cancelada'),
+    ]
+
+    DERIVACION_TIPOS = [
+        ('PRESENCIAL', 'Atención presencial'),
+        ('EMERGENCIA', 'Emergencia (ECU-911)'),
     ]
 
     cita = models.OneToOneField(
@@ -53,6 +59,11 @@ class TeleconsultaSesion(models.Model):
     inicio = models.DateTimeField(null=True, blank=True)
     fin = models.DateTimeField(null=True, blank=True)
     ubicacion_declarada_paciente = models.CharField(max_length=200, blank=True)
+
+    # Escalamiento / derivación (seguridad clínica)
+    derivacion_tipo = models.CharField(max_length=20, choices=DERIVACION_TIPOS, blank=True)
+    derivacion_motivo = models.TextField(blank=True)
+    derivada_en = models.DateTimeField(null=True, blank=True)
 
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)

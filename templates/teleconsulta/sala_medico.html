@@ -13,9 +13,12 @@
       <button id="btnAdmitir" class="btn btn-success btn-sm" disabled>
         <i class="bi bi-door-open"></i> Admitir paciente
       </button>
+      <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalDerivar" title="Requiere atención presencial o emergencia">
+        <i class="bi bi-exclamation-octagon-fill"></i> Derivar / Emergencia
+      </button>
       <form method="post" action="{% url 'teleconsulta:finalizar' sesion.id %}" onsubmit="return confirm('¿Finalizar la teleconsulta?');" class="d-inline">
         {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right"></i> Finalizar</button>
+        <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-box-arrow-right"></i> Finalizar</button>
       </form>
     </div>
   </div>
@@ -85,6 +88,49 @@
           <small class="text-muted">Envíalo por WhatsApp/SMS. Caduca al terminar la cita.</small>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal derivación / emergencia -->
+<div class="modal fade" id="modalDerivar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{% url 'teleconsulta:derivar' sesion.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title text-danger"><i class="bi bi-exclamation-octagon-fill"></i> Derivar la teleconsulta</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted">Usa esto cuando el caso <strong>no se puede resolver por video</strong> y requiere atención presencial o es una emergencia. La teleconsulta se cerrará y quedará registrada.</p>
+          <div class="mb-3">
+            <label class="form-label">Tipo de derivación</label>
+            <div class="d-grid gap-2">
+              <label class="border rounded p-2 d-flex align-items-center gap-2">
+                <input type="radio" name="tipo" value="PRESENCIAL" checked>
+                <span><strong>Atención presencial</strong><br><small class="text-muted">El paciente debe acudir a un establecimiento de salud.</small></span>
+              </label>
+              <label class="border border-danger rounded p-2 d-flex align-items-center gap-2">
+                <input type="radio" name="tipo" value="EMERGENCIA">
+                <span><strong class="text-danger">Emergencia (ECU-911)</strong><br><small class="text-muted">Riesgo vital: activar servicios de emergencia.</small></span>
+              </label>
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Motivo de la derivación</label>
+            <textarea name="motivo" class="form-control" rows="3" required placeholder="Ej: signos de alarma respiratorios, requiere valoración presencial urgente..."></textarea>
+          </div>
+          {% if sesion.ubicacion_declarada_paciente %}
+          <div class="alert alert-warning py-2 mb-0 small"><i class="bi bi-geo-alt-fill"></i> Ubicación declarada por el paciente: <strong>{{ sesion.ubicacion_declarada_paciente }}</strong></div>
+          {% endif %}
+          <div class="alert alert-danger py-2 mt-2 mb-0 small"><i class="bi bi-telephone-fill"></i> Emergencias en Ecuador: <strong>ECU-911</strong></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger"><i class="bi bi-exclamation-octagon"></i> Derivar y cerrar</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

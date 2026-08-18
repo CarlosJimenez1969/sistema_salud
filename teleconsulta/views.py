@@ -128,6 +128,38 @@ def finalizar(request, sesion_id):
 
 
 @login_required
+def derivar(request, sesion_id):
+    """Escalamiento: deriva la teleconsulta a atención presencial o emergencia,
+    con motivo, y cierra la sesión (seguridad clínica)."""
+    sesion, medico = _sesion_del_medico(request, sesion_id)
+    if not sesion:
+        return redirect('ver_agenda')
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo', 'PRESENCIAL')
+        if tipo not in dict(TeleconsultaSesion.DERIVACION_TIPOS):
+            tipo = 'PRESENCIAL'
+        sesion.derivacion_tipo = tipo
+        sesion.derivacion_motivo = (request.POST.get('motivo') or '').strip()[:2000]
+        sesion.derivada_en = timezone.now()
+        sesion.estado = 'DERIVADA'
+        sesion.fin = sesion.fin or timezone.now()
+        sesion.paciente_admitido = False
+        sesion.paciente_en_espera = False
+        sesion.save(update_fields=[
+            'derivacion_tipo', 'derivacion_motivo', 'derivada_en',
+            'estado', 'fin', 'paciente_admitido', 'paciente_en_espera'])
+        EventoAuditoria.registrar(
+            actor=request.user.get_username(), accion='DERIVA_A_' + tipo,
+            recurso=f'sesion:{sesion.id}', sesion=sesion, ip=get_client_ip(request),
+            motivo=sesion.derivacion_motivo,
+            ubicacion=sesion.ubicacion_declarada_paciente)
+        etiqueta = dict(TeleconsultaSesion.DERIVACION_TIPOS)[tipo]
+        messages.warning(
+            request, f"Teleconsulta derivada a: {etiqueta}. Se registró el motivo.")
+    return redirect('ver_agenda')
+
+
+@login_required
 def estado_medico_json(request, sesion_id):
     """Polling del médico: ¿el paciente está en sala de espera?"""
     sesion, medico = _sesion_del_medico(request, sesion_id)
@@ -249,5 +281,8 @@ def estado_json(request, token):
     return JsonResponse({
         'estado': sesion.estado,
         'admitido': sesion.paciente_admitido,
-        'finalizada': sesion.estado in ('FINALIZADA', 'CANCELADA'),
+        'finalizada': sesion.estado in ('FINALIZADA', 'CANCELADA', 'DERIVADA'),
+        'derivada': sesion.estado == 'DERIVADA',
+        'derivacion_tipo': sesion.derivacion_tipo,
+        'derivacion_motivo': sesion.derivacion_motivo,
     })

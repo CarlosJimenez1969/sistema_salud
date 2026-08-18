@@ -14,7 +14,7 @@
 <body>
   <div id="jitsi"></div>
   <div id="fin">
-    <div>
+    <div id="finBox" style="max-width:460px">
       <div style="font-size:44px">✅</div>
       <h2>La teleconsulta finalizó</h2>
       <p style="color:#94a3b8">Gracias por usar VertexSalud. Puedes cerrar esta ventana.</p>
@@ -42,13 +42,23 @@
 
     function poll(){
       fetch("{% url 'teleconsulta:estado' token %}").then(r=>r.json()).then(function(d){
-        if(d.finalizada){
-          document.getElementById('jitsi').style.display='none';
-          document.getElementById('fin').style.display='flex';
+        if(!d.finalizada) return;
+        if(d.derivada){
+          var emerg = d.derivacion_tipo === 'EMERGENCIA';
+          var box = document.getElementById('finBox');
+          box.innerHTML =
+            '<div style="font-size:44px">'+(emerg?'🚨':'🏥')+'</div>'+
+            '<h2>'+(emerg?'Necesitas atención de EMERGENCIA':'Necesitas atención PRESENCIAL')+'</h2>'+
+            '<p style="color:#cbd5e1">Tu médico indicó que este caso debe atenderse '+(emerg?'de inmediato':'de forma presencial')+'.</p>'+
+            (d.derivacion_motivo? '<p style="color:#94a3b8">Motivo: '+d.derivacion_motivo+'</p>':'')+
+            (emerg? '<p style="font-size:22px;color:#f87171;font-weight:bold">Llama YA al ECU-911 (911)</p>':
+                    '<p style="color:#94a3b8">Acude al establecimiento de salud más cercano.</p>');
         }
+        document.getElementById('jitsi').style.display='none';
+        document.getElementById('fin').style.display='flex';
       }).catch(function(){});
     }
-    setInterval(poll, 5000);
+    setInterval(poll, 4000);
   })();
   </script>
 </body>
