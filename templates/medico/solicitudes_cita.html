@@ -111,6 +111,16 @@
                        {% if medico.hora_inicio %}value="{{ medico.hora_inicio|time:'H:i' }}"{% endif %}>
               </div>
             </div>
+            <div class="mt-3">
+              <label class="form-label">Modalidad</label>
+              <select name="modalidad" class="form-select">
+                <option value="PRESENCIAL" selected>Presencial</option>
+                <option value="TELECONSULTA">Teleconsulta (video)</option>
+                <option value="TELEINTERCONSULTA">Teleinterconsulta</option>
+                <option value="TELEMONITOREO">Telemonitoreo</option>
+              </select>
+              <small class="text-muted">Si es remota, se genera la sala de video y el enlace del paciente.</small>
+            </div>
             {% if medico.hora_inicio and medico.hora_fin %}
             <small class="text-muted d-block mt-2">Tu horario de atención: {{ medico.hora_inicio|time:'H:i' }} – {{ medico.hora_fin|time:'H:i' }}</small>
             {% endif %}

@@ -272,18 +272,28 @@ def agendar_solicitud(request, sol_id):
         u.save()
         paciente = Paciente.objects.create(usuario=u, telefono=sol.telefono)
 
+    modalidad = request.POST.get("modalidad", "PRESENCIAL")
+    if modalidad not in dict(Cita.MODALIDADES):
+        modalidad = "PRESENCIAL"
     cita = Cita.objects.create(
         medico=medico, paciente=paciente, fecha=fecha_d, hora=hora_t,
-        motivo=sol.motivo or "Solicitud desde la página web", estado="P")
+        motivo=sol.motivo or "Solicitud desde la página web", estado="P",
+        modalidad=modalidad)
+
+    # Si es remota, dejar creada la sesión de teleconsulta (con su token/sala)
+    if cita.es_remota:
+        from teleconsulta.services import sesion_para_cita
+        sesion_para_cita(cita)
 
     sol.estado = "agendada"
     sol.cita = cita
     sol.save(update_fields=["estado", "cita"])
 
+    extra = " (teleconsulta)" if cita.es_remota else ""
     messages.success(
         request,
-        "Cita agendada para %s el %s a las %s. Ya aparece en tu agenda."
-        % (sol.nombre, fecha_d.strftime("%d/%m/%Y"), hora_raw))
+        "Cita%s agendada para %s el %s a las %s. Ya aparece en tu agenda."
+        % (extra, sol.nombre, fecha_d.strftime("%d/%m/%Y"), hora_raw))
     return redirect("/citas/agenda/?fecha=%s" % fecha_d.isoformat())
 
 

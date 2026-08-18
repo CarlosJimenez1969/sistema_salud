@@ -27,6 +27,7 @@ from users import views as users_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('citas/', include('citas.urls')),
+    path('teleconsulta/', include('teleconsulta.urls')),
     path('facturas/', include('facturacion.urls')),
     path('api/v1/facturas/', include('facturacion.api_urls')),
 

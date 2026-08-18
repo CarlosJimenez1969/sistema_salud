@@ -1,0 +1,47 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teleconsulta | VertexSalud</title>
+  <style>
+    html,body{margin:0;height:100%;background:#0b0f0d;font-family:system-ui,sans-serif}
+    #jitsi{position:fixed;inset:0}
+    #fin{position:fixed;inset:0;display:none;align-items:center;justify-content:center;color:#e2e8f0;background:#0b0f0d;text-align:center;padding:24px}
+  </style>
+  <script src="https://{{ jitsi_domain }}/external_api.js"></script>
+</head>
+<body>
+  <div id="jitsi"></div>
+  <div id="fin">
+    <div>
+      <div style="font-size:44px">✅</div>
+      <h2>La teleconsulta finalizó</h2>
+      <p style="color:#94a3b8">Gracias por usar VertexSalud. Puedes cerrar esta ventana.</p>
+    </div>
+  </div>
+  <script>
+  (function(){
+    try{
+      new JitsiMeetExternalAPI("{{ jitsi_domain }}", {
+        roomName: "{{ sesion.sala_id }}",
+        parentNode: document.getElementById('jitsi'),
+        userInfo: { displayName: "{{ paciente_nombre|escapejs }}" },
+        configOverwrite: { prejoinPageEnabled: false, disableDeepLinking: true },
+        interfaceConfigOverwrite: { MOBILE_APP_PROMO: false }
+      });
+    }catch(e){ console.error(e); }
+
+    function poll(){
+      fetch("{% url 'teleconsulta:estado' token %}").then(r=>r.json()).then(function(d){
+        if(d.finalizada){
+          document.getElementById('jitsi').style.display='none';
+          document.getElementById('fin').style.display='flex';
+        }
+      }).catch(function(){});
+    }
+    setInterval(poll, 5000);
+  })();
+  </script>
+</body>
+</html>

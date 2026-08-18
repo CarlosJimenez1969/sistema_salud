@@ -96,12 +96,18 @@
                                     {{ cita.paciente.usuario.last_name }} {{ cita.paciente.usuario.first_name }}<br>
                                     <small class="text-muted">{{ cita.paciente.usuario.cedula }}</small>
                                 {% endif %}
+                                {% if cita.es_remota %}<br><span class="badge bg-info text-dark mt-1"><i class="bi bi-camera-video"></i> {{ cita.get_modalidad_display }}</span>{% endif %}
                             </td>
                             <td class="align-middle">{{ cita.motivo|default:"Sin especificar" }}</td>
                             <td class="align-middle text-center">
                                 <a href="{% url 'historial_medico' cita.paciente.id %}" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm">
                                     <i class="bi bi-file-earmark-medical"></i> Ver Ficha
                                 </a>
+                                {% if cita.es_remota %}
+                                <a href="{% url 'teleconsulta:abrir_sala_cita' cita.id %}" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" title="Abrir sala de teleconsulta">
+                                    <i class="bi bi-camera-video-fill"></i> Sala
+                                </a>
+                                {% endif %}
                                 {% if cita.whatsapp_link %}
                                 <a href="{{ cita.whatsapp_link }}" target="_blank" class="btn btn-success btn-sm rounded-pill px-3 shadow-sm" title="Enviar recordatorio por WhatsApp">
                                     <i class="bi bi-whatsapp"></i>

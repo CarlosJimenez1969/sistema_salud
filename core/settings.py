@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'citas',
     'historia',
     'facturacion',
+    'teleconsulta',
 
     'rest_framework',
     'rest_framework.authtoken',

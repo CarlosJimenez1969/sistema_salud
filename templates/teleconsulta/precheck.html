@@ -1,0 +1,118 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verificación técnica | VertexSalud</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body{background:#f1f5f9}
+    .dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+    .g{background:#22c55e}.y{background:#f59e0b}.r{background:#ef4444}.n{background:#cbd5e1}
+    .lvl{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+    .lvl>span{display:block;height:100%;width:0;background:#22c55e;transition:width .1s}
+  </style>
+</head>
+<body class="text-slate-700">
+  <div class="max-w-xl mx-auto sm:my-8 px-3">
+    <div class="bg-white sm:rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="bg-gradient-to-br from-teal-600 to-emerald-700 px-6 py-5 text-white">
+        <h1 class="text-xl font-bold">🔧 Verifiquemos tu equipo</h1>
+        <p class="text-teal-50 text-sm mt-0.5">Un chequeo rápido antes de la videollamada.</p>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <video id="prev" autoplay muted playsinline class="w-full rounded-lg bg-slate-900" style="max-height:220px"></video>
+
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span><span id="dCam" class="dot n"></span> <span class="ml-2">Cámara</span></span>
+            <span id="tCam" class="text-sm text-slate-400">Verificando…</span>
+          </div>
+          <div>
+            <div class="flex items-center justify-between">
+              <span><span id="dMic" class="dot n"></span> <span class="ml-2">Micrófono</span></span>
+              <span id="tMic" class="text-sm text-slate-400">Verificando…</span>
+            </div>
+            <div class="lvl mt-1"><span id="micBar"></span></div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span><span id="dSpk" class="dot n"></span> <span class="ml-2">Parlantes</span></span>
+            <button id="btnSound" class="text-sm text-emerald-700 underline">Probar sonido</button>
+          </div>
+          <div class="flex items-center justify-between">
+            <span><span id="dNet" class="dot n"></span> <span class="ml-2">Conexión a internet</span></span>
+            <span id="tNet" class="text-sm text-slate-400">Midiendo…</span>
+          </div>
+        </div>
+
+        <div id="ayuda" class="hidden rounded-lg bg-red-50 border border-red-200 text-red-800 px-4 py-3 text-sm">
+          No pudimos acceder a tu cámara/micrófono. Revisa que el navegador tenga permiso
+          (icono de la barra de direcciones) y recarga. Si no funciona, el médico puede
+          atenderte por teléfono.
+        </div>
+
+        <form method="post" action="{% url 'teleconsulta:listo' token %}" class="space-y-3">
+          {% csrf_token %}
+          <div>
+            <label class="block text-sm font-semibold mb-1">¿Desde dónde te conectas? <span class="text-slate-400 font-normal">(por seguridad, por si hay una emergencia)</span></label>
+            <input type="text" name="ubicacion" placeholder="Ciudad / sector" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-semibold transition">
+            Estoy listo/a — Ir a la sala de espera
+          </button>
+          <p class="text-center text-xs text-slate-400">Si algo falla, podrás igual pasar a la sala; el médico verá tu estado.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    function set(id, cls, txt){ var d=document.getElementById(id); d.className='dot '+cls; }
+    // Cámara + micrófono
+    navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(function(stream){
+      document.getElementById('prev').srcObject = stream;
+      set('dCam','g'); document.getElementById('tCam').textContent='OK';
+      set('dMic','g'); document.getElementById('tMic').textContent='OK';
+      // Medidor de micrófono
+      try{
+        var ac = new (window.AudioContext||window.webkitAudioContext)();
+        var src = ac.createMediaStreamSource(stream);
+        var an = ac.createAnalyser(); an.fftSize=256; src.connect(an);
+        var data = new Uint8Array(an.frequencyBinCount);
+        var bar = document.getElementById('micBar');
+        (function loop(){ an.getByteFrequencyData(data);
+          var v=0; for(var i=0;i<data.length;i++) v=Math.max(v,data[i]);
+          bar.style.width = Math.min(100,(v/200)*100)+'%';
+          requestAnimationFrame(loop);
+        })();
+      }catch(e){}
+    }).catch(function(){
+      set('dCam','r'); document.getElementById('tCam').textContent='Sin acceso';
+      set('dMic','r'); document.getElementById('tMic').textContent='Sin acceso';
+      document.getElementById('ayuda').classList.remove('hidden');
+    });
+
+    // Parlantes: beep de prueba
+    document.getElementById('btnSound').onclick=function(e){
+      e.preventDefault();
+      try{ var ac=new (window.AudioContext||window.webkitAudioContext)();
+        var o=ac.createOscillator(), g=ac.createGain(); o.connect(g); g.connect(ac.destination);
+        o.frequency.value=440; g.gain.value=0.1; o.start(); setTimeout(function(){o.stop();},400);
+        set('dSpk','g');
+      }catch(e){ set('dSpk','y'); }
+    };
+
+    // Conexión: estimación por navigator.connection
+    var net = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    var tNet=document.getElementById('tNet');
+    if(net && net.downlink){
+      var d=net.downlink;
+      if(d>=1.5){ set('dNet','g'); tNet.textContent='Buena ('+d+' Mbps)'; }
+      else if(d>=0.6){ set('dNet','y'); tNet.textContent='Justa ('+d+' Mbps)'; }
+      else { set('dNet','r'); tNet.textContent='Débil ('+d+' Mbps)'; }
+    } else { set('dNet','y'); tNet.textContent='No se pudo medir'; }
+  })();
+  </script>
+</body>
+</html>

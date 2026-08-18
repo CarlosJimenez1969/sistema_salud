@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Teleconsulta — {{ paciente.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+    <div>
+      <h4 class="mb-0"><i class="bi bi-camera-video-fill text-success"></i> Teleconsulta</h4>
+      <small class="text-muted">Paciente: <strong>{{ paciente.usuario.get_full_name|default:paciente }}</strong> · {{ cita.fecha|date:"d/m/Y" }} {{ cita.hora|time:"H:i" }} · {{ cita.get_modalidad_display }}</small>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <span id="estadoBadge" class="badge bg-secondary">…</span>
+      <button id="btnAdmitir" class="btn btn-success btn-sm" disabled>
+        <i class="bi bi-door-open"></i> Admitir paciente
+      </button>
+      <form method="post" action="{% url 'teleconsulta:finalizar' sesion.id %}" onsubmit="return confirm('¿Finalizar la teleconsulta?');" class="d-inline">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right"></i> Finalizar</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Video -->
+    <div class="col-lg-8">
+      <div id="jitsi" style="height:70vh; min-height:420px; border-radius:12px; overflow:hidden; background:#0b0f0d;"></div>
+      <div id="avisoEspera" class="alert alert-warning mt-2 mb-0 py-2 d-none">
+        <i class="bi bi-hourglass-split"></i> El paciente está en la <strong>sala de espera</strong>. Cuando quieras, pulsa <strong>Admitir paciente</strong> para que entre al video.
+      </div>
+    </div>
+
+    <!-- Panel clínico -->
+    <div class="col-lg-4">
+      <div class="card mb-2">
+        <div class="card-header py-2"><i class="bi bi-person-vcard"></i> Paciente</div>
+        <div class="card-body py-2 small">
+          <div><strong>{{ paciente.usuario.get_full_name|default:paciente }}</strong></div>
+          {% if paciente.usuario.cedula %}<div>Cédula: {{ paciente.usuario.cedula }}</div>{% endif %}
+          {% if paciente.telefono %}<div>Tel: {{ paciente.telefono }}</div>{% endif %}
+          {% if paciente.edad %}<div>Edad: {{ paciente.edad }} años</div>{% endif %}
+          {% if paciente.tipo_sangre %}<div>Tipo de sangre: {{ paciente.tipo_sangre }}</div>{% endif %}
+        </div>
+      </div>
+
+      {% if paciente.alergias or paciente.enfermedades_cronicas %}
+      <div class="card mb-2">
+        <div class="card-header py-2"><i class="bi bi-exclamation-triangle-fill text-warning"></i> Alertas</div>
+        <div class="card-body py-2 small">
+          {% if paciente.alergias %}<div><strong>Alergias:</strong> {{ paciente.alergias }}</div>{% endif %}
+          {% if paciente.enfermedades_cronicas %}<div><strong>Crónicas:</strong> {{ paciente.enfermedades_cronicas }}</div>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="card mb-2">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-clock-history"></i> Últimas consultas</span>
+        </div>
+        <div class="card-body py-2 small">
+          {% for h in historias %}
+            <div class="border-bottom pb-1 mb-1">
+              <div class="text-muted">{{ h.fecha_atencion|date:"d/m/Y" }}</div>
+              <div>{{ h.motivo_consulta|default:"—"|truncatechars:70 }}</div>
+            </div>
+          {% empty %}
+            <div class="text-muted">Sin consultas previas registradas.</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <a href="{% url 'crear_historia' paciente.id %}" target="_blank" class="btn btn-primary w-100 mb-2">
+        <i class="bi bi-file-medical"></i> Registrar historia clínica
+      </a>
+      <a href="{% url 'historial_medico' paciente.id %}" target="_blank" class="btn btn-outline-secondary w-100 btn-sm">
+        <i class="bi bi-folder2-open"></i> Ver historial completo
+      </a>
+
+      <div class="card mt-2">
+        <div class="card-header py-2"><i class="bi bi-link-45deg"></i> Enlace del paciente</div>
+        <div class="card-body py-2">
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control" readonly value="{{ enlace_paciente }}" onclick="this.select()">
+            <button class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText('{{ enlace_paciente }}');this.innerHTML='✓'">Copiar</button>
+          </div>
+          <small class="text-muted">Envíalo por WhatsApp/SMS. Caduca al terminar la cita.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://meet.jit.si/external_api.js"></script>
+<script>
+(function(){
+  // Video del médico
+  try{
+    new JitsiMeetExternalAPI("{{ jitsi_domain }}", {
+      roomName: "{{ sesion.sala_id }}",
+      parentNode: document.getElementById('jitsi'),
+      userInfo: { displayName: "{{ medico_nombre|escapejs }} (médico)" },
+      configOverwrite: { prejoinPageEnabled: false, disableDeepLinking: true },
+      interfaceConfigOverwrite: { MOBILE_APP_PROMO: false }
+    });
+  }catch(e){ console.error('Jitsi', e); }
+
+  var admitido = {{ sesion.paciente_admitido|yesno:"true,false" }};
+  var btn = document.getElementById('btnAdmitir');
+  var badge = document.getElementById('estadoBadge');
+  var aviso = document.getElementById('avisoEspera');
+
+  function pintar(d){
+    if(d.paciente_admitido){ badge.className='badge bg-success'; badge.textContent='Paciente admitido'; btn.disabled=true; btn.innerHTML='<i class="bi bi-check2"></i> Admitido'; aviso.classList.add('d-none'); }
+    else if(d.paciente_en_espera){ badge.className='badge bg-warning text-dark'; badge.textContent='Paciente en espera'; btn.disabled=false; aviso.classList.remove('d-none'); }
+    else if(d.consentimiento){ badge.className='badge bg-info text-dark'; badge.textContent='Verificación técnica'; btn.disabled=true; aviso.classList.add('d-none'); }
+    else { badge.className='badge bg-secondary'; badge.textContent='Esperando al paciente'; btn.disabled=true; aviso.classList.add('d-none'); }
+  }
+  function poll(){
+    fetch("{% url 'teleconsulta:estado_medico' sesion.id %}").then(r=>r.json()).then(function(d){
+      if(d.ok) pintar(d);
+    }).catch(function(){});
+  }
+  btn.onclick = function(){
+    btn.disabled=true;
+    fetch("{% url 'teleconsulta:admitir' sesion.id %}", {method:'POST', headers:{'X-CSRFToken':'{{ csrf_token }}'}})
+      .then(r=>r.json()).then(function(){ poll(); });
+  };
+  poll(); setInterval(poll, 4000);
+})();
+</script>
+{% endblock %}

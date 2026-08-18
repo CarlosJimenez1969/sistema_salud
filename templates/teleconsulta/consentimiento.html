@@ -1,0 +1,65 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consentimiento de telesalud | VertexSalud</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body{background:#f1f5f9}</style>
+</head>
+<body class="text-slate-700">
+  <div class="max-w-2xl mx-auto sm:my-8 px-3">
+    <div class="bg-white sm:rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="bg-gradient-to-br from-teal-600 to-emerald-700 px-6 py-5 text-white">
+        <h1 class="text-xl font-bold">🩺 Consentimiento para teleconsulta</h1>
+        <p class="text-teal-50 text-sm mt-0.5">Lee y acepta para continuar con tu atención por video.</p>
+      </div>
+
+      <div class="p-6 space-y-4">
+        {% if messages %}{% for m in messages %}
+          <div class="rounded-lg bg-red-50 border border-red-200 text-red-800 px-4 py-2 text-sm">{{ m }}</div>
+        {% endfor %}{% endif %}
+
+        <div class="text-xs text-slate-400 uppercase tracking-wide">Documento {{ version }}</div>
+        <div class="max-h-72 overflow-y-auto bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm whitespace-pre-line leading-relaxed">{{ consent_text }}</div>
+
+        <form method="post" class="space-y-4">
+          {% csrf_token %}
+          <div>
+            <label class="block text-sm font-semibold mb-1">Acepto en calidad de:</label>
+            <div class="flex gap-3 text-sm">
+              <label class="flex items-center gap-2"><input type="radio" name="aceptado_por" value="PACIENTE" checked onchange="toggleRep()"> Paciente</label>
+              <label class="flex items-center gap-2"><input type="radio" name="aceptado_por" value="REPRESENTANTE" onchange="toggleRep()"> Representante legal</label>
+            </div>
+          </div>
+
+          <div id="repFields" class="hidden space-y-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <p class="text-xs text-amber-800">Para menores de edad o personas que no pueden consentir por sí mismas.</p>
+            <input type="text" name="rep_nombre" placeholder="Nombre del representante" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+            <div class="flex gap-2">
+              <input type="text" name="rep_cedula" placeholder="Cédula" class="w-1/2 border border-slate-300 rounded-lg px-3 py-2 text-sm">
+              <input type="text" name="rep_parentesco" placeholder="Parentesco (madre, padre, tutor…)" class="w-1/2 border border-slate-300 rounded-lg px-3 py-2 text-sm">
+            </div>
+          </div>
+
+          <label class="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="acepto" required class="mt-1">
+            <span>He leído y <strong>acepto</strong> el consentimiento informado para ser atendido/a por telesalud.</span>
+          </label>
+
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-semibold transition">
+            Aceptar y continuar
+          </button>
+          <p class="text-center text-xs text-slate-400">Tu aceptación queda registrada con fecha, hora y dispositivo, y puedes revocarla en cualquier momento.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script>
+    function toggleRep(){
+      var rep = document.querySelector('input[name="aceptado_por"]:checked').value === 'REPRESENTANTE';
+      document.getElementById('repFields').classList.toggle('hidden', !rep);
+    }
+  </script>
+</body>
+</html>

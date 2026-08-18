@@ -1,0 +1,43 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sala de espera | VertexSalud</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body{background:#f1f5f9}
+    .spin{width:56px;height:56px;border:5px solid #d1fae5;border-top-color:#10b981;border-radius:50%;animation:s 1s linear infinite;margin:0 auto}
+    @keyframes s{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body class="text-slate-700">
+  <div class="max-w-md mx-auto sm:my-10 px-3">
+    <div class="bg-white sm:rounded-2xl shadow-sm border border-slate-200 overflow-hidden text-center">
+      <div class="bg-gradient-to-br from-teal-600 to-emerald-700 px-6 py-6 text-white">
+        <h1 class="text-xl font-bold">🕒 Sala de espera</h1>
+      </div>
+      <div class="p-8 space-y-5">
+        <div class="spin"></div>
+        <div>
+          <p class="text-lg font-semibold">Estás en la sala de espera</p>
+          <p class="text-slate-500 text-sm mt-1">El Dr(a). {{ medico.usuario.get_full_name|default:medico }} te admitirá en breve. No cierres esta pantalla.</p>
+        </div>
+        <div id="msg" class="text-sm text-emerald-700"></div>
+        <p class="text-xs text-slate-400">Entrarás automáticamente al video cuando el médico te admita.</p>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function(){
+    var video = "{% url 'teleconsulta:sala_paciente' token %}";
+    function poll(){
+      fetch("{% url 'teleconsulta:estado' token %}").then(r=>r.json()).then(function(d){
+        if(d.finalizada){ document.getElementById('msg').textContent='La teleconsulta finalizó.'; return; }
+        if(d.admitido){ document.getElementById('msg').textContent='¡El médico te admitió! Entrando…'; window.location = video; }
+      }).catch(function(){});
+    }
+    poll(); setInterval(poll, 3000);
+  })();
+  </script>
+</body>
+</html>

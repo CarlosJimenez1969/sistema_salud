@@ -11,6 +11,14 @@ class Cita(models.Model):
         ('C', 'Cancelado'),
     ]
 
+    # Modalidad de atención (atributo de primera clase, no texto en observaciones)
+    MODALIDADES = [
+        ('PRESENCIAL', 'Presencial'),
+        ('TELECONSULTA', 'Teleconsulta'),
+        ('TELEINTERCONSULTA', 'Teleinterconsulta'),
+        ('TELEMONITOREO', 'Telemonitoreo'),
+    ]
+
     medico = models.ForeignKey(Medico, on_delete=models.CASCADE, related_name='citas')
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='citas')
     # Solo se usa para citas veterinarias (el paciente es el dueño)
@@ -21,7 +29,14 @@ class Cita(models.Model):
     motivo = models.TextField(blank=True, help_text="Motivo de la consulta")
 
     estado = models.CharField(max_length=20, choices=ESTADOS, default='P')
+    modalidad = models.CharField(
+        max_length=20, choices=MODALIDADES, default='PRESENCIAL',
+        help_text="Presencial o modalidad remota (telesalud)")
     creado_en = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def es_remota(self):
+        return self.modalidad != 'PRESENCIAL'
 
     class Meta:
         # Ordenar por fecha y hora (las más próximas primero)
