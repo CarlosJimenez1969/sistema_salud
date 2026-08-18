@@ -89,6 +89,7 @@ def sala_medico(request, sesion_id):
         'historias': historias, 'enlace_paciente': enlace_paciente,
         'jitsi_domain': jitsi_domain(),
         'medico_nombre': request.user.get_full_name() or request.user.get_username(),
+        'es_medico': bool(getattr(request.user, 'perfil_medico', None)),
     })
 
 
@@ -134,6 +135,10 @@ def derivar(request, sesion_id):
     sesion, medico = _sesion_del_medico(request, sesion_id)
     if not sesion:
         return redirect('ver_agenda')
+    # La derivación / declaración de emergencia es un acto CLÍNICO: solo el médico.
+    if not getattr(request.user, 'perfil_medico', None):
+        messages.error(request, "Solo el médico puede derivar o declarar una emergencia.")
+        return redirect('teleconsulta:sala_medico', sesion_id=sesion.id)
     if request.method == 'POST':
         tipo = request.POST.get('tipo', 'PRESENCIAL')
         if tipo not in dict(TeleconsultaSesion.DERIVACION_TIPOS):

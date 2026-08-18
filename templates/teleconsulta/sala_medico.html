@@ -13,9 +13,11 @@
       <button id="btnAdmitir" class="btn btn-success btn-sm" disabled>
         <i class="bi bi-door-open"></i> Admitir paciente
       </button>
+      {% if es_medico %}
       <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalDerivar" title="Requiere atención presencial o emergencia">
         <i class="bi bi-exclamation-octagon-fill"></i> Derivar / Emergencia
       </button>
+      {% endif %}
       <form method="post" action="{% url 'teleconsulta:finalizar' sesion.id %}" onsubmit="return confirm('¿Finalizar la teleconsulta?');" class="d-inline">
         {% csrf_token %}
         <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-box-arrow-right"></i> Finalizar</button>
