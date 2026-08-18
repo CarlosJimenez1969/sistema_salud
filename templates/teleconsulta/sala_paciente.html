@@ -22,15 +22,23 @@
   </div>
   <script>
   (function(){
-    try{
-      new JitsiMeetExternalAPI("{{ jitsi_domain }}", {
-        roomName: "{{ sesion.sala_id }}",
-        parentNode: document.getElementById('jitsi'),
-        userInfo: { displayName: "{{ paciente_nombre|escapejs }}" },
-        configOverwrite: { prejoinPageEnabled: false, disableDeepLinking: true },
-        interfaceConfigOverwrite: { MOBILE_APP_PROMO: false }
-      });
-    }catch(e){ console.error(e); }
+    if (typeof JitsiMeetExternalAPI === 'undefined') {
+      document.getElementById('jitsi').innerHTML =
+        '<div style="color:#e2e8f0;padding:28px;text-align:center;max-width:420px;margin:15vh auto;font-family:sans-serif">'+
+        '<div style="font-size:40px">🔒</div>'+
+        '<h3>No se pudo cargar el video</h3>'+
+        '<p>Abrí <a href="https://{{ jitsi_domain }}/" target="_blank" style="color:#22c55e;font-weight:bold">https://{{ jitsi_domain }}</a>, aceptá el certificado, y volvé a recargar esta página.</p></div>';
+    } else {
+      try{
+        new JitsiMeetExternalAPI("{{ jitsi_domain }}", {
+          roomName: "{{ sesion.sala_id }}",
+          parentNode: document.getElementById('jitsi'),
+          userInfo: { displayName: "{{ paciente_nombre|escapejs }}" },
+          configOverwrite: { prejoinPageEnabled: false, disableDeepLinking: true },
+          interfaceConfigOverwrite: { MOBILE_APP_PROMO: false }
+        });
+      }catch(e){ console.error(e); }
+    }
 
     function poll(){
       fetch("{% url 'teleconsulta:estado' token %}").then(r=>r.json()).then(function(d){

@@ -93,15 +93,25 @@
 <script>
 (function(){
   // Video del médico
-  try{
-    new JitsiMeetExternalAPI("{{ jitsi_domain }}", {
-      roomName: "{{ sesion.sala_id }}",
-      parentNode: document.getElementById('jitsi'),
-      userInfo: { displayName: "{{ medico_nombre|escapejs }} (médico)" },
-      configOverwrite: { prejoinPageEnabled: false, disableDeepLinking: true },
-      interfaceConfigOverwrite: { MOBILE_APP_PROMO: false }
-    });
-  }catch(e){ console.error('Jitsi', e); }
+  if (typeof JitsiMeetExternalAPI === 'undefined') {
+    document.getElementById('jitsi').innerHTML =
+      '<div style="color:#e2e8f0;padding:28px;text-align:center;font-family:sans-serif">'+
+      '<div style="font-size:40px">🔒</div>'+
+      '<h5>No se pudo cargar el video</h5>'+
+      '<p>Tu navegador aún no confía en el servidor de video local.</p>'+
+      '<p><a href="https://{{ jitsi_domain }}/" target="_blank" style="color:#22c55e;font-weight:bold">1) Abrí https://{{ jitsi_domain }}</a> y aceptá el certificado (Avanzado → Continuar).</p>'+
+      '<p>2) Volvé aquí y <a href="" style="color:#22c55e">recargá esta página</a>.</p></div>';
+  } else {
+    try{
+      new JitsiMeetExternalAPI("{{ jitsi_domain }}", {
+        roomName: "{{ sesion.sala_id }}",
+        parentNode: document.getElementById('jitsi'),
+        userInfo: { displayName: "{{ medico_nombre|escapejs }} (médico)" },
+        configOverwrite: { prejoinPageEnabled: false, disableDeepLinking: true },
+        interfaceConfigOverwrite: { MOBILE_APP_PROMO: false }
+      });
+    }catch(e){ console.error('Jitsi', e); }
+  }
 
   var admitido = {{ sesion.paciente_admitido|yesno:"true,false" }};
   var btn = document.getElementById('btnAdmitir');
