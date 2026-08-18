@@ -66,6 +66,7 @@ def sesion_para_cita(cita, ventana_horas=6):
 
 
 def jitsi_domain():
-    # Fase 1: servidor público de Jitsi. En producción se auto-hospeda en el VPS
-    # para soberanía de datos (Norma de Telesalud / LOPDP).
-    return 'meet.jit.si'
+    # Configurable por entorno. En producción se auto-hospeda en el VPS
+    # (sin candado de moderador, soberanía de datos — Norma de Telesalud / LOPDP).
+    from django.conf import settings
+    return getattr(settings, 'JITSI_DOMAIN', 'meet.jit.si')

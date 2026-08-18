@@ -208,6 +208,12 @@ PAYPHONE_STORE_ID = config('PAYPHONE_STORE_ID', default='')
 RESEND_API_KEY    = config('RESEND_API_KEY', default='')
 RESEND_FROM       = config('RESEND_FROM',    default='VertexSalud <onboarding@resend.dev>')
 
+# ── Telesalud / Jitsi ──────────────────────────────────────────────────────────
+# Dominio del servidor Jitsi. Por defecto el público meet.jit.si (exige moderador
+# autenticado). En producción se auto-hospeda en el VPS. Para pruebas locales se
+# puede apuntar a una instancia abierta vía la variable JITSI_DOMAIN.
+JITSI_DOMAIN = config('JITSI_DOMAIN', default='meet.jit.si')
+
 # ── Cron Token (para endpoint protegido de tareas programadas) ─────────────────
 CRON_SECRET_TOKEN = config('CRON_SECRET_TOKEN', default='')
 
