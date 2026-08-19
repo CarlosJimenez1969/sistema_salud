@@ -124,6 +124,12 @@ def finalizar(request, sesion_id):
         EventoAuditoria.registrar(
             actor=request.user.get_username(), accion='FINALIZA_TELECONSULTA',
             recurso=f'sesion:{sesion.id}', sesion=sesion, ip=get_client_ip(request))
+        # Al finalizar, llevar al médico a registrar la nota clínica (queda en la HC
+        # única del paciente, marcada como atención remota).
+        if getattr(request.user, 'perfil_medico', None):
+            messages.success(
+                request, "Teleconsulta finalizada. Registra la nota clínica de la atención.")
+            return redirect('crear_historia', paciente_id=sesion.cita.paciente_id)
         messages.success(request, "Teleconsulta finalizada.")
     return redirect('ver_agenda')
 
