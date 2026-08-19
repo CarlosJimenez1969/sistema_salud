@@ -1,4 +1,5 @@
 """Servicios/ayudas del módulo de telesalud."""
+import uuid
 from datetime import timedelta
 
 from django.utils import timezone
@@ -63,6 +64,35 @@ def sesion_para_cita(cita, ventana_horas=6):
         sesion.token_expira = inicio_cita + timedelta(hours=ventana_horas)
         sesion.save(update_fields=['token_expira'])
     return sesion
+
+
+def crear_o_reusar_paciente(nombre, telefono, cedula=''):
+    """Busca un Paciente por teléfono; si no existe, crea uno mínimo (walk-in)."""
+    from django.contrib.auth import get_user_model
+    from paciente.models import Paciente
+    paciente = (Paciente.objects.filter(telefono=telefono)
+                .select_related('usuario').first())
+    if paciente:
+        return paciente
+    U = get_user_model()
+    partes = (nombre or 'Paciente').split(' ', 1)
+    first = partes[0][:150]
+    last = (partes[1] if len(partes) > 1 else '')[:150]
+    base = 'pac_urg%s' % uuid.uuid4().hex[:8]
+    uname, email, i = base, '%s@sincorreo.vertexsalud' % base, 1
+    while U.objects.filter(username=uname).exists():
+        i += 1
+        uname = '%s_%d' % (base, i)
+    while U.objects.filter(email=email).exists():
+        i += 1
+        email = '%s_%d@sincorreo.vertexsalud' % (base, i)
+    u = U.objects.create(username=uname, email=email,
+                         first_name=first, last_name=last, role='PACIENTE')
+    if cedula and not U.objects.filter(cedula=cedula).exists():
+        u.cedula = cedula
+    u.set_unusable_password()
+    u.save()
+    return Paciente.objects.create(usuario=u, telefono=telefono)
 
 
 def jitsi_domain():

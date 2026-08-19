@@ -14,9 +14,12 @@ from django.urls import reverse
 from django.utils import timezone
 
 from citas.models import Cita
-from .models import TeleconsultaSesion, ConsentimientoTelesalud, EventoAuditoria
+from .models import (
+    TeleconsultaSesion, ConsentimientoTelesalud, EventoAuditoria, SolicitudUrgencia,
+)
 from .services import (
     CONSENT_TEXT, CONSENT_VERSION, get_client_ip, sesion_para_cita, jitsi_domain,
+    crear_o_reusar_paciente,
 )
 
 
@@ -284,6 +287,102 @@ def sala_paciente(request, token):
         'sesion': sesion, 'token': token,
         'jitsi_domain': jitsi_domain(), 'paciente_nombre': nombre,
     })
+
+
+# ─────────────────────────── URGENCIAS (cola) ───────────────────────────
+def urgencia_nueva(request):
+    """Paciente pide teleorientación de urgencia AHORA (sin login, sin agendar)."""
+    if request.method == 'POST':
+        nombre = (request.POST.get('nombre') or '').strip()
+        tel = (request.POST.get('telefono') or '').strip()
+        tel_dig = ''.join(c for c in tel if c.isdigit())
+        if not nombre or len(tel_dig) < 7:
+            messages.error(request, "Escribe tu nombre y un teléfono válido.")
+            return redirect('teleconsulta:urgencia_nueva')
+        sol = SolicitudUrgencia.objects.create(
+            nombre=nombre[:150], telefono=tel[:30],
+            cedula=(request.POST.get('cedula') or '').strip()[:20],
+            motivo=(request.POST.get('motivo') or '').strip()[:1000],
+            ubicacion=(request.POST.get('ubicacion') or '').strip()[:200],
+        )
+        EventoAuditoria.registrar(
+            actor=f'urgencia:{sol.token[:8]}', accion='SOLICITA_URGENCIA',
+            recurso=f'urgencia:{sol.id}', ip=get_client_ip(request))
+        return redirect('teleconsulta:urgencia_espera', token=sol.token)
+    return render(request, 'teleconsulta/urgencia_nueva.html', {})
+
+
+def urgencia_espera(request, token):
+    sol = get_object_or_404(SolicitudUrgencia, token=token)
+    if sol.estado == 'TOMADA' and sol.sesion:
+        return redirect('teleconsulta:entrada', token=sol.sesion.token)
+    return render(request, 'teleconsulta/urgencia_espera.html', {'sol': sol})
+
+
+def urgencia_estado(request, token):
+    sol = get_object_or_404(SolicitudUrgencia, token=token)
+    data = {'estado': sol.estado, 'posicion': sol.posicion_en_cola}
+    if sol.estado == 'TOMADA' and sol.sesion:
+        data['sesion_token'] = sol.sesion.token
+    return JsonResponse(data)
+
+
+@login_required
+def urgencias_panel(request):
+    medico = _medico_del_usuario(request)
+    if not medico:
+        messages.error(request, "Solo personal médico ve la cola de urgencias.")
+        return redirect('home')
+    cola = SolicitudUrgencia.objects.filter(estado='EN_COLA')
+    return render(request, 'teleconsulta/urgencias_panel.html', {
+        'cola': cola, 'total': cola.count(),
+        'es_medico': bool(getattr(request.user, 'perfil_medico', None)),
+    })
+
+
+@login_required
+def urgencias_estado_json(request):
+    medico = _medico_del_usuario(request)
+    if not medico:
+        return JsonResponse({'ok': False}, status=403)
+    return JsonResponse({'ok': True, 'total': SolicitudUrgencia.objects.filter(estado='EN_COLA').count()})
+
+
+@login_required
+def urgencia_tomar(request, sol_id):
+    medico = getattr(request.user, 'perfil_medico', None)
+    if not medico:
+        messages.error(request, "Solo un médico puede tomar una urgencia.")
+        return redirect('teleconsulta:urgencias_panel')
+    if request.method != 'POST':
+        return redirect('teleconsulta:urgencias_panel')
+    sol = get_object_or_404(SolicitudUrgencia, id=sol_id)
+    if sol.estado != 'EN_COLA':
+        messages.warning(request, "Esa urgencia ya fue tomada o cancelada.")
+        return redirect('teleconsulta:urgencias_panel')
+
+    paciente = crear_o_reusar_paciente(sol.nombre, sol.telefono, sol.cedula)
+    ahora = timezone.localtime(timezone.now())
+    cita = Cita.objects.create(
+        medico=medico, paciente=paciente, fecha=ahora.date(),
+        hora=ahora.time().replace(microsecond=0),
+        motivo=sol.motivo or 'Teleorientación de urgencia', estado='P',
+        modalidad='TELECONSULTA')
+    sesion = sesion_para_cita(cita)
+    if sol.ubicacion:
+        sesion.ubicacion_declarada_paciente = sol.ubicacion
+        sesion.save(update_fields=['ubicacion_declarada_paciente'])
+
+    sol.estado = 'TOMADA'
+    sol.medico = medico
+    sol.sesion = sesion
+    sol.tomada_en = timezone.now()
+    sol.save(update_fields=['estado', 'medico', 'sesion', 'tomada_en'])
+    EventoAuditoria.registrar(
+        actor=request.user.get_username(), accion='TOMA_URGENCIA',
+        recurso=f'urgencia:{sol.id}', sesion=sesion, ip=get_client_ip(request))
+    messages.success(request, f"Tomaste la urgencia de {sol.nombre}. Estás en la sala.")
+    return redirect('teleconsulta:sala_medico', sesion_id=sesion.id)
 
 
 def estado_json(request, token):

@@ -109,6 +109,8 @@
         <p class="vx-section">Mi consultorio</p>
         <a class="vx-item {% if rn == 'solicitudes_cita' %}active{% endif %}" href="{% url 'solicitudes_cita' %}">
           <i class="bi bi-inbox-fill"></i><span class="vx-txt"><span>Solicitudes de cita</span><span class="vx-sub">Pacientes que piden cita</span></span></a>
+        <a class="vx-item {% if rn == 'urgencias_panel' %}active{% endif %}" href="{% url 'teleconsulta:urgencias_panel' %}">
+          <i class="bi bi-heart-pulse-fill text-danger"></i><span class="vx-txt"><span>Urgencias</span><span class="vx-sub">Teleorientación en cola</span></span></a>
         <a class="vx-item {% if rn == 'ficha_editar' %}active{% endif %}" href="{% url 'ficha_editar' %}">
           <i class="bi bi-globe"></i><span class="vx-txt"><span>Mi página web</span><span class="vx-sub">Tu ficha para Google</span></span></a>
         {% endif %}
@@ -121,6 +123,8 @@
           <i class="bi bi-clock-history"></i><span class="vx-txt"><span>Configurar horario</span><span class="vx-sub">Días y horas de atención</span></span></a>
         <a class="vx-item {% if rn == 'solicitudes_cita' %}active{% endif %}" href="{% url 'solicitudes_cita' %}">
           <i class="bi bi-inbox-fill"></i><span class="vx-txt"><span>Solicitudes de cita</span><span class="vx-sub">Pacientes que piden cita</span></span></a>
+        <a class="vx-item {% if rn == 'urgencias_panel' %}active{% endif %}" href="{% url 'teleconsulta:urgencias_panel' %}">
+          <i class="bi bi-heart-pulse-fill text-danger"></i><span class="vx-txt"><span>Urgencias</span><span class="vx-sub">Teleorientación en cola</span></span></a>
 
         <p class="vx-section">Pacientes</p>
         <a class="vx-item {% if rn == 'listar_pacientes' %}active{% endif %}" href="{% url 'listar_pacientes' %}">

@@ -1,0 +1,51 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>En cola — Teleorientación urgente | VertexSalud</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body{background:#f1f5f9}
+    .spin{width:56px;height:56px;border:5px solid #fecaca;border-top-color:#e11d48;border-radius:50%;animation:s 1s linear infinite;margin:0 auto}
+    @keyframes s{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body class="text-slate-700">
+  <div class="max-w-md mx-auto sm:my-10 px-3">
+    <div class="bg-white sm:rounded-2xl shadow-sm border border-slate-200 overflow-hidden text-center">
+      <div class="bg-gradient-to-br from-rose-600 to-red-700 px-6 py-6 text-white">
+        <h1 class="text-xl font-bold">🕒 Estás en la cola de urgencias</h1>
+      </div>
+      <div class="p-8 space-y-5">
+        <div class="spin"></div>
+        <div>
+          <p class="text-lg font-semibold">Un médico te tomará en breve</p>
+          <p class="text-slate-500 text-sm mt-1">No cierres esta pantalla. Cuando un médico te tome, pasarás a la videollamada.</p>
+        </div>
+        <div class="text-3xl font-bold text-rose-600" id="pos">
+          {% if sol.posicion_en_cola %}Posición: {{ sol.posicion_en_cola }}{% endif %}
+        </div>
+        <div id="msg" class="text-sm text-rose-700"></div>
+        <p class="text-xs text-slate-400">Si es una emergencia con riesgo de vida, llama al <strong>ECU-911</strong>.</p>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function(){
+    function poll(){
+      fetch("{% url 'teleconsulta:urgencia_estado' sol.token %}").then(r=>r.json()).then(function(d){
+        if(d.estado === 'TOMADA' && d.sesion_token){
+          document.getElementById('msg').textContent='¡Un médico te tomó! Entrando…';
+          window.location = "/teleconsulta/t/" + d.sesion_token + "/";
+        } else if(d.estado === 'CANCELADA'){
+          document.getElementById('msg').textContent='Tu solicitud fue cancelada.';
+        } else {
+          document.getElementById('pos').textContent = d.posicion ? ('Posición: ' + d.posicion) : '';
+        }
+      }).catch(function(){});
+    }
+    poll(); setInterval(poll, 3000);
+  })();
+  </script>
+</body>
+</html>

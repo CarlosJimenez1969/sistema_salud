@@ -155,6 +155,54 @@ class ConsentimientoTelesalud(models.Model):
         self.save()
 
 
+class SolicitudUrgencia(models.Model):
+    """Teleorientación de urgencia SIN agendar: el paciente pide atención 'ahora'
+    y entra a una cola; un médico de turno la toma y se crea la teleconsulta.
+
+    Nota clínica/legal: es para urgencia/teleorientación, NO para emergencia vital
+    (ante riesgo de vida, el flujo deriva a ECU-911)."""
+
+    ESTADOS = [
+        ('EN_COLA', 'En cola'),
+        ('TOMADA', 'Tomada por un médico'),
+        ('CANCELADA', 'Cancelada'),
+    ]
+
+    nombre = models.CharField(max_length=150)
+    telefono = models.CharField(max_length=30)
+    cedula = models.CharField(max_length=20, blank=True)
+    motivo = models.TextField(blank=True)
+    ubicacion = models.CharField(max_length=200, blank=True)
+
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='EN_COLA')
+    token = models.CharField(max_length=96, unique=True, default=_nuevo_token)
+
+    medico = models.ForeignKey(
+        'medico.Medico', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='urgencias_tomadas')
+    sesion = models.ForeignKey(
+        TeleconsultaSesion, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='urgencia_origen')
+
+    creado = models.DateTimeField(auto_now_add=True)
+    tomada_en = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['creado']  # FIFO: el más antiguo primero
+        verbose_name = 'Solicitud de urgencia'
+        verbose_name_plural = 'Solicitudes de urgencia'
+
+    def __str__(self):
+        return f"Urgencia de {self.nombre} ({self.get_estado_display()})"
+
+    @property
+    def posicion_en_cola(self):
+        if self.estado != 'EN_COLA':
+            return None
+        return SolicitudUrgencia.objects.filter(
+            estado='EN_COLA', creado__lt=self.creado).count() + 1
+
+
 class EventoAuditoria(models.Model):
     """Log inmutable (append-only) de accesos y acciones sobre la teleconsulta.
     Quién, qué, cuándo y desde dónde. Exportable para auditoría."""

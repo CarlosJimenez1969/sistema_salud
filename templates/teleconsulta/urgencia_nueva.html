@@ -1,0 +1,42 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teleorientación urgente | VertexSalud</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body{background:#f1f5f9}</style>
+</head>
+<body class="text-slate-700">
+  <div class="max-w-lg mx-auto sm:my-8 px-3">
+    <div class="bg-white sm:rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="bg-gradient-to-br from-rose-600 to-red-700 px-6 py-5 text-white">
+        <h1 class="text-xl font-bold">🩺 Teleorientación urgente</h1>
+        <p class="text-rose-50 text-sm mt-0.5">Un médico de turno te atenderá por video lo antes posible.</p>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="rounded-lg bg-red-50 border border-red-200 text-red-800 px-4 py-3 text-sm">
+          <strong>¿Es una emergencia con riesgo de vida?</strong> (dificultad grave para respirar, dolor de pecho intenso, pérdida de conciencia, sangrado abundante) → <strong>llama YA al ECU-911</strong>. Esto es para orientación urgente, no reemplaza una emergencia.
+        </div>
+
+        {% if messages %}{% for m in messages %}
+          <div class="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2 text-sm">{{ m }}</div>
+        {% endfor %}{% endif %}
+
+        <form method="post" class="space-y-3">
+          {% csrf_token %}
+          <input type="text" name="nombre" required placeholder="Tu nombre completo" class="w-full border border-slate-300 rounded-lg px-3 py-2.5">
+          <input type="tel" name="telefono" required inputmode="numeric" maxlength="10" placeholder="Teléfono (10 dígitos)" class="w-full border border-slate-300 rounded-lg px-3 py-2.5">
+          <input type="text" name="cedula" placeholder="Cédula (opcional)" class="w-full border border-slate-300 rounded-lg px-3 py-2.5">
+          <textarea name="motivo" rows="3" placeholder="¿Qué te pasa? (síntomas, desde cuándo…)" class="w-full border border-slate-300 rounded-lg px-3 py-2.5"></textarea>
+          <input type="text" name="ubicacion" placeholder="¿Desde dónde te conectas? Ciudad/sector" class="w-full border border-slate-300 rounded-lg px-3 py-2.5">
+          <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-lg font-semibold transition">
+            Solicitar atención urgente
+          </button>
+          <p class="text-center text-xs text-slate-400">Entrarás a una sala de espera. Un médico te tomará y te pedirá aceptar el consentimiento.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
